@@ -1,0 +1,32 @@
+name: BioQuantix Daily EOD Data Batch
+
+on:
+  schedule:
+    # 周二至周六 UTC 11点 (对应美东时间早晨 6:00)。
+    # 完美避开深夜 MarketData 结算盲区，确保抓取到前一天的完整 EOD 历史数据
+    - cron: '0 11 * * 2-6' 
+  workflow_dispatch: # 允许你手动点击运行
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        # 仅安装必要的 requests (调用API) 和 supabase (写库)
+        run: pip install requests supabase
+
+      - name: Run EOD Scraper and AI Engine
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          DEEPSEEK_KEY: ${{ secrets.DEEPSEEK_KEY }}
+          MARKETDATA_TOKEN: ${{ secrets.MARKETDATA_TOKEN }}
+        run: python update_data.py
