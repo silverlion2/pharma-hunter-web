@@ -25,7 +25,9 @@ import {
 const SUPABASE_URL = 'YOUR_SUPABASE_URL';
 const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// 【修复白屏的关键】：检测是否填写了真实的 URL。如果没填，则暂时不初始化客户端，防止报错崩溃全站。
+const isSupabaseConfigured = SUPABASE_URL.startsWith('http');
+const supabase = isSupabaseConfigured ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 const App = () => {
   const [view, setView] = useState('landing'); // 'landing' | 'dashboard' | 'upgrade'
@@ -66,7 +68,7 @@ const App = () => {
   useEffect(() => {
     async function fetchData() {
       try {
-        if (SUPABASE_URL === 'YOUR_SUPABASE_URL') {
+        if (!isSupabaseConfigured || !supabase) {
           console.log("Using local fallback data (Supabase keys not configured yet).");
           setAssetData(fallbackData);
           setIsLoading(false);
