@@ -4,12 +4,26 @@ from datetime import datetime, timedelta
 from supabase import create_client, Client
 
 # ==========================================
-# 1. 初始化环境变量 (通过 GitHub Actions 注入)
+# 1. 初始化环境变量 (自动清洗防报错机制)
 # ==========================================
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
-DEEPSEEK_KEY = os.environ.get("DEEPSEEK_KEY")
-MARKETDATA_TOKEN = os.environ.get("MARKETDATA_TOKEN")
+def clean_secret(val):
+    """自动清洗由 Markdown 复制粘贴引起的特殊字符和多余括号"""
+    if not val:
+        return val
+    val = str(val).strip()
+    # 如果误粘贴了形如 [url](url) 的 Markdown 格式，提取真实的 url
+    if "](" in val:
+        val = val.split("](")[1].strip(")")
+    return val
+
+SUPABASE_URL = clean_secret(os.environ.get("SUPABASE_URL"))
+SUPABASE_KEY = clean_secret(os.environ.get("SUPABASE_KEY"))
+DEEPSEEK_KEY = clean_secret(os.environ.get("DEEPSEEK_KEY"))
+MARKETDATA_TOKEN = clean_secret(os.environ.get("MARKETDATA_TOKEN"))
+
+# 确保 URL 带有完整的协议头，防止 Name or service not known 错误
+if SUPABASE_URL and not SUPABASE_URL.startswith("http"):
+    SUPABASE_URL = "https://" + SUPABASE_URL
 
 # 如果在本地测试没有环境变量，直接抛出异常提醒
 if not SUPABASE_URL or not SUPABASE_KEY:
@@ -30,7 +44,6 @@ TARGETS = [
 def fetch_clinical_trials(company_name):
     """通过 ClinicalTrials.gov API v2 抓取企业正在进行的后期临床试验"""
     try:
-        # 已确认：ClinicalTrials.gov 的正确 v2 接口 URL
         url = f"https://clinicaltrials.gov/api/v2/studies?query.term={company_name}&filter.advanced=AREA[OverallStatus]ACTIVE_NOT_RECRUITING OR AREA[OverallStatus]RECRUITING&pageSize=1"
         headers = {"accept": "application/json"}
         resp = requests.get(url, headers=headers)
@@ -48,17 +61,17 @@ def fetch_clinical_trials(company_name):
         return "Clinical trials API fetch error."
 
 def fetch_market_data(ticker_symbol):
-    """使用 MarketData API 提取 T-1 历史收盘价与期权异动 (大幅降低 API 成本)"""
+    """使用 MarketData API 提取 T-1 历史收盘价与期权异动"""
     if not MARKETDATA_TOKEN:
         print("Warning: MARKETDATA_TOKEN is not set.")
         return {"price": "N/A", "options": "Token Missing"}
         
     headers = {"Authorization": f"Bearer {MARKETDATA_TOKEN}"}
     
-    # 获取 T-1 (前一天) 的日期。如果在周二至周六早晨运行，这正好是上一交易日。
+    # 获取 T-1 (前一天) 的日期。
     yesterday_str = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
     
-    # 抓取现货历史收盘价 (已确认接口：https://api.marketdata.app/v1/stocks/candles/D/{ticker})
+    # 抓取现货历史收盘价
     price = "N/A"
     try:
         stock_url = f"https://api.marketdata.app/v1/stocks/candles/D/{ticker_symbol}?from={yesterday_str}&to={yesterday_str}"
@@ -70,7 +83,7 @@ def fetch_market_data(ticker_symbol):
         print(f"MarketData Stock Error for {ticker_symbol}: {e}")
         pass
         
-    # 抓取期权 T-1 历史链结算数据 (已确认接口：https://api.marketdata.app/v1/options/chain/{ticker})
+    # 抓取期权 T-1 历史链结算数据
     options_data = "Normal"
     try:
         opt_url = f"https://api.marketdata.app/v1/options/chain/{ticker_symbol}?date={yesterday_str}"
@@ -88,9 +101,7 @@ def fetch_market_data(ticker_symbol):
 # 3. AI M&A 分析大脑 (DeepSeek)
 # ==========================================
 def get_ai_digest(ticker, market_data, clin_data):
-    """将临床和市场数据喂给 DeepSeek，按照 BioQuantix 标准生成并购潜力量化摘要"""
-    
-    # 【已修复】：这里必须是干净的 URL 字符串，绝不能带有 Markdown 的方括号
+    """将临床和市场数据喂给 DeepSeek，生成战略摘要"""
     url = "https://api.deepseek.com/chat/completions"
     
     if not DEEPSEEK_KEY:
@@ -128,7 +139,7 @@ def get_ai_digest(ticker, market_data, clin_data):
     
     try:
         resp = requests.post(url, json=payload, headers=headers)
-        resp.raise_for_status() # 如果 DeepSeek 返回 4xx/5xx 错误，这里会抛出异常
+        resp.raise_for_status() 
         return resp.json()["choices"][0]["message"]["content"]
     except Exception as e:
         print(f"DeepSeek API Error for {ticker}: {e}")
@@ -166,7 +177,6 @@ def main():
         
         print(f"[{ticker}] 推送至 Supabase 云数据库...")
         try:
-            # upsert 表示如果数据库里已经有这个 ticker，就更新它；如果没有，就新建。
             result = supabase.table('assets').upsert(db_record).execute()
             print(f"✅ {ticker} 更新完毕！\n")
         except Exception as e:
