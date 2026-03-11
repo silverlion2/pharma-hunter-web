@@ -23,8 +23,8 @@ import {
 // ==========================================
 // 请将下面两个字符串替换为你自己的 Supabase URL 和 Anon Key
 // 只要你填入了真实的 URL，系统就会自动切换为“云端数据模式”
-const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const SUPABASE_URL = 'https://erdsylieacekhyfkibfr.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_YLjZ8sqaZtzY84w4VcpyWA_wNydkldi';
 
 // 【安全机制】：检测是否填写了真实的 URL，避免未配置时导致白屏崩溃。
 const isSupabaseConfigured = SUPABASE_URL.startsWith('http');
