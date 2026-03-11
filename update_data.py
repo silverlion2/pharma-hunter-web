@@ -77,7 +77,7 @@ def fetch_market_data(ticker_symbol):
 # ==========================================
 def get_ai_digest(ticker, market_data, clin_data):
     """将临床和市场数据喂给 DeepSeek，按照 BioQuantix 标准生成并购潜力量化摘要"""
-    url = "[https://api.deepseek.com/chat/completions](https://api.deepseek.com/chat/completions)"
+    url = "https://api.deepseek.com/chat/completions"
     headers = {"Authorization": f"Bearer {DEEPSEEK_KEY}", "Content-Type": "application/json"}
     
     prompt = f"""
