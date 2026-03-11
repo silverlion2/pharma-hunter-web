@@ -17,18 +17,20 @@ def clean_secret(val):
     return val
 
 SUPABASE_URL = clean_secret(os.environ.get("SUPABASE_URL"))
+# 关键更改：这里我们仍然读取 SUPABASE_KEY 环境变量，
+# 但请确保在 GitHub Secrets 中，你填入的是 Service Role Key (secret)，而不是 Anon Key (public)
 SUPABASE_KEY = clean_secret(os.environ.get("SUPABASE_KEY"))
 DEEPSEEK_KEY = clean_secret(os.environ.get("DEEPSEEK_KEY"))
 MARKETDATA_TOKEN = clean_secret(os.environ.get("MARKETDATA_TOKEN"))
 
-# 确保 URL 带有完整的协议头，防止 Name or service not known 错误
+# 确保 URL 带有完整的协议头
 if SUPABASE_URL and not SUPABASE_URL.startswith("http"):
     SUPABASE_URL = "https://" + SUPABASE_URL
 
-# 如果在本地测试没有环境变量，直接抛出异常提醒
 if not SUPABASE_URL or not SUPABASE_KEY:
     raise ValueError("Missing Supabase credentials in environment variables.")
 
+# 初始化 Supabase 客户端 (使用 Service Role Key 可以绕过 RLS 限制进行后端写入)
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # 核心监控的 Biotech 标的池
@@ -177,6 +179,7 @@ def main():
         
         print(f"[{ticker}] 推送至 Supabase 云数据库...")
         try:
+            # upsert 表示如果数据库里已经有这个 ticker，就更新它；如果没有，就新建。
             result = supabase.table('assets').upsert(db_record).execute()
             print(f"✅ {ticker} 更新完毕！\n")
         except Exception as e:
