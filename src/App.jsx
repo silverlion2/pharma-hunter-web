@@ -7,8 +7,8 @@ import {
 // ==========================================
 // 1. Supabase 数据库配置
 // ==========================================
-const SUPABASE_URL = 'https://erdsylieacekhyfkibfr.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_YLjZ8sqaZtzY84w4VcpyWA_wNydkldi';
+const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
 const isSupabaseConfigured = SUPABASE_URL.startsWith('http');
 
 const App = () => {
@@ -165,7 +165,7 @@ const App = () => {
     }
   };
 
-  // --- 视图组件 (Landing / Upgrade / Dashboard) 省略了未改变的大量重复代码，精简展示核心 ---
+  // --- 视图组件 (Landing / Upgrade / Dashboard) ---
   
   return (
     <div className="min-h-screen bg-[#0A0C10] text-slate-200 font-sans tracking-tight selection:bg-cyan-500 selection:text-slate-900">
@@ -231,6 +231,66 @@ const App = () => {
              </button>
            </div>
          </div>
+        )}
+
+        {view === 'upgrade' && (
+          <div id="upgrade" className="max-w-5xl mx-auto py-12 px-6">
+            <button onClick={() => setView('dashboard')} className="flex items-center gap-2 text-slate-500 hover:text-white mb-8 transition-all font-bold text-xs">
+              <ArrowLeft size={14} /> BACK TO TERMINAL
+            </button>
+            
+            <div className="text-center mb-12">
+              <h2 className="text-4xl font-black text-white mb-4 tracking-tight">Unlock Institutional Intelligence</h2>
+              <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+                Targets with Scores {'>'} 80 and Live DeepSeek Analysis are restricted to Pro members.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="bg-slate-900/40 border border-slate-800 p-8 rounded-3xl flex flex-col hover:border-slate-700 transition-all">
+                <h3 className="text-lg font-bold mb-1">Single Scan</h3>
+                <div className="text-3xl font-black mb-6 text-white">$9.90 <span className="text-xs font-normal text-slate-500">/ scan</span></div>
+                <ul className="space-y-4 mb-8 flex-1">
+                  <li className="flex gap-3 text-slate-400 text-xs"><CheckCircle2 size={16} className="text-cyan-500 shrink-0" /> One-time Full Asset Audit</li>
+                  <li className="flex gap-3 text-slate-400 text-xs"><CheckCircle2 size={16} className="text-cyan-500 shrink-0" /> Predictive Upside Modeling</li>
+                  <li className="flex gap-3 text-slate-400 text-xs"><CheckCircle2 size={16} className="text-cyan-500 shrink-0" /> Downloadable PDF Digest</li>
+                </ul>
+                <button className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-black text-xs">BUY SINGLE REPORT</button>
+              </div>
+
+              <div className="bg-gradient-to-b from-cyan-500/10 to-[#0A0C10] border-2 border-cyan-500/50 p-8 rounded-3xl flex flex-col shadow-2xl relative">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-cyan-500 text-slate-900 text-[9px] font-black px-3 py-1 rounded-full shadow-lg">MOST POPULAR</div>
+                <h3 className="text-lg font-bold mb-1 text-white">Pro Monthly</h3>
+                <div className="text-3xl font-black mb-6 text-white">$49.00 <span className="text-xs font-normal text-slate-400">/ mo</span></div>
+                <ul className="space-y-4 mb-8 flex-1 text-xs">
+                  <li className="flex gap-3 text-slate-200"><CheckCircle2 size={16} className="text-cyan-400 shrink-0" /> Full Alpha Radar Access</li>
+                  <li className="flex gap-3 text-slate-200"><CheckCircle2 size={16} className="text-cyan-400 shrink-0" /> Daily AI Digest Feed</li>
+                  <li className="flex gap-3 text-slate-200"><CheckCircle2 size={16} className="text-cyan-400 shrink-0" /> Unlock Hidden S-Class</li>
+                </ul>
+                <button className="w-full py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-black text-xs transition-transform active:scale-95">UPGRADE PRO</button>
+              </div>
+
+              <div className="bg-slate-900/40 border border-slate-800 p-8 rounded-3xl flex flex-col hover:border-slate-700 transition-all">
+                <h3 className="text-lg font-bold mb-1">Elite Annual</h3>
+                <div className="text-3xl font-black mb-6 text-white">$499.00 <span className="text-xs font-normal text-slate-500">/ yr</span></div>
+                <ul className="space-y-4 mb-8 flex-1 text-xs">
+                  <li className="flex gap-3 text-slate-400"><CheckCircle2 size={16} className="text-slate-700 shrink-0" /> 15% Savings vs Monthly</li>
+                  <li className="flex gap-3 text-slate-400"><CheckCircle2 size={16} className="text-slate-700 shrink-0" /> API Access for Data Export</li>
+                  <li className="flex gap-3 text-slate-400"><CheckCircle2 size={16} className="text-slate-700 shrink-0" /> Priority Strategy Support</li>
+                </ul>
+                <button className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-black text-xs hover:bg-slate-800 transition-colors">GET ELITE PASS</button>
+              </div>
+            </div>
+            
+            <div className="mt-12 p-6 bg-slate-900/60 rounded-2xl border border-slate-800 text-center">
+              <div className="flex items-center justify-center gap-2 text-slate-500 text-[10px] font-bold uppercase mb-2">
+                <Scale size={14} /> Information Disclaimer
+              </div>
+              <p className="text-slate-500 text-xs leading-relaxed max-w-2xl mx-auto">
+                BioQuantix is a data analytics tool, not a registered investment advisor. The intelligence and metrics provided are for informational and research purposes only and do not constitute financial advice. Use of this platform is subject to our Terms of Service.
+              </p>
+            </div>
+          </div>
         )}
         
         {view === 'dashboard' && (
@@ -322,6 +382,12 @@ const App = () => {
                         </div>
                         <div className={`text-3xl font-mono font-black leading-none ${showPastDeals ? 'text-indigo-400' : 'text-cyan-400'}`}>{activeAsset.score}</div>
                       </div>
+                      {!showPastDeals && (
+                        <div className="px-6 py-4 bg-slate-950 border border-slate-800 rounded-2xl text-center hidden md:block">
+                          <div className="text-[9px] text-slate-600 font-black uppercase mb-1">Deal Premium</div>
+                          <div className="text-3xl font-mono font-black text-white leading-none">{activeAsset.upside}</div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -348,21 +414,74 @@ const App = () => {
                     </div>
                   )}
 
-                  <section className="bg-slate-950 border border-slate-800/60 rounded-2xl p-6">
-                    <h3 className={`text-sm font-black uppercase flex items-center gap-2 mb-4 ${showPastDeals ? 'text-indigo-400' : 'text-cyan-400'}`}>
-                      <Database className="w-4 h-4" /> 
-                      {showPastDeals ? 'Historical T-7 Digest & Outcome' : 'DeepSeek Model Digest'}
-                    </h3>
-                    <article className="space-y-4 text-slate-400 text-sm leading-relaxed">
-                      {activeAsset.digest.split('\n').filter(line => line.trim() !== '').map((paragraph, index) => (
-                        <p key={index} className={paragraph.includes('VERDICT') || paragraph.includes('OUTCOME') ? `p-4 bg-slate-900 border rounded-xl text-xs text-slate-300 ${showPastDeals ? 'border-indigo-500/30' : 'border-cyan-500/30'}` : ""}>
-                          {paragraph.includes('VERDICT') && !showPastDeals ? <span className="text-cyan-400 font-black block mb-1">MODEL VERDICT:</span> : null}
-                          {paragraph.includes('OUTCOME') && showPastDeals ? <span className="text-indigo-400 font-black block mb-1">ACTUAL OUTCOME:</span> : null}
-                          {paragraph.replace('VERDICT:', '').replace('OUTCOME:', '')}
-                        </p>
-                      ))}
-                    </article>
-                  </section>
+                  {/* 【还原模块 1】：交易倒计时窗口 (仅实时雷达显示) */}
+                  {!showPastDeals && (
+                    <div className="flex flex-col md:flex-row items-center gap-6 p-5 bg-slate-950 rounded-2xl border border-slate-800/60 mb-8">
+                      <div className="flex-1">
+                        <h4 className="text-slate-400 text-xs font-black uppercase tracking-widest mb-1">Predicted Execution Window</h4>
+                        <p className="text-slate-500 text-xs leading-relaxed max-w-md italic">Calculated based on institutional BD benchmarks and current MarketData API volume intensity.</p>
+                      </div>
+                      <div className="flex items-center gap-4 px-6 py-3 bg-cyan-500/5 border border-cyan-500/20 rounded-2xl shrink-0">
+                        <Clock className="text-cyan-400" size={20} />
+                        <div className="text-xl font-mono font-black text-cyan-400">{activeAsset.time}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 【还原模块 2】：两列并排布局 (研报 + 影子信号) */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    
+                    {/* 专家解析 / 数据库拉取的 AI Digest */}
+                    <section className={`lg:col-span-7 bg-slate-950 border rounded-[2rem] p-6 relative ${showPastDeals ? 'border-indigo-500/20' : 'border-slate-800/60'}`}>
+                      <h3 className={`text-sm font-black uppercase flex items-center gap-2 mb-4 ${showPastDeals ? 'text-indigo-400' : 'text-cyan-400'}`}>
+                        <Database className="w-4 h-4" /> 
+                        {showPastDeals ? 'Historical T-7 Digest & Outcome' : 'DeepSeek Model Digest'}
+                      </h3>
+                      <article className="space-y-4 text-slate-400 text-sm leading-relaxed overflow-y-auto max-h-[300px] pr-2 custom-scrollbar">
+                        {activeAsset.digest.split('\n').filter(line => line.trim() !== '').map((paragraph, index) => (
+                          <p key={index} className={paragraph.includes('VERDICT') || paragraph.includes('OUTCOME') ? `p-4 bg-slate-900 border rounded-xl text-xs text-slate-300 ${showPastDeals ? 'border-indigo-500/30' : 'border-cyan-500/30'}` : ""}>
+                            {paragraph.includes('VERDICT') && !showPastDeals ? <span className="text-cyan-400 font-black block mb-1">MODEL VERDICT:</span> : null}
+                            {paragraph.includes('OUTCOME') && showPastDeals ? <span className="text-indigo-400 font-black block mb-1">ACTUAL OUTCOME:</span> : null}
+                            {paragraph.replace('VERDICT:', '').replace('OUTCOME:', '')}
+                          </p>
+                        ))}
+                      </article>
+                    </section>
+
+                    {/* 【还原模块 3】：影子信号追踪时间轴 */}
+                    <section className={`lg:col-span-5 bg-slate-950 border rounded-[2rem] p-6 ${showPastDeals ? 'border-indigo-500/20' : 'border-slate-800/60'}`}>
+                      <h3 className={`text-sm font-black uppercase mb-6 flex items-center gap-2 ${showPastDeals ? 'text-indigo-400' : 'text-blue-400'}`}>
+                        <Activity className="w-4 h-4" /> 
+                        {showPastDeals ? 'Historical Signals (T-7)' : 'Options Flow & Signals'}
+                      </h3>
+                      <div className="space-y-8 relative">
+                        <div className="absolute left-[7px] top-2 bottom-2 w-[1px] bg-slate-800" />
+                        {(showPastDeals ? [
+                          { type: 'OPTIONS', date: 'T-7 DAYS', desc: 'Abnormal OTM Call Sweep Volume Detected', mood: 'VALIDATED' },
+                          { type: 'LEGAL', date: 'T-14 DAYS', desc: 'Sudden patent dispute settlement cleared', mood: 'CLEARED' },
+                          { type: 'DOMAIN', date: 'T-21 DAYS', desc: 'Joint venture web domain registered', mood: 'TRACKED' }
+                        ] : [
+                          { type: 'OPTIONS', date: 'T-1 EOD', desc: 'MarketData API detected elevated OTM volume', mood: 'HIGH-INTENT' },
+                          { type: 'CLINICAL', date: 'ACTIVE', desc: 'FDA ClinicalTrials.gov matches MNC Pipeline Gap', mood: 'STRATEGIC' },
+                          { type: 'TALENT', date: 'RECENT', desc: 'Pre-Acquisition Integration Specialist Hired', mood: 'PHASE-4' }
+                        ]).map((s, idx) => (
+                          <div key={idx} className="flex gap-6 relative">
+                            <div className={`w-3.5 h-3.5 rounded-full bg-slate-950 border-2 z-10 shrink-0 mt-1 flex items-center justify-center ${showPastDeals ? 'border-indigo-500/50' : 'border-slate-700'}`}>
+                              <div className={`w-1.5 h-1.5 rounded-full ${idx === 0 ? (showPastDeals ? 'bg-indigo-400' : 'bg-cyan-400') : 'bg-slate-800'}`} />
+                            </div>
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] text-slate-500 font-mono font-bold">{s.date}</span>
+                                <span className={`text-[9px] font-black tracking-widest px-1.5 py-0.5 rounded ${showPastDeals ? 'bg-indigo-500/10 text-indigo-400' : 'bg-slate-800 text-slate-400'}`}>{s.mood}</span>
+                              </div>
+                              <div className="text-xs font-bold text-slate-200">{s.desc}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+
+                  </div>
                 </section>
                 )}
               </main>
@@ -374,6 +493,9 @@ const App = () => {
       <style dangerouslySetInnerHTML={{ __html: `
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700;800&display=swap');
         .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
       `}} />
     </div>
   );
