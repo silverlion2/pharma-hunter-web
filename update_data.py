@@ -2,6 +2,7 @@ import os
 import requests
 import json
 import math
+import time
 from datetime import datetime, timedelta
 from supabase import create_client, Client
 
@@ -38,7 +39,7 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # ==========================================
-# 2. SEC 真实财务数据抓取与降级防线 (Milestone 2)
+# 2. SEC 真实财务数据抓取与降级防线 (增强版)
 # ==========================================
 SEC_HEADERS = {"User-Agent": "BioQuantix Founder contact@bioquantix.com"}
 CIK_DICT = {}
@@ -55,48 +56,97 @@ except Exception as e:
     send_alert("系统警告", "SEC字典拉取失败，财务抓取将全面降级。")
 
 def fetch_sec_financials(ticker):
-    """提取真实SEC财报，计算Cash Runway。带有防崩溃降级。"""
+    """提取真实SEC财报，支持多种会计标签，并包含防崩溃降级"""
     cik = CIK_DICT.get(ticker)
     if not cik:
-        return 50.0, 'SEC_MISSING' # CIK缺失，直接降级
+        return None, 'CIK_NOT_FOUND_IN_SEC_DICT' # 内部详细报错，返回 None 交给主循环查历史
     
     try:
-        # 抓取 SEC 公司财务核心指标库 (companyfacts)
         url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"
+        
+        # 加上 time.sleep 防止被 SEC 封禁 IP (每次请求停顿 0.2 秒)
+        time.sleep(0.2) 
+        
         resp = requests.get(url, headers=SEC_HEADERS, timeout=10)
         if resp.status_code != 200:
+            return None, f'HTTP_{resp.status_code}_FROM_SEC'
+            
+        facts = resp.json().get('facts', {}).get('us-gaap', {})
+        
+        # 1. 扩充“现金”的抓取词库
+        cash_data = None
+        for cash_tag in ['CashAndCashEquivalentsAtCarryingValue', 'Cash', 'CashAndCashEquivalentsAtCarryingValueIncludingDiscontinuedOperations']:
+            if cash_tag in facts:
+                cash_data = facts[cash_tag].get('units', {}).get('USD', [])
+                if cash_data: break
+                
+        # 2. 扩充“研发费用”的抓取词库
+        rnd_data = None
+        for rnd_tag in ['ResearchAndDevelopmentExpense', 'ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost']:
+            if rnd_tag in facts:
+                rnd_data = facts[rnd_tag].get('units', {}).get('USD', [])
+                if rnd_data: break
+        
+        if not cash_data or not rnd_data:
+            return None, f'NON_STANDARD_GAAP_TAGS (Cash:{bool(cash_data)}, R&D:{bool(rnd_data)})'
+
+        latest_cash = float(cash_data[-1]['val'])
+        latest_rnd = float(rnd_data[-1]['val']) * 4.0 
+        
+        if latest_rnd == 0:
+            return None, 'ZERO_RD_EXPENSE'
+            
+        runway_years = latest_cash / latest_rnd
+        cash_pressure_score = max(10.0, min(95.0, 100.0 - (runway_years * 40.0)))
+        
+        return cash_pressure_score, None
+    except Exception as e:
+        return None, f'SEC_PARSING_EXCEPTION: {str(e)}'
+
+    
+    try:
+        url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"
+        
+        # 加上 time.sleep 防止被 SEC 封禁 IP (每次请求停顿 0.2 秒)
+        time.sleep(0.2) 
+        
+        resp = requests.get(url, headers=SEC_HEADERS, timeout=10)
+        if resp.status_code != 200:
+            print(f"⚠️ [{ticker}] SEC 拒绝访问 (HTTP {resp.status_code})")
             return 50.0, 'SEC_MISSING'
             
         facts = resp.json().get('facts', {}).get('us-gaap', {})
         
-        # 尝试多种标签获取现金与研发费用
-        cash_data = facts.get('CashAndCashEquivalentsAtCarryingValue', {}).get('units', {}).get('USD', [])
-        if not cash_data:
-            cash_data = facts.get('Cash', {}).get('units', {}).get('USD', [])
-            
-        rnd_data = facts.get('ResearchAndDevelopmentExpense', {}).get('units', {}).get('USD', [])
+        # 1. 扩充“现金”的抓取词库
+        cash_data = None
+        for cash_tag in ['CashAndCashEquivalentsAtCarryingValue', 'Cash', 'CashAndCashEquivalentsAtCarryingValueIncludingDiscontinuedOperations']:
+            if cash_tag in facts:
+                cash_data = facts[cash_tag].get('units', {}).get('USD', [])
+                if cash_data: break
+                
+        # 2. 扩充“研发费用”的抓取词库
+        rnd_data = None
+        for rnd_tag in ['ResearchAndDevelopmentExpense', 'ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost']:
+            if rnd_tag in facts:
+                rnd_data = facts[rnd_tag].get('units', {}).get('USD', [])
+                if rnd_data: break
         
         if not cash_data or not rnd_data:
-            return 50.0, 'SEC_MISSING' # 财报格式非标，直接降级保底
+            print(f"⚠️ [{ticker}] 财报标签不标准 (Cash抓取: {bool(cash_data)}, R&D抓取: {bool(rnd_data)})")
+            return 50.0, 'SEC_MISSING' 
 
-        # 提取最新一期的财报数据
         latest_cash = float(cash_data[-1]['val'])
-        # R&D 通常是季报，乘以4年化
         latest_rnd = float(rnd_data[-1]['val']) * 4.0 
         
         if latest_rnd == 0:
             return 50.0, 'SEC_MISSING'
             
-        # 计算 Runway (年)
         runway_years = latest_cash / latest_rnd
-        
-        # 核心算法：Runway越短，现金压力越大，并购紧迫性分数越高！
-        # 算法: 100 - (runway_years * 40), 最高95，最低10。比如0.5年=80分，2年=20分。
         cash_pressure_score = max(10.0, min(95.0, 100.0 - (runway_years * 40.0)))
         
         return cash_pressure_score, None
     except Exception as e:
-        print(f"SEC 解析失败 {ticker}: {e}")
+        print(f"❌ SEC 解析失败 {ticker}: {e}")
         return 50.0, 'SEC_MISSING'
 
 # ==========================================
@@ -140,7 +190,7 @@ def fetch_market_data(ticker_symbol):
         
     options_signal = "Normal Options Flow"
     has_anomaly = False
-    raw_signals = [] # 用于给前端展示的数组
+    raw_signals = [] 
     
     try:
         opt_url = f"https://api.marketdata.app/v1/options/chain/{ticker_symbol}?date={yesterday_str}"
@@ -161,16 +211,16 @@ def fetch_market_data(ticker_symbol):
                 oi = float(ois[i]) if ois[i] else 0.0
                 
                 # 严格过滤法则
-                if side not in ['call', 'c']: continue # 1. 只看Call
-                if strike <= float(price) * 1.10: continue # 2. 行权价必须比现价高10%以上(OTM)
-                if vol < 100: continue # 过滤杂音
+                if side not in ['call', 'c']: continue 
+                if strike <= float(price) * 1.10: continue 
+                if vol < 100: continue 
                 
-                # 3. 成交量必须暴增（大于原有未平仓量的1.5倍）
+                # 成交量暴增探测
                 if oi > 0 and vol > (oi * 1.5):
                     anomaly_desc = f"Strike ${strike} Call Sweep (Vol: {int(vol)} vs OI: {int(oi)})"
                     anomalies.append(anomaly_desc)
                     raw_signals.append({"type": "OPTIONS", "date": "T-1 EOD", "desc": anomaly_desc, "mood": "HIGH-INTENT"})
-                elif oi == 0 and vol > 500: # 无前置仓位的突然突袭
+                elif oi == 0 and vol > 500: 
                     anomaly_desc = f"Strike ${strike} Call New Opening (Vol: {int(vol)})"
                     anomalies.append(anomaly_desc)
                     raw_signals.append({"type": "OPTIONS", "date": "T-1 EOD", "desc": anomaly_desc, "mood": "HIGH-INTENT"})
@@ -187,12 +237,13 @@ def fetch_market_data(ticker_symbol):
 # ==========================================
 # 4. AI M&A 分析大脑 (DeepSeek 容灾版)
 # ==========================================
-def get_ai_digest(ticker, market_data, clin_data):
+def get_ai_digest(ticker, market_data, clin_data, quant_scores):
     url = "https://api.deepseek.com/chat/completions"
     if not DEEPSEEK_KEY: return "AI analysis failed due to missing API key."
 
     headers = {"Authorization": f"Bearer {DEEPSEEK_KEY}", "Content-Type": "application/json"}
     
+    # 核心优化：把 Python 算出来的真实量化分数，喂给 AI，强制它输出具体数字！
     prompt = f"""
     You are a quantitative bio-pharma M&A analyst for BioQuantix.
     Analyze the following EOD data for {ticker}:
@@ -200,11 +251,17 @@ def get_ai_digest(ticker, market_data, clin_data):
     - Clinical Pipeline: {clin_data['desc']}
     - Institutional Options Activity: {market_data['options_signal']}
     
+    Algorithmic Engine Scores (Based on SEC & Sector Data):
+    - Cash Pressure Score: {quant_scores['c_score']:.1f}/100
+    - Asset Scarcity Score: {quant_scores['t_score']:.1f}/100
+    - Catalyst Score: {quant_scores['m_score']:.1f}/100
+    - OVERALL QUANT SCORE: {quant_scores['final_score']:.1f}/100
+    
     Write a highly professional, 150-word "Strategic Digest" assessing acquisition probability.
     Structure strictly into: 
     1. Strategic Rationale
     2. Market Intelligence
-    3. VERDICT.
+    3. VERDICT (Must explicitly state the Overall Quant Score and provide a quantitative estimated M&A premium percentage based on the data).
     Do not give financial advice. Keep it analytical and objective.
     """
     
@@ -223,7 +280,8 @@ def get_ai_digest(ticker, market_data, clin_data):
         return resp.json()["choices"][0]["message"]["content"]
     except Exception as e:
         print(f"DeepSeek API Error for {ticker}: {e}")
-        return "FAILED_TIMEOUT"
+        # 修改：将具体的真实报错原因传回，而不是仅仅返回一个统一的标记
+        return f"FAILED_TIMEOUT: {str(e)}"
 
 # ==========================================
 # 5. 自动化主流程 (动态清洗与入库)
@@ -231,7 +289,7 @@ def get_ai_digest(ticker, market_data, clin_data):
 def main():
     print("🚀 BioQuantix EOD Auto-Update Engine Started...")
     
-    # 获取字典库 (Milestone 1)
+    # 获取字典库
     TARGET_SCARCITY_MAP = {}
     try:
         dict_resp = supabase.table('target_dict').select('*').execute()
@@ -249,6 +307,7 @@ def main():
         response = supabase.table('watchlist').select('*').eq('is_active', True).execute()
         targets = response.data
         if not targets:
+            print("⚠️ Watchlist 为空。")
             return
     except Exception as e:
         print(f"❌ 读取 watchlist 失败: {e}")
@@ -262,11 +321,47 @@ def main():
         name = target["name"]
         mechanism = target.get("mechanism", "Unknown")
         
+        # =======================================================
+        # 新增：优先拉取当前数据库里的历史数据作为备份 (Fallback)
+        # =======================================================
+        historical_data = None
+        try:
+            hist_resp = supabase.table('assets').select('*').eq('ticker', ticker).execute()
+            if hist_resp.data and len(hist_resp.data) > 0:
+                historical_data = hist_resp.data[0]
+        except Exception as e:
+            print(f"⚠️ [{ticker}] 无法读取历史缓存: {e}")
+
         clin_data = fetch_clinical_trials(name)
         market_data = fetch_market_data(ticker)
         
-        # 1. 真实 Cash Score (跑真实财报)
-        c_score, sec_warning_flag = fetch_sec_financials(ticker)
+        error_logs = [] # <--- 新增：专门用于收集底层真实报错的列表
+        
+        # 市场数据降级处理 (对外展示纯英文)
+        if market_data["options_signal"].startswith("Options Data Error"):
+            error_logs.append(f"MarketData Error: {market_data['options_signal']}") # 记录真实失败原因
+            if historical_data and historical_data.get('shadow_signals'):
+                market_data["raw_signals"] = historical_data['shadow_signals']
+            else:
+                market_data["raw_signals"] = [{"type": "SYSTEM", "date": "T-1 EOD", "desc": "Data source feedback delayed. Using historical baseline.", "mood": "DELAYED"}]
+
+        # 1. 真实 Cash Score (跑真实财报 + 历史缓存缝合)
+        c_score_raw, sec_error_detail = fetch_sec_financials(ticker)
+        sec_warning_flag = None
+        
+        if c_score_raw is None:
+            print(f"⚠️ [{ticker}] SEC 抓取失败 ({sec_error_detail})，尝试调用历史数据...")
+            sec_warning_flag = 'SEC_MISSING' 
+            error_logs.append(f"SEC Error: {sec_error_detail}") # 记录真实失败原因
+            
+            if historical_data and historical_data.get('cash_score'):
+                c_score = historical_data['cash_score']
+                print(f"   -> 成功借用历史 Cash Score: {c_score}")
+            else:
+                c_score = 50.0
+                print(f"   -> 无历史记录，启用中立值 50.0")
+        else:
+            c_score = c_score_raw
         
         # 2. 真实 Scarcity Score (匹配小抄字典)
         t_score = TARGET_SCARCITY_MAP.get(mechanism, 60.0)
@@ -276,10 +371,10 @@ def main():
         if "Phase 3" in clin_data["phase"]: m_score = 90.0
         elif "Phase 2" in clin_data["phase"]: m_score = 75.0
         
-        # 4. 估值分数 (MVP阶段暂用70基础分代替绝对PB计算)
+        # 4. 估值分数
         v_score = 70.0
         
-        # --- 核心高阶加权打分公式 (Milestone 2) ---
+        # --- 核心高阶加权打分公式 ---
         # 权重: 现金压力(30%) + 靶点稀缺(40%) + 里程碑(20%) + 估值(10%)
         base_s_score = (c_score * 0.3) + (t_score * 0.4) + (m_score * 0.2) + (v_score * 0.1)
         
@@ -287,18 +382,35 @@ def main():
         final_score = base_s_score * 1.15 if market_data["has_anomaly"] else base_s_score
         final_score = round(min(final_score, 99.5), 1) # 封顶
         
-        print(f"[{ticker}] 计算完毕 | C:{c_score} T:{t_score} M:{m_score} | 最终分: {final_score}")
+        print(f"[{ticker}] 计算完毕 | C:{c_score:.1f} T:{t_score:.1f} M:{m_score:.1f} | 最终分: {final_score}")
 
-        ai_digest = get_ai_digest(ticker, market_data, clin_data)
+        # 将真实分数打包，传给 AI 大脑
+        quant_scores = {
+            "c_score": c_score,
+            "t_score": t_score,
+            "m_score": m_score,
+            "final_score": final_score
+        }
+        ai_digest = get_ai_digest(ticker, market_data, clin_data, quant_scores)
         
-        if "FAILED_TIMEOUT" in ai_digest:
-            fail_count += 1
-            supabase.table('assets').update({"warning_flag": "AI_TIMEOUT"}).eq("ticker", ticker).execute()
-            continue
+        # AI 容灾处理 (缝合历史研报或全英文中立文案，不再直接 continue 丢弃数据)
+        if ai_digest.startswith("FAILED_TIMEOUT"):
+            print(f"⚠️ [{ticker}] AI 分析超时，尝试调用历史研报...")
+            sec_warning_flag = 'AI_TIMEOUT' 
+            error_logs.append(f"AI Error: {ai_digest}") # 记录真实失败原因
+            
+            if historical_data and historical_data.get('digest'):
+                ai_digest = historical_data['digest']
+                print(f"   -> 成功借用历史 AI Digest")
+            else:
+                ai_digest = "Data source feedback delayed. Maintaining neutral observation status pending API synchronization.\n\nVERDICT: Neutral. Awaiting data refresh."
+                print(f"   -> 无历史记录，启用全英文中立文案")
             
         success_count += 1
         
-        # 组装入库数据 (包含所有真实细分数据和真实的影子信号数组)
+        error_log_str = " | ".join(error_logs) if error_logs else None # 组合所有报错信息
+        
+        # 组装入库数据
         db_record = {
             "ticker": ticker,
             "name": name,
@@ -307,11 +419,12 @@ def main():
             "scarcity_score": t_score,
             "milestone_score": m_score,
             "valuation_score": v_score,
-            "shadow_signals": market_data["raw_signals"], # 真实的期权拦截信号！
+            "shadow_signals": market_data["raw_signals"], 
             "digest": ai_digest,
             "target_area": target["target_area"],
             "is_past_deal": target["is_past_deal"],
-            "warning_flag": sec_warning_flag 
+            "warning_flag": sec_warning_flag,
+            "error_log": error_log_str # <--- 核心：将底层真实的失败信息存入数据库！
         }
         
         if "deal_info" in target and target["deal_info"]:
@@ -323,15 +436,17 @@ def main():
         except Exception as e:
             print(f"❌ {ticker} 写入 assets 失败: {e}")
             
-        # 历史暗储：写入日志表 (Milestone 3)
+        # 历史暗储：写入日志表
         try:
             history_record = {
                 "ticker": ticker,
-                "score": final_score
+                "score": final_score,
+                "warning_flag": sec_warning_flag,
+                "error_log": error_log_str # <--- 历史表同样保留真实失败记录
             }
             supabase.table('assets_history_log').insert(history_record).execute()
         except Exception as e:
-            pass # 暗储失败不影响主流程运行
+            pass 
 
     summary_msg = f"成功跑通: {success_count}条，失败拦截: {fail_count}条。"
     send_alert("BioQuantix 日常更新完成", summary_msg)
