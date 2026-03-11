@@ -2,10 +2,10 @@ name: BioQuantix Daily EOD Data Batch
 
 on:
   schedule:
-    # 周二至周六 UTC 11点 (对应美东时间早晨 6:00)。
-    # 完美避开深夜 MarketData 结算盲区，确保抓取到前一天的完整 EOD 历史数据
+    # 周二至周六 UTC 11点 (对应美东时间早晨 6:00)
+    # 避开深夜 MarketData 结算盲区，确保抓取到前一天的完整 EOD 历史数据
     - cron: '0 11 * * 2-6' 
-  workflow_dispatch: # 允许你手动点击运行
+  workflow_dispatch: # 允许你随时手动点击运行
 
 jobs:
   update-data:
@@ -29,4 +29,5 @@ jobs:
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           DEEPSEEK_KEY: ${{ secrets.DEEPSEEK_KEY }}
           MARKETDATA_TOKEN: ${{ secrets.MARKETDATA_TOKEN }}
+          BARK_KEY: ${{ secrets.BARK_KEY }} # 【新增】给程序注入手机报警权限
         run: python update_data.py
