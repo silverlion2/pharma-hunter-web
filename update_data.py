@@ -34,10 +34,28 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # 核心监控的 Biotech 标的池
+# 这里我们加入之前的 15 个核心标的
 TARGETS = [
-    {"ticker": "ALT", "name": "Altimmune"},
-    {"ticker": "ETNB", "name": "89bio"},
-    {"ticker": "VKTX", "name": "Viking Therapeutics"}
+    # Metabolic & Liver
+    {"ticker": "ALT", "name": "Altimmune", "target_area": "Metabolic", "is_past_deal": False},
+    {"ticker": "TERN", "name": "Terns Pharma", "target_area": "Metabolic", "is_past_deal": False},
+    {"ticker": "ETNB", "name": "89bio", "target_area": "Metabolic", "is_past_deal": False},
+    {"ticker": "MDGL", "name": "Madrigal", "target_area": "Metabolic", "is_past_deal": False},
+    {"ticker": "VKTX", "name": "Viking Tx", "target_area": "Metabolic", "is_past_deal": False},
+    
+    # Autoimmune & Immunology
+    {"ticker": "IMVT", "name": "Immunovant", "target_area": "Autoimmune", "is_past_deal": False},
+    {"ticker": "APLS", "name": "Apellis", "target_area": "Autoimmune", "is_past_deal": False},
+    {"ticker": "CABA", "name": "Cabaletta Bio", "target_area": "Autoimmune", "is_past_deal": False},
+    {"ticker": "KYTX", "name": "Kymera", "target_area": "Autoimmune", "is_past_deal": False},
+    {"ticker": "VTYX", "name": "Ventyx Bio", "target_area": "Autoimmune", "is_past_deal": False},
+
+    # Past Deals
+    {"ticker": "ALPN", "name": "Alpine Immune", "target_area": "Autoimmune", "is_past_deal": True, "deal_info": "Acquired by Vertex ($4.9B) | April 2024"},
+    {"ticker": "RXDX", "name": "Prometheus", "target_area": "Autoimmune", "is_past_deal": True, "deal_info": "Acquired by Merck ($10.8B) | April 2023"},
+    {"ticker": "HIBI", "name": "HI-Bio", "target_area": "Autoimmune", "is_past_deal": True, "deal_info": "Acquired by Biogen ($1.8B) | May 2024"},
+    {"ticker": "CBAY", "name": "CymaBay", "target_area": "Metabolic", "is_past_deal": True, "deal_info": "Acquired by Gilead ($4.3B) | Feb 2024"},
+    {"ticker": "CRMO", "name": "Carmot", "target_area": "Metabolic", "is_past_deal": True, "deal_info": "Acquired by Roche ($2.7B) | Dec 2023"}
 ]
 
 # ==========================================
@@ -174,8 +192,13 @@ def main():
             "ticker": ticker,
             "name": name,
             "score": round(score, 1),
-            "digest": ai_digest
+            "digest": ai_digest,
+            "target_area": target["target_area"],
+            "is_past_deal": target["is_past_deal"]
         }
+        
+        if target.get("deal_info"):
+             db_record["deal_info"] = target["deal_info"]
         
         print(f"[{ticker}] 推送至 Supabase 云数据库...")
         try:
