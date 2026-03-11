@@ -7,8 +7,8 @@ import {
 // ==========================================
 // 1. Supabase 数据库配置
 // ==========================================
-const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const SUPABASE_URL = 'https://erdsylieacekhyfkibfr.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_YLjZ8sqaZtzY84w4VcpyWA_wNydkldi';
 const isSupabaseConfigured = SUPABASE_URL.startsWith('http');
 
 const App = () => {
@@ -21,7 +21,6 @@ const App = () => {
 
   // ==========================================
   // 2. 真实收集的医药情报数据 (无 Mock，全真案例)
-  // 包含 10 个现役标的 + 5 个历史真实收购案例
   // ==========================================
   const fallbackData = [
     // --- 靶点一：Metabolic & Liver (代谢与肝病) ---
@@ -68,7 +67,7 @@ const App = () => {
       digest: "Trading below cash value post-trial failure, VTYX retains multiple shots on goal (NLRP3, TYK2). Sanofi recently took an equity stake. This is a classic 'sum-of-the-parts' acquisition target for an MNC looking for cheap pipeline optionality.\n\nVERDICT: Deep value play. Acquirer could buy the entire company just for the cash and patents."
     },
 
-    // --- 历史真实交易 (Past Deals) - 评估节点：官宣前 1 周 ---
+    // --- 历史真实交易 (Past Deals) ---
     {
       ticker: 'ALPN', name: 'Alpine Immune', score: 96.5, target_area: 'Autoimmune', is_past_deal: true, deal_info: "Acquired by Vertex ($4.9B) | April 2024",
       digest: "[T-7 Days Report]: ALPN's Phase 2 IgA nephropathy data established Povetacicept as a best-in-class dual antagonist. Massive unhedged OTM call buying detected 5 days prior. Vertex faces extreme pipeline gap pressure outside of cystic fibrosis.\n\nOUTCOME: Acquired at 67% premium."
@@ -79,7 +78,7 @@ const App = () => {
     },
     {
       ticker: 'HIBI', name: 'HI-Bio', score: 91.5, target_area: 'Autoimmune', is_past_deal: true, deal_info: "Acquired by Biogen ($1.8B) | May 2024",
-      digest: "[T-7 Days Report]: Felzartamab (anti-CD38) shows durable remission in primary membranous nephropathy. Biogen is aggressively expanding into immunology to offset neurology risk. Private market shadow intelligence flagged term sheet negotiations.\n\nOUTCOME: Acquired via definitive merger agreement."
+      digest: "[T-7 Days Report]: Felzartamab shows durable remission in primary membranous nephropathy. Biogen is aggressively expanding into immunology to offset neurology risk. Private market shadow intelligence flagged term sheet negotiations.\n\nOUTCOME: Acquired via definitive merger agreement."
     },
     {
       ticker: 'CBAY', name: 'CymaBay', score: 95.0, target_area: 'Metabolic', is_past_deal: true, deal_info: "Acquired by Gilead ($4.3B) | Feb 2024",
@@ -100,7 +99,6 @@ const App = () => {
           setIsLoading(false);
           return;
         }
-
         const response = await fetch(`${SUPABASE_URL}/rest/v1/assets?select=*`, {
           headers: {
             'apikey': SUPABASE_ANON_KEY,
@@ -109,9 +107,7 @@ const App = () => {
             'Prefer': 'return=representation'
           }
         });
-        
         if (!response.ok) throw new Error('Failed to fetch from Supabase');
-        
         const data = await response.json();
         setAssetData(data && data.length > 0 ? data : fallbackData);
       } catch (err) {
@@ -124,34 +120,43 @@ const App = () => {
     fetchData();
   }, []);
 
-  // 4. 数据过滤与状态重构
-  const activeList = assetData
-    .filter(a => a.target_area === targetArea && a.is_past_deal === showPastDeals)
-    .map(item => ({
+  // 4. 数据过滤与定制化锁定逻辑
+  const baseFiltered = assetData.filter(a => a.target_area === targetArea && a.is_past_deal === showPastDeals);
+  const sortedList = [...baseFiltered].sort((a, b) => b.score - a.score);
+
+  const activeList = sortedList.map((item, index) => {
+    let isLocked = false;
+    if (!showPastDeals) {
+      if (targetArea === 'Autoimmune' && index < 3) {
+        isLocked = true;
+      }
+    }
+
+    return {
       ...item,
       time: item.score >= 85 ? '14-45 Days' : '90-180 Days',
       status: item.is_past_deal ? 'ACQUIRED' : (item.score >= 85 ? 'IMMINENT' : 'IN-FOCUS'),
       upside: item.is_past_deal ? 'REALIZED' : (item.score >= 85 ? '+65% ~ +85%' : '+30% ~ +50%'),
-      locked: !item.is_past_deal && item.score >= 80, 
+      locked: isLocked, 
       category: item.target_area,
-      factors: [
-        { label: 'Model Confidence', score: Math.min(100, item.score + 5), color: 'from-blue-500 to-cyan-400', desc: 'Based on FDA Data' },
-        { label: 'Options Flow', score: Math.min(100, item.score), color: 'from-cyan-500 to-teal-400', desc: 'MarketData API T-1' },
-        { label: 'Strategic Fit', score: Math.min(100, item.score + 10), color: 'from-indigo-500 to-blue-500', desc: 'MNC Pipeline Map' },
-        { label: 'Value Metric', score: Math.max(0, item.score - 5), color: 'from-sky-400 to-cyan-300', desc: 'Calculated NPV Gap' }
+      factors: item.factors || [
+        { label: 'Cash Runway', score: Math.min(100, Math.round(item.score * 1.05)), color: 'from-blue-500 to-cyan-400', desc: 'R&D burn rate vs cash reserves' },
+        { label: 'Asset Scarcity', score: Math.min(100, Math.round(item.score * 1.1)), color: 'from-cyan-500 to-teal-400', desc: 'Target competition density' },
+        { label: 'Catalyst Timing', score: Math.max(10, Math.round(item.score * 0.95)), color: 'from-indigo-500 to-blue-500', desc: 'Proximity to Phase II/III readout' },
+        { label: 'Value Gap', score: Math.max(10, Math.round(item.score * 0.85)), color: 'from-sky-400 to-cyan-300', desc: 'Enterprise value vs project NPV' }
       ]
-    }))
-    .sort((a, b) => b.score - a.score);
+    };
+  });
 
-  // 确保每次切换靶点或视图时，默认选中列表的第一个可见元素
   useEffect(() => {
     if (activeList.length > 0) {
       const firstAvailable = activeList.find(a => !a.locked) || activeList[0];
-      if (!activeList.find(a => a.ticker === selectedTicker)) {
+      const currentInList = activeList.find(a => a.ticker === selectedTicker);
+      if (!currentInList || (currentInList.locked && view !== 'upgrade')) {
         setSelectedTicker(firstAvailable.ticker);
       }
     }
-  }, [targetArea, showPastDeals, activeList]);
+  }, [targetArea, showPastDeals, assetData]);
 
   const activeAsset = activeList.find(a => a.ticker === selectedTicker) || activeList[0] || fallbackData[0];
 
@@ -165,11 +170,26 @@ const App = () => {
     }
   };
 
-  // --- 视图组件 (Landing / Upgrade / Dashboard) ---
-  
+  const pipelineGaps = {
+    'Metabolic': [
+      { name: 'PFE', target: 'MASH / Obesity', level: 92, color: 'bg-blue-500' },
+      { name: 'NVS', target: 'Metabolic Combos', level: 85, color: 'bg-cyan-500' },
+      { name: 'GSK', target: 'Liver Disease', level: 70, color: 'bg-teal-500' }
+    ],
+    'Autoimmune': [
+      { name: 'ABBV', target: 'Immunology Cliff', level: 95, color: 'bg-indigo-500' },
+      { name: 'JNJ', target: 'Targeted Autoimmune', level: 88, color: 'bg-blue-500' },
+      { name: 'SNY', target: 'Oral Immunology', level: 82, color: 'bg-cyan-500' }
+    ]
+  };
+  const currentGaps = pipelineGaps[targetArea] || pipelineGaps['Metabolic'];
+  const themeColorText = targetArea === 'Autoimmune' ? 'text-indigo-400' : 'text-cyan-400';
+  const themeColorBg = targetArea === 'Autoimmune' ? 'bg-indigo-500' : 'bg-cyan-500';
+
+  // --- 视图组件 ---
   return (
-    <div className="min-h-screen bg-[#0A0C10] text-slate-200 font-sans tracking-tight selection:bg-cyan-500 selection:text-slate-900">
-      <div className="max-w-[1440px] mx-auto p-4 md:p-8">
+    <div className="min-h-screen bg-[#0A0C10] text-slate-200 font-sans tracking-tight selection:bg-cyan-500 selection:text-slate-900 flex flex-col">
+      <div className="max-w-[1440px] mx-auto p-4 md:p-8 flex-grow w-full">
         
         {/* Header */}
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 border-b border-slate-800/60 pb-8">
@@ -210,7 +230,7 @@ const App = () => {
         </header>
 
         {view === 'landing' && (
-           <div className="min-h-[85vh] flex flex-col justify-center max-w-6xl mx-auto py-12 px-6">
+           <div className="min-h-[70vh] flex flex-col justify-center max-w-6xl mx-auto py-12 px-6">
            <div className="text-center mb-16 relative">
              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-cyan-500/10 blur-[120px] rounded-full pointer-events-none" />
              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800/50 border border-slate-700 text-cyan-400 text-xs font-black uppercase tracking-widest mb-8">
@@ -295,17 +315,16 @@ const App = () => {
         
         {view === 'dashboard' && (
           <>
-            {/* 靶点选择器 Target Area Selector */}
-            <div className="mb-8 flex gap-4 border-b border-slate-800/50 pb-4">
+            <div className="mb-8 flex gap-4 border-b border-slate-800/50 pb-4 overflow-x-auto custom-scrollbar">
               <button 
                 onClick={() => setTargetArea('Metabolic')}
-                className={`px-5 py-2.5 rounded-full text-xs font-black tracking-widest transition-all border ${targetArea === 'Metabolic' ? 'bg-cyan-500 text-slate-900 border-cyan-500 shadow-lg shadow-cyan-500/20' : 'bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-600'}`}
+                className={`px-5 py-2.5 rounded-full text-xs font-black tracking-widest transition-all border whitespace-nowrap ${targetArea === 'Metabolic' ? 'bg-cyan-500 text-slate-900 border-cyan-500 shadow-lg shadow-cyan-500/20' : 'bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-600'}`}
               >
                 METABOLIC / LIVER
               </button>
               <button 
                 onClick={() => setTargetArea('Autoimmune')}
-                className={`px-5 py-2.5 rounded-full text-xs font-black tracking-widest transition-all border ${targetArea === 'Autoimmune' ? 'bg-indigo-500 text-white border-indigo-500 shadow-lg shadow-indigo-500/20' : 'bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-600'}`}
+                className={`px-5 py-2.5 rounded-full text-xs font-black tracking-widest transition-all border whitespace-nowrap ${targetArea === 'Autoimmune' ? 'bg-indigo-500 text-white border-indigo-500 shadow-lg shadow-indigo-500/20' : 'bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-600'}`}
               >
                 AUTOIMMUNE / IMMUNOLOGY
               </button>
@@ -318,7 +337,7 @@ const App = () => {
                 <div className="bg-slate-900/40 border border-slate-800 rounded-2xl overflow-hidden">
                   <div className="p-4 border-b border-slate-800/80 flex justify-between items-center bg-slate-900/60">
                     <h2 className="font-bold text-xs text-slate-400 tracking-widest uppercase flex items-center gap-2">
-                      <TrendingUp className={`w-4 h-4 ${showPastDeals ? 'text-indigo-400' : 'text-cyan-400'}`} />
+                      <TrendingUp className={`w-4 h-4 ${showPastDeals ? 'text-indigo-400' : themeColorText}`} />
                       {showPastDeals ? 'Historical Deals' : 'Quant Radar'}
                     </h2>
                   </div>
@@ -328,14 +347,14 @@ const App = () => {
                       <div 
                         key={item.ticker}
                         onClick={() => handleSelect(item.ticker)}
-                        className={`group px-4 py-3.5 flex items-center justify-between cursor-pointer transition-all ${item.locked ? 'hover:bg-cyan-500/[0.02]' : 'hover:bg-white/[0.02]'} ${selectedTicker === item.ticker && !item.locked ? 'bg-white/[0.04]' : ''}`}
+                        className={`group px-4 py-3.5 flex items-center justify-between cursor-pointer transition-all ${item.locked ? `hover:${themeColorBg}/[0.02]` : 'hover:bg-white/[0.02]'} ${selectedTicker === item.ticker && !item.locked ? 'bg-white/[0.04]' : ''}`}
                       >
                         <div className="flex items-center gap-3">
-                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-black text-xs border ${item.locked ? 'bg-black text-slate-800 border-slate-800' : 'bg-slate-800/50 text-slate-300 border-slate-700/50'}`}>
+                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-black text-xs border ${item.locked ? 'bg-black text-slate-800 border-slate-800' : `bg-slate-800/50 ${themeColorText} border-slate-700/50`}`}>
                             {item.locked ? <Lock size={14} /> : item.ticker}
                           </div>
                           <div>
-                            <div className="text-sm font-bold text-slate-200 group-hover:text-cyan-400 transition-colors line-clamp-1">
+                            <div className={`text-sm font-bold text-slate-200 transition-colors line-clamp-1 ${!item.locked && `group-hover:${themeColorText}`}`}>
                               {item.locked ? 'Premium Hidden' : item.name}
                             </div>
                             <div className={`text-[9px] font-black tracking-widest mt-0.5 ${item.status === 'IMMINENT' || item.status === 'ACQUIRED' ? 'text-blue-400' : 'text-slate-500'}`}>
@@ -345,6 +364,34 @@ const App = () => {
                         </div>
                         <div className={`text-sm font-mono font-black ${item.locked ? 'text-slate-800' : 'text-slate-300'}`}>
                           {item.locked ? '?.?' : item.score}
+                        </div>
+                      </div>
+                    ))}
+                    {activeList.length === 0 && (
+                      <div className="px-4 py-6 text-center text-xs text-slate-500">No signals detected yet.</div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 relative overflow-hidden">
+                  <h3 className={`text-slate-400 text-xs font-black tracking-widest mb-2 uppercase flex items-center gap-2`}>
+                    <Cpu className={`w-4 h-4 ${themeColorText}`} /> Pipeline Gap Map
+                  </h3>
+                  <p className="text-[9px] text-slate-500 italic mb-5 leading-tight">
+                    Urgency reflects MNC's impending patent cliffs (revenue at risk) and strategic desperation for assets in this sector.
+                  </p>
+                  <div className="space-y-6">
+                    {currentGaps.map((m) => (
+                      <div key={m.name} className="space-y-2">
+                        <div className="flex justify-between items-end">
+                          <div className="flex flex-col">
+                             <span className="text-white text-[11px] font-black">{m.name}</span>
+                             <span className="text-[9px] text-slate-500">{m.target}</span>
+                          </div>
+                          <span className="text-[10px] font-mono text-slate-400">Urgency: {m.level}%</span>
+                        </div>
+                        <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
+                          <div className={`h-full ${m.color}`} style={{ width: `${m.level}%` }} />
                         </div>
                       </div>
                     ))}
@@ -358,7 +405,7 @@ const App = () => {
                 <section className="bg-slate-900 border border-slate-800 rounded-[2rem] p-8 md:p-10 relative overflow-hidden">
                   <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-8">
                     <div className="flex gap-6 items-center">
-                      <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-3xl font-black shrink-0 shadow-lg ${showPastDeals ? 'bg-indigo-500 text-white shadow-indigo-500/10' : 'bg-cyan-500 text-slate-900 shadow-cyan-500/10'}`}>
+                      <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-3xl font-black shrink-0 shadow-lg ${showPastDeals || targetArea === 'Autoimmune' ? 'bg-indigo-500 text-white shadow-indigo-500/10' : 'bg-cyan-500 text-slate-900 shadow-cyan-500/10'}`}>
                         {activeAsset.ticker[0]}
                       </div>
                       <div>
@@ -368,7 +415,7 @@ const App = () => {
                         </h2>
                         <div className="flex gap-2">
                           <span className="px-2.5 py-1 bg-slate-800 border border-slate-700 text-slate-400 text-[10px] rounded-md font-bold uppercase">{activeAsset.category}</span>
-                          <span className={`px-2.5 py-1 text-[10px] rounded-md font-bold uppercase ${showPastDeals ? 'bg-indigo-500/10 text-indigo-400' : 'bg-cyan-500/10 text-cyan-400'}`}>
+                          <span className={`px-2.5 py-1 text-[10px] rounded-md font-bold uppercase ${showPastDeals || targetArea === 'Autoimmune' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-cyan-500/10 text-cyan-400'}`}>
                             {showPastDeals ? 'M&A Validated' : 'S-Class Target'}
                           </span>
                         </div>
@@ -380,14 +427,8 @@ const App = () => {
                         <div className="text-[9px] text-slate-600 font-black uppercase mb-1">
                           {showPastDeals ? 'T-7 Days Score' : 'Quant Score'}
                         </div>
-                        <div className={`text-3xl font-mono font-black leading-none ${showPastDeals ? 'text-indigo-400' : 'text-cyan-400'}`}>{activeAsset.score}</div>
+                        <div className={`text-3xl font-mono font-black leading-none ${showPastDeals || targetArea === 'Autoimmune' ? 'text-indigo-400' : 'text-cyan-400'}`}>{activeAsset.score}</div>
                       </div>
-                      {!showPastDeals && (
-                        <div className="px-6 py-4 bg-slate-950 border border-slate-800 rounded-2xl text-center hidden md:block">
-                          <div className="text-[9px] text-slate-600 font-black uppercase mb-1">Deal Premium</div>
-                          <div className="text-3xl font-mono font-black text-white leading-none">{activeAsset.upside}</div>
-                        </div>
-                      )}
                     </div>
                   </div>
 
@@ -409,38 +450,50 @@ const App = () => {
                           <div className="h-1 w-full bg-slate-950 rounded-full overflow-hidden mb-2">
                             <div className={`h-full bg-gradient-to-r ${f.color}`} style={{ width: `${f.score}%` }} />
                           </div>
+                          <p className="text-[9px] text-slate-600 font-medium uppercase leading-tight truncate">{f.desc}</p>
                         </div>
                       ))}
                     </div>
                   )}
 
-                  {/* 【还原模块 1】：交易倒计时窗口 (仅实时雷达显示) */}
+                  {/* 交易预测窗口 (Transaction Prediction) */}
                   {!showPastDeals && (
                     <div className="flex flex-col md:flex-row items-center gap-6 p-5 bg-slate-950 rounded-2xl border border-slate-800/60 mb-8">
                       <div className="flex-1">
-                        <h4 className="text-slate-400 text-xs font-black uppercase tracking-widest mb-1">Predicted Execution Window</h4>
+                        <h4 className="text-slate-400 text-xs font-black uppercase tracking-widest mb-1">Transaction Prediction</h4>
                         <p className="text-slate-500 text-xs leading-relaxed max-w-md italic">Calculated based on institutional BD benchmarks and current MarketData API volume intensity.</p>
                       </div>
-                      <div className="flex items-center gap-4 px-6 py-3 bg-cyan-500/5 border border-cyan-500/20 rounded-2xl shrink-0">
-                        <Clock className="text-cyan-400" size={20} />
-                        <div className="text-xl font-mono font-black text-cyan-400">{activeAsset.time}</div>
+                      <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0 w-full md:w-auto">
+                        <div className={`flex items-center gap-4 px-5 py-3 bg-opacity-5 border rounded-xl w-full sm:w-auto ${targetArea === 'Autoimmune' ? 'bg-indigo-500 border-indigo-500/20' : 'bg-cyan-500 border-cyan-500/20'}`}>
+                          <Clock className={`shrink-0 ${themeColorText}`} size={18} />
+                          <div>
+                            <div className="text-[9px] text-slate-500 font-bold uppercase mb-0.5">Predicted Execution</div>
+                            <div className={`text-lg font-mono font-black leading-none ${themeColorText}`}>{activeAsset.time}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4 px-5 py-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl w-full sm:w-auto">
+                          <TrendingUp className="text-emerald-400 shrink-0" size={18} />
+                          <div>
+                            <div className="text-[9px] text-slate-500 font-bold uppercase mb-0.5">Estimated Premium</div>
+                            <div className="text-lg font-mono font-black text-emerald-400 leading-none">{activeAsset.upside}</div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}
 
-                  {/* 【还原模块 2】：两列并排布局 (研报 + 影子信号) */}
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                     
-                    {/* 专家解析 / 数据库拉取的 AI Digest */}
-                    <section className={`lg:col-span-7 bg-slate-950 border rounded-[2rem] p-6 relative ${showPastDeals ? 'border-indigo-500/20' : 'border-slate-800/60'}`}>
-                      <h3 className={`text-sm font-black uppercase flex items-center gap-2 mb-4 ${showPastDeals ? 'text-indigo-400' : 'text-cyan-400'}`}>
+                    {/* 专家解析 */}
+                    <section className={`lg:col-span-7 bg-slate-950 border rounded-[2rem] p-6 relative ${showPastDeals || targetArea === 'Autoimmune' ? 'border-indigo-500/20' : 'border-slate-800/60'}`}>
+                      <h3 className={`text-sm font-black uppercase flex items-center gap-2 mb-4 ${showPastDeals || targetArea === 'Autoimmune' ? 'text-indigo-400' : 'text-cyan-400'}`}>
                         <Database className="w-4 h-4" /> 
                         {showPastDeals ? 'Historical T-7 Digest & Outcome' : 'DeepSeek Model Digest'}
                       </h3>
                       <article className="space-y-4 text-slate-400 text-sm leading-relaxed overflow-y-auto max-h-[300px] pr-2 custom-scrollbar">
                         {activeAsset.digest.split('\n').filter(line => line.trim() !== '').map((paragraph, index) => (
-                          <p key={index} className={paragraph.includes('VERDICT') || paragraph.includes('OUTCOME') ? `p-4 bg-slate-900 border rounded-xl text-xs text-slate-300 ${showPastDeals ? 'border-indigo-500/30' : 'border-cyan-500/30'}` : ""}>
-                            {paragraph.includes('VERDICT') && !showPastDeals ? <span className="text-cyan-400 font-black block mb-1">MODEL VERDICT:</span> : null}
+                          <p key={index} className={paragraph.includes('VERDICT') || paragraph.includes('OUTCOME') ? `p-4 bg-slate-900 border rounded-xl text-xs text-slate-300 ${showPastDeals || targetArea === 'Autoimmune' ? 'border-indigo-500/30' : 'border-cyan-500/30'}` : ""}>
+                            {paragraph.includes('VERDICT') && !showPastDeals ? <span className={`font-black block mb-1 ${themeColorText}`}>MODEL VERDICT:</span> : null}
                             {paragraph.includes('OUTCOME') && showPastDeals ? <span className="text-indigo-400 font-black block mb-1">ACTUAL OUTCOME:</span> : null}
                             {paragraph.replace('VERDICT:', '').replace('OUTCOME:', '')}
                           </p>
@@ -448,13 +501,17 @@ const App = () => {
                       </article>
                     </section>
 
-                    {/* 【还原模块 3】：影子信号追踪时间轴 */}
-                    <section className={`lg:col-span-5 bg-slate-950 border rounded-[2rem] p-6 ${showPastDeals ? 'border-indigo-500/20' : 'border-slate-800/60'}`}>
-                      <h3 className={`text-sm font-black uppercase mb-6 flex items-center gap-2 ${showPastDeals ? 'text-indigo-400' : 'text-blue-400'}`}>
+                    {/* Shadow Intelligence Feed (影子信号追踪) */}
+                    <section className={`lg:col-span-5 bg-slate-950 border rounded-[2rem] p-6 ${showPastDeals || targetArea === 'Autoimmune' ? 'border-indigo-500/20' : 'border-slate-800/60'}`}>
+                      <h3 className={`text-sm font-black uppercase mb-2 flex items-center gap-2 ${showPastDeals || targetArea === 'Autoimmune' ? 'text-indigo-400' : 'text-blue-400'}`}>
                         <Activity className="w-4 h-4" /> 
-                        {showPastDeals ? 'Historical Signals (T-7)' : 'Options Flow & Signals'}
+                        {showPastDeals ? 'Historical Signals (T-7)' : 'Shadow Intelligence Feed'}
                       </h3>
-                      <div className="space-y-8 relative">
+                      <p className="text-[10px] text-slate-500 italic mb-6 leading-relaxed">
+                        Monitors alternative data (EOD Options Sweeps, Domain Registrations, Talent Migrations) to detect institutional front-running before public M&A announcements.
+                      </p>
+                      
+                      <div className="space-y-6 relative">
                         <div className="absolute left-[7px] top-2 bottom-2 w-[1px] bg-slate-800" />
                         {(showPastDeals ? [
                           { type: 'OPTIONS', date: 'T-7 DAYS', desc: 'Abnormal OTM Call Sweep Volume Detected', mood: 'VALIDATED' },
@@ -465,16 +522,16 @@ const App = () => {
                           { type: 'CLINICAL', date: 'ACTIVE', desc: 'FDA ClinicalTrials.gov matches MNC Pipeline Gap', mood: 'STRATEGIC' },
                           { type: 'TALENT', date: 'RECENT', desc: 'Pre-Acquisition Integration Specialist Hired', mood: 'PHASE-4' }
                         ]).map((s, idx) => (
-                          <div key={idx} className="flex gap-6 relative">
-                            <div className={`w-3.5 h-3.5 rounded-full bg-slate-950 border-2 z-10 shrink-0 mt-1 flex items-center justify-center ${showPastDeals ? 'border-indigo-500/50' : 'border-slate-700'}`}>
-                              <div className={`w-1.5 h-1.5 rounded-full ${idx === 0 ? (showPastDeals ? 'bg-indigo-400' : 'bg-cyan-400') : 'bg-slate-800'}`} />
+                          <div key={idx} className="flex gap-5 relative">
+                            <div className={`w-3.5 h-3.5 rounded-full bg-slate-950 border-2 z-10 shrink-0 mt-1 flex items-center justify-center ${showPastDeals || targetArea === 'Autoimmune' ? 'border-indigo-500/50' : 'border-slate-700'}`}>
+                              <div className={`w-1.5 h-1.5 rounded-full ${idx === 0 ? (showPastDeals || targetArea === 'Autoimmune' ? 'bg-indigo-400' : 'bg-cyan-400') : 'bg-slate-800'}`} />
                             </div>
                             <div className="space-y-1">
                               <div className="flex items-center gap-2">
                                 <span className="text-[10px] text-slate-500 font-mono font-bold">{s.date}</span>
-                                <span className={`text-[9px] font-black tracking-widest px-1.5 py-0.5 rounded ${showPastDeals ? 'bg-indigo-500/10 text-indigo-400' : 'bg-slate-800 text-slate-400'}`}>{s.mood}</span>
+                                <span className={`text-[8px] font-black tracking-widest px-1.5 py-0.5 rounded ${showPastDeals || targetArea === 'Autoimmune' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-slate-800 text-slate-400'}`}>{s.mood}</span>
                               </div>
-                              <div className="text-xs font-bold text-slate-200">{s.desc}</div>
+                              <div className="text-xs font-bold text-slate-200 leading-tight">{s.desc}</div>
                             </div>
                           </div>
                         ))}
@@ -488,6 +545,38 @@ const App = () => {
             </div>
           </>
         )}
+        
+        {/* 全局页脚 Footer */}
+        <footer className="mt-20 py-10 border-t border-slate-900 w-full">
+          <div className="grid md:grid-cols-2 gap-8 items-start mb-10">
+            <div>
+              <div className="text-[10px] text-slate-500 font-mono tracking-[0.3em] uppercase flex items-center gap-2 mb-2">
+                <ShieldCheck size={14} className="text-slate-600" />
+                Institutional-Grade Quantitative Intelligence
+              </div>
+              <p className="text-[11px] text-slate-700 font-bold uppercase tracking-widest">
+                Model v2.5.9-LTS • Datacenter: US-East
+              </p>
+            </div>
+            <div className="p-4 bg-slate-800/30 border border-slate-700/50 rounded-xl">
+              <div className="text-[10px] font-black text-slate-400 uppercase mb-1 flex items-center gap-2">
+                <AlertCircle size={14} /> Information Analytics Disclaimer
+              </div>
+              <p className="text-xs text-slate-500 leading-relaxed italic">
+                BioQuantix provides algorithmic data aggregation and market intelligence for informational purposes only. We are not a registered investment advisor. The intelligence provided does not constitute financial advice. Past data is not indicative of future results.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] text-slate-500 font-black uppercase tracking-widest">
+            <span>© 2026 BioQuantix Digital Terminal • Data Intelligence</span>
+            <div className="flex gap-6">
+               <a href="/terms.html" className="hover:text-cyan-400 transition-colors">Terms of Service</a>
+               <a href="/privacy.html" className="hover:text-cyan-400 transition-colors">Privacy Policy</a>
+               <a href="/refund.html" className="hover:text-cyan-400 transition-colors">Refund Policy</a>
+            </div>
+          </div>
+        </footer>
+
       </div>
       
       <style dangerouslySetInnerHTML={{ __html: `
