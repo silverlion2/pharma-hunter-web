@@ -46,9 +46,7 @@ const FeedbackWidget = () => {
         headers: {
           'Content-Type': 'application/json',
           'apikey': SUPABASE_ANON_KEY,
-          // 🚨 核心修复：彻底删除了 'Authorization': `Bearer ...` 这一行
-          // 添加 Prefer 头，要求 Supabase 仅返回状态不返回数据
-          'Prefer': 'return=minimal'
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
         },
         body: JSON.stringify(formData)
       });
@@ -67,40 +65,7 @@ const FeedbackWidget = () => {
       setStatus('error');
     }
   };
-const handleForgotPassword = async (e) => {
-      e.preventDefault();
-      
-      // 注意：确保 formData.email 对应你表单里绑定的邮箱状态名
-      const targetEmail = formData.email || ''; 
-      
-      if (!targetEmail) {
-          alert("Please enter your registered email address before clicking 'Forgot Password'!");
-          return;
-      }
 
-      try {
-          const { error } = await supabase.auth.resetPasswordForEmail(targetEmail, {
-              redirectTo: window.location.origin + '/reset-password', 
-          });
-          if (error) throw error;
-          alert("An email containing a reset link has been sent to your address. Please check your inbox!");
-      } catch (error) {
-          console.error("Failed to send reset email:", error.message);
-          alert("Failed to send: " + error.message);
-      }
-  };
-
-  const handleLogout = async (e) => {
-      if (e) e.preventDefault();
-      try {
-          const { error } = await supabase.auth.signOut();
-          if (error) throw error;
-          window.location.reload(); 
-      } catch (error) {
-          console.error("Logout failed:", error.message);
-          alert("Encountered an issue while logging out. Please try again.");
-      }
-  };
   return (
     <div className="fixed bottom-6 right-6 z-50">
       {!isOpen ? (
@@ -503,19 +468,9 @@ const App = () => {
     }
   };
 
-  const handleLogout = async (e) => {
-      if (e) e.preventDefault();
-      
-      try {
-          const { error } = await supabase.auth.signOut();
-          if (error) throw error;
-          
-          // 登出成功后刷新当前页面，以彻底清除本地的登录状态缓存
-          window.location.reload(); 
-      } catch (error) {
-          console.error("Logout failed:", error.message);
-          alert("Encountered an issue while logging out. Please try again.");
-      }
+  const handleLogout = async () => {
+    if (supabase) await supabase.auth.signOut();
+    setView('landing');
   };
 
   const currentGaps = pipelineGapsData[targetArea] || pipelineGapsData['Metabolic'];
@@ -1077,16 +1032,7 @@ const App = () => {
                       placeholder="••••••••"
                     />
                   </div>
-                  <div className="flex justify-end mt-1 mb-4">
-                      <button 
-                          onClick={handleForgotPassword} 
-                          type="button" 
-                          className="text-xs text-cyan-500 hover:text-cyan-400 transition-colors bg-transparent border-none cursor-pointer"
-                      >
-                          Forgot Password?
-                      </button>
-                  </div>
-              
+                  
                   {authError && (
                     <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-400">
                       {authError}
