@@ -31,23 +31,30 @@ const FeedbackWidget = () => {
   const [status, setStatus] = useState('idle'); // idle, loading, success, error
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
 
+  // 1. 你的真实 Supabase URL
+  const SUPABASE_URL = 'https://erdsylieacekhyfkibfr.supabase.co';
+  
+  // 2. 真实的 Supabase Anon Key
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVyZHN5bGllYWNla2h5ZmtpYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNjQzMjYsImV4cCI6MjA4ODc0MDMyNn0.AZWiXrTtrNMa8GHNK4imHug-7Gf85S0fEve19hFtx1w';
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!isSupabaseConfigured) {
-      setStatus('error');
-      setTimeout(() => setStatus('idle'), 3000);
+    
+    // 如果还没填 Key，阻止提交并报错提示
+    if (SUPABASE_ANON_KEY.includes('这里替换成')) {
+      alert("请先在代码中填入真实的 Supabase Anon Key！");
       return;
     }
     
     setStatus('loading');
+    
     try {
       const response = await fetch(`${SUPABASE_URL}/rest/v1/contact_leads`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'apikey': SUPABASE_ANON_KEY,
-          // 🚨 核心修复：彻底删除了 'Authorization': `Bearer ...` 这一行
-          // 添加 Prefer 头，要求 Supabase 仅返回状态不返回数据
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
           'Prefer': 'return=minimal'
         },
         body: JSON.stringify(formData)
@@ -61,46 +68,16 @@ const FeedbackWidget = () => {
           setStatus('idle');
         }, 2000);
       } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Supabase API 报错拒绝:", errorData);
         setStatus('error');
       }
     } catch (error) {
+      console.error("网络请求失败:", error);
       setStatus('error');
     }
   };
-const handleForgotPassword = async (e) => {
-      e.preventDefault();
-      
-      // 注意：确保 formData.email 对应你表单里绑定的邮箱状态名
-      const targetEmail = formData.email || ''; 
-      
-      if (!targetEmail) {
-          alert("Please enter your registered email address before clicking 'Forgot Password'!");
-          return;
-      }
 
-      try {
-          const { error } = await supabase.auth.resetPasswordForEmail(targetEmail, {
-              redirectTo: window.location.origin + '/reset-password', 
-          });
-          if (error) throw error;
-          alert("An email containing a reset link has been sent to your address. Please check your inbox!");
-      } catch (error) {
-          console.error("Failed to send reset email:", error.message);
-          alert("Failed to send: " + error.message);
-      }
-  };
-
-  const handleLogout = async (e) => {
-      if (e) e.preventDefault();
-      try {
-          const { error } = await supabase.auth.signOut();
-          if (error) throw error;
-          window.location.reload(); 
-      } catch (error) {
-          console.error("Logout failed:", error.message);
-          alert("Encountered an issue while logging out. Please try again.");
-      }
-  };
   return (
     <div className="fixed bottom-6 right-6 z-50">
       {!isOpen ? (
@@ -172,6 +149,9 @@ const handleForgotPassword = async (e) => {
       )}
     </div>
   );
+};
+
+export default FeedbackWidget;
 };
 
 
