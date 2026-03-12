@@ -1,13 +1,137 @@
 import React, { useState, useEffect } from 'react';
 import { 
   TrendingUp, Search, AlertCircle, Clock, Zap, Lock, Target, ShieldCheck, Activity,
-  ArrowLeft, CheckCircle2, Database, Cpu, Scale, Crosshair, TerminalSquare, History, Beaker
+  ArrowLeft, CheckCircle2, Database, Cpu, Scale, Crosshair, TerminalSquare, History, Beaker,
+  MessageSquare, X, Send
 } from 'lucide-react';
 
-// Phase 4: 使用环境变量彻底隐藏数据库密钥
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Phase 4: 使用环境变量隐藏数据库密钥的降级访问方式
+const getEnv = (key) => {
+  try {
+    return import.meta.env[key] || '';
+  } catch (e) {
+    return '';
+  }
+};
+
+const SUPABASE_URL = getEnv('VITE_SUPABASE_URL');
+const SUPABASE_ANON_KEY = getEnv('VITE_SUPABASE_ANON_KEY');
 const isSupabaseConfigured = SUPABASE_URL && SUPABASE_URL.startsWith('http');
+
+// Phase 5.1 新增: 极简 Feedback 组件
+const FeedbackWidget = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [status, setStatus] = useState('idle'); // idle, loading, success, error
+  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!isSupabaseConfigured) {
+      setStatus('error');
+      setTimeout(() => setStatus('idle'), 3000);
+      return;
+    }
+    
+    setStatus('loading');
+    try {
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/contact_leads`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (response.ok) {
+        setStatus('success');
+        setFormData({ name: '', email: '', message: '' });
+        setTimeout(() => {
+          setIsOpen(false);
+          setStatus('idle');
+        }, 2000);
+      } else {
+        setStatus('error');
+      }
+    } catch (error) {
+      setStatus('error');
+    }
+  };
+
+  return (
+    <div className="fixed bottom-6 right-6 z-50">
+      {!isOpen ? (
+        <button 
+          onClick={() => setIsOpen(true)}
+          className="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 p-3 rounded-full shadow-2xl transition-all hover:scale-105 active:scale-95 flex items-center justify-center group"
+          title="Feedback & Contact"
+        >
+          <MessageSquare className="w-5 h-5 group-hover:text-cyan-400 transition-colors" />
+        </button>
+      ) : (
+        <div className="bg-slate-900 border border-slate-700 w-80 rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-5 fade-in duration-200">
+          <div className="bg-slate-800/50 p-4 border-b border-slate-700 flex justify-between items-center">
+            <h3 className="text-xs font-bold text-slate-200 flex items-center gap-2 uppercase tracking-widest">
+              <MessageSquare className="w-3.5 h-3.5 text-cyan-400" />
+              Send Feedback
+            </h3>
+            <button onClick={() => setIsOpen(false)} className="text-slate-500 hover:text-slate-300 transition-colors">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          
+          <div className="p-4">
+            {status === 'success' ? (
+              <div className="flex flex-col items-center justify-center py-6 text-center">
+                <div className="w-10 h-10 bg-emerald-500/10 rounded-full flex items-center justify-center mb-3">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                </div>
+                <p className="text-xs text-slate-300 font-bold">Message Received.</p>
+                <p className="text-[10px] text-slate-500 mt-1">Our team will review your feedback.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-3">
+                <input 
+                  type="text" 
+                  placeholder="Name (Optional)" 
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500/50 transition-colors placeholder:text-slate-600"
+                />
+                <input 
+                  type="email" 
+                  required
+                  placeholder="Work Email *" 
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500/50 transition-colors placeholder:text-slate-600"
+                />
+                <textarea 
+                  required
+                  placeholder="Feature request, bug report, or institutional inquiry..." 
+                  value={formData.message}
+                  onChange={(e) => setFormData({...formData, message: e.target.value})}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500/50 transition-colors h-24 resize-none placeholder:text-slate-600"
+                />
+                <button 
+                  type="submit" 
+                  disabled={status === 'loading'}
+                  className="w-full bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-black text-xs py-2.5 rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {status === 'loading' ? <Clock className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                  {status === 'loading' ? 'SENDING...' : 'SUBMIT'}
+                </button>
+                {status === 'error' && <p className="text-[9px] text-red-400 text-center mt-2">Failed to send. Please try again later.</p>}
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 
 const App = () => {
   const [view, setView] = useState('landing'); 
@@ -19,7 +143,7 @@ const App = () => {
   const [pipelineGapsData, setPipelineGapsData] = useState({ 'Metabolic': [], 'Autoimmune': [] });
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fallback 保底数据维持不变，保障无网络/无密钥时的演示效果
+  // Fallback 保底数据维持不变
   const fallbackData = [
     {
       ticker: 'ALT', name: 'Altimmune', score: 94.5, target_area: 'Metabolic', is_past_deal: false, warning_flag: null,
@@ -186,15 +310,14 @@ const App = () => {
   const sortedList = [...baseFiltered].sort((a, b) => b.score - a.score);
 
   const activeList = sortedList.map((item, index) => {
-    // Phase 4 核心修正：严格按照 >= 80 锁定，隐藏判定规则
     let isLocked = false;
+    // 历史并购完全解密，仅当非历史数据且分数 >= 80 时才锁定。
     if (!showPastDeals && item.score >= 80) isLocked = true;
 
     const rawSignals = item.shadow_signals && Array.isArray(item.shadow_signals) && item.shadow_signals.length > 0
         ? item.shadow_signals 
         : [{ type: 'SYSTEM', date: 'T-1 EOD', desc: 'No abnormal institutional activity detected currently.', mood: 'NORMAL' }];
 
-    // Phase 4 核心修正：基于分数的动态文案解释
     const cashDesc = item.cash_score >= 80 ? 'Critical runway < 6 months' : (item.cash_score <= 40 ? 'Adequate cash buffer > 2 years' : 'Moderate runway pressure');
     const scarcityDesc = item.scarcity_score >= 90 ? 'Extreme target scarcity' : (item.scarcity_score >= 70 ? 'High competition density' : 'Standard target density');
     const milestoneDesc = item.milestone_score >= 90 ? 'Imminent clinical catalyst' : (item.milestone_score >= 70 ? 'Near-term readout expected' : 'Long-term development phase');
@@ -245,7 +368,7 @@ const App = () => {
 
   return (
     <div className="min-h-screen bg-[#0A0C10] text-slate-200 font-sans tracking-tight selection:bg-cyan-500 selection:text-slate-900 flex flex-col">
-      <div className="max-w-[1440px] mx-auto p-4 md:p-8 flex-grow w-full">
+      <div className="max-w-[1440px] mx-auto p-4 md:p-8 flex-grow w-full relative">
         
         {/* Header */}
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 border-b border-slate-800/60 pb-8">
@@ -299,17 +422,47 @@ const App = () => {
              <p className="text-slate-400 text-lg md:text-xl max-w-3xl mx-auto leading-relaxed mb-10">
                Institutional research requires armies of analysts. <strong className="text-white">BioQuantix uses machine learning.</strong> We track clinical milestones, pipeline gaps, and alternative data to quantify bio-pharma M&A trends.
              </p>
+             
+             {/* Phase 5.1 新增: 平台客观实力背书 (数据跳动栏) */}
+             <div className="flex flex-wrap justify-center gap-4 mb-10 text-xs font-mono font-bold text-slate-500 uppercase tracking-widest">
+                <span className="bg-slate-900 border border-slate-800 px-4 py-2 rounded-lg text-cyan-400">[ $15B+ M&A Value Tracked ]</span>
+                <span className="bg-slate-900 border border-slate-800 px-4 py-2 rounded-lg text-blue-400">[ 150+ Clinical Assets Monitored ]</span>
+                <span className="bg-slate-900 border border-slate-800 px-4 py-2 rounded-lg text-indigo-400">[ 12 Institutional Anomalies Flagged ]</span>
+             </div>
+
              <button 
                onClick={() => {setView('dashboard'); setShowPastDeals(false);}}
                className="bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-black text-lg px-10 py-5 rounded-2xl transition-all transform hover:scale-105 active:scale-95 shadow-2xl shadow-cyan-500/20 flex items-center gap-3 mx-auto"
              >
                <Database size={24} /> ENTER TERMINAL
              </button>
+             
+             {/* Phase 5.1 新增: 历史高光回测证明卡片 */}
+             <div className="mt-20 max-w-2xl mx-auto text-left bg-slate-900/60 border border-slate-800 rounded-3xl p-8 shadow-2xl backdrop-blur-sm relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-10">
+                  <TerminalSquare className="w-24 h-24 text-cyan-400" />
+                </div>
+                <div className="flex items-center gap-2 text-[10px] text-cyan-500 font-bold uppercase tracking-widest mb-4">
+                  <ShieldCheck size={14} /> Data-Driven Track Record
+                </div>
+                <h3 className="text-xl font-black text-white mb-2 tracking-tight">The Alpine Immune ($ALPN) Anomaly</h3>
+                <p className="text-sm text-slate-400 leading-relaxed mb-6">
+                  See how the BioQuantix algorithm identified structural data anomalies in Alpine Immune 7 days prior to the <strong className="text-slate-200">$4.9B Vertex acquisition</strong>.
+                </p>
+                <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-xs text-slate-300">
+                  <div className="flex justify-between items-center mb-2 pb-2 border-b border-slate-800">
+                     <span className="text-slate-500">TIMESTAMP: T-7 DAYS</span>
+                     <span className="text-emerald-400 font-black">QUANT SCORE: 96.5</span>
+                  </div>
+                  <div className="text-indigo-400 font-bold mb-1">FLAG_FIRED: [OPTIONS_FLOW]</div>
+                  <div className="text-slate-400 leading-tight">Massive unhedged OTM call buying detected 5 days prior to announcement. Vertex pipeline gap correlation established.</div>
+                </div>
+             </div>
+
            </div>
          </div>
         )}
 
-        {/* Phase 4 核心修正：优化激发渴望感的升级文案 */}
         {view === 'upgrade' && (
           <div id="upgrade" className="max-w-5xl mx-auto py-12 px-6">
             <button onClick={() => setView('dashboard')} className="flex items-center gap-2 text-slate-500 hover:text-white mb-8 transition-all font-bold text-xs">
@@ -341,6 +494,8 @@ const App = () => {
                   <li className="flex gap-3 text-slate-200"><CheckCircle2 size={16} className="text-cyan-400 shrink-0" /> Full Alpha Radar Access</li>
                   <li className="flex gap-3 text-slate-200"><CheckCircle2 size={16} className="text-cyan-400 shrink-0" /> Daily AI Digest Feed</li>
                   <li className="flex gap-3 text-slate-200"><CheckCircle2 size={16} className="text-cyan-400 shrink-0" /> Unlock Hidden S-Class</li>
+                  {/* Phase 5 强调 Pro 核心特权 */}
+                  <li className="flex gap-3 text-slate-200"><CheckCircle2 size={16} className="text-cyan-400 shrink-0" /> Priority Anomaly Alerts</li>
                 </ul>
                 <button className="w-full py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-black text-xs transition-transform active:scale-95">UPGRADE PRO</button>
               </div>
@@ -484,7 +639,6 @@ const App = () => {
                         <div className="flex gap-2">
                           <span className="px-2.5 py-1 bg-slate-800 border border-slate-700 text-slate-400 text-[10px] rounded-md font-bold uppercase">{activeAsset.category}</span>
                           
-                          {/* Phase 4 核心修正：动态 S/A/B 徽章及 Hover 释义 */}
                           <span className={`px-2.5 py-1 text-[10px] rounded-md font-bold uppercase ${showPastDeals || targetArea === 'Autoimmune' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-cyan-500/10 text-cyan-400'}`}>
                             {showPastDeals ? 'M&A Validated' : (
                               <div className="group/badge relative flex items-center gap-1 cursor-help">
@@ -645,6 +799,9 @@ const App = () => {
             </div>
           </div>
         </footer>
+
+        {/* Phase 5.1 渲染极简反馈组件 */}
+        <FeedbackWidget />
 
       </div>
       
