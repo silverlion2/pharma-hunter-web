@@ -56,45 +56,39 @@ except Exception as e:
     send_alert("系统警告", "SEC字典拉取失败，财务抓取将全面降级。")
 
 def fetch_financials_dual_layer(ticker):
-    """Phase 3: 优先尝试 MarketData 财报，失败则降级到 SEC Edgar，彻底解决财务提取率低的问题"""
     cash, rnd = 0.0, 0.0
     source = "NONE"
     error_details = []
     
-    # 防线 1: MarketData API (提取标准化财务数据)
     if MARKETDATA_TOKEN:
         try:
             headers = {"Authorization": f"Bearer {MARKETDATA_TOKEN}"}
-            # 尝试访问 MarketData 财报端点
             md_url = f"https://api.marketdata.app/v1/stocks/financials/{ticker}/"
             resp = requests.get(md_url, headers=headers, timeout=5)
             if resp.status_code == 200:
                 md_data = resp.json()
                 if md_data.get('s') == 'ok':
-                    # 假设 MarketData 提取现金和研发的字段
                     cash_arr = md_data.get('cash', [])
                     rnd_arr = md_data.get('research_development', [])
                     if cash_arr and len(cash_arr) > 0 and rnd_arr and len(rnd_arr) > 0:
                         cash = float(cash_arr[-1])
-                        rnd = float(rnd_arr[-1]) * 4.0 # 年化
+                        rnd = float(rnd_arr[-1]) * 4.0 
                         source = "MarketData"
             else:
                 error_details.append(f"MarketData Financials HTTP {resp.status_code}")
         except Exception as e:
             error_details.append(f"MarketData Financials Exception: {str(e)}")
 
-    # 防线 2: SEC EDGAR 兜底 (携带扩充词库与抗封禁延迟)
     if source == "NONE" and ticker in CIK_DICT:
         try:
             cik = CIK_DICT[ticker]
             url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"
-            time.sleep(0.2) # 防止 SEC 封禁
+            time.sleep(0.2) 
             resp = requests.get(url, headers=SEC_HEADERS, timeout=10)
             
             if resp.status_code == 200:
                 facts = resp.json().get('facts', {}).get('us-gaap', {})
                 
-                # 寻找现金
                 for tag in ['CashAndCashEquivalentsAtCarryingValue', 'Cash', 'CashAndCashEquivalentsAtCarryingValueIncludingDiscontinuedOperations']:
                     if tag in facts:
                         d = facts[tag].get('units', {}).get('USD', [])
@@ -102,7 +96,6 @@ def fetch_financials_dual_layer(ticker):
                             cash = float(d[-1]['val'])
                             break
                             
-                # 寻找研发
                 for tag in ['ResearchAndDevelopmentExpense', 'ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost']:
                     if tag in facts:
                         d = facts[tag].get('units', {}).get('USD', [])
@@ -131,7 +124,6 @@ def fetch_financials_dual_layer(ticker):
 # 3. 临床倒计时与行情估值抓取
 # ==========================================
 def fetch_clinical_trials(company_name):
-    """Phase 3: 精准提取 estimatedCompletionDate 计算真实揭盲倒计时"""
     try:
         url = f"https://clinicaltrials.gov/api/v2/studies?query.term={company_name}&filter.advanced=AREA[OverallStatus]ACTIVE_NOT_RECRUITING OR AREA[OverallStatus]RECRUITING&pageSize=1"
         headers = {"accept": "application/json"}
@@ -144,12 +136,10 @@ def fetch_clinical_trials(company_name):
             title = study["identificationModule"].get("briefTitle", "Unknown Trial")
             phase = study["designModule"].get("phases", ["Phase Unknown"])[0]
             
-            # 提取预计完成日期用于 Min-Time 算法
             est_date_str = study["statusModule"].get("completionDateStruct", {}).get("date", "")
             days_to_clin = 999
             if est_date_str:
                 try:
-                    # 兼容 YYYY-MM 和 YYYY-MM-DD
                     if len(est_date_str) == 7:
                         est_date = datetime.strptime(est_date_str, "%Y-%m")
                     else:
@@ -168,7 +158,6 @@ def fetch_clinical_trials(company_name):
         return {"desc": "Clinical trials API fetch error.", "phase": "None", "days_to_clin": 999}
 
 def fetch_market_data(ticker_symbol):
-    """Phase 3: 提取真实市值(Market Cap)并结合严苛期权算法输出真实信号"""
     result = {
         "price": "N/A", 
         "market_cap": 0, 
@@ -187,7 +176,6 @@ def fetch_market_data(ticker_symbol):
     headers = {"Authorization": f"Bearer {MARKETDATA_TOKEN}"}
     yesterday_str = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
     
-    # 抓取实时/结算行情 获取市值 (V_score 核心基座)
     try:
         q_url = f"https://api.marketdata.app/v1/stocks/quotes/{ticker_symbol}/"
         q_resp = requests.get(q_url, headers=headers, timeout=10).json()
@@ -197,7 +185,6 @@ def fetch_market_data(ticker_symbol):
     except Exception as e:
         result["error"] = f"Quotes API Error: {str(e)}"
         
-    # 期权异动严格过滤 (Call, OTM 10%, Volume>1.5x OI)
     try:
         opt_url = f"https://api.marketdata.app/v1/options/chain/{ticker_symbol}?date={yesterday_str}"
         opt_resp = requests.get(opt_url, headers=headers, timeout=10).json()
@@ -218,18 +205,15 @@ def fetch_market_data(ticker_symbol):
                 vol = float(volumes[i])
                 oi = float(ois[i]) if ois[i] else 0.0
                 
-                # 规则 1 & 2: 只挑 Call，且价外 > 10%
                 if side not in ['call', 'c']: continue 
                 if strike <= float(result["price"]) * 1.10: continue 
-                if vol < 100: continue # 过滤小散户杂音
+                if vol < 100: continue 
                 
-                # 规则 3: 成交量暴增探测
                 if (oi > 0 and vol > oi * 1.5) or (oi == 0 and vol > 500):
                     desc = f"Strike ${strike} Call Sweep (Vol: {int(vol)}/OI: {int(oi)})"
                     anomalies.append(desc)
                     result["raw_signals"].append({"type": "OPTIONS", "date": "T-1 EOD", "desc": desc, "mood": "HIGH-INTENT"})
                     
-                    # 提取期权到期日用于推算窗口
                     try:
                         exp_date = datetime.strptime(str(expirations[i]), "%Y-%m-%d")
                         opt_days = (exp_date - datetime.now()).days
@@ -250,7 +234,7 @@ def fetch_market_data(ticker_symbol):
     return result
 
 # ==========================================
-# 4. AI M&A 分析大脑 (带定量注入)
+# 4. AI M&A 分析大脑
 # ==========================================
 def get_ai_digest(ticker, market_data, clin_data, quant_scores):
     url = "https://api.deepseek.com/chat/completions"
@@ -299,12 +283,11 @@ def get_ai_digest(ticker, market_data, clin_data, quant_scores):
         return f"FAILED_TIMEOUT: {str(e)}"
 
 # ==========================================
-# 5. 自动化主流程 (Phase 3 数学闭环)
+# 5. 自动化主流程
 # ==========================================
 def main():
-    print("🚀 BioQuantix EOD Auto-Update Engine Started (Phase 3 Core)...")
+    print("🚀 BioQuantix EOD Auto-Update Engine Started (Phase 4 Core)...")
     
-    # 获取字典库
     TARGET_SCARCITY_MAP = {}
     try:
         print("📚 正在从云端拉取靶点稀缺度字典 (target_dict)...")
@@ -319,7 +302,6 @@ def main():
             "FcRn Inhibitor": 80, "Standard Oncology / mAb": 60 
         }
 
-    # 获取监控池
     try:
         response = supabase.table('watchlist').select('*').eq('is_active', True).execute()
         targets = response.data
@@ -338,7 +320,6 @@ def main():
         name = target["name"]
         mechanism = target.get("mechanism", "Unknown")
         
-        # 拉取历史数据作为断网备份
         historical_data = None
         try:
             hist_resp = supabase.table('assets').select('*').eq('ticker', ticker).execute()
@@ -360,9 +341,6 @@ def main():
             else:
                 market_data["raw_signals"] = [{"type": "SYSTEM", "date": "T-1 EOD", "desc": "Data source feedback delayed. Using historical baseline.", "mood": "DELAYED"}]
 
-        # ---------------------------------------------------------
-        # Phase 3 核心计算: C_score (现金压力)
-        # ---------------------------------------------------------
         fin_data, sec_error_detail = fetch_financials_dual_layer(ticker)
         
         if fin_data is None:
@@ -377,27 +355,19 @@ def main():
         else:
             c_score = fin_data["c_score"]
         
-        # ---------------------------------------------------------
-        # Phase 3 核心计算: T_score (靶点稀缺度)
-        # ---------------------------------------------------------
         t_score = TARGET_SCARCITY_MAP.get(mechanism, 60.0)
         
         # ---------------------------------------------------------
-        # Phase 3 核心计算: V_score (估值洼地) - 真实Market Cap推算
+        # Phase 4: V_score 连续性衰减公式 (无级变速拉开差距)
         # ---------------------------------------------------------
         v_score = 50.0
         if fin_data and market_data["market_cap"] > 0:
             p_cash_ratio = market_data["market_cap"] / fin_data["cash"]
-            if p_cash_ratio < 1.0: v_score = 95.0   # 破净市值，极度低估
-            elif p_cash_ratio < 2.0: v_score = 80.0
-            elif p_cash_ratio < 5.0: v_score = 60.0
-            else: v_score = 40.0
+            # 动态计算：市值与现金比每高1倍，分数下降10分，最高100，最低10。
+            v_score = max(10.0, min(100.0, 105.0 - (p_cash_ratio * 10.0)))
         elif historical_data and historical_data.get('valuation_score'):
             v_score = historical_data['valuation_score']
 
-        # ---------------------------------------------------------
-        # Phase 3 核心计算: M_score (里程碑催化) - 真实天数推算
-        # ---------------------------------------------------------
         days_to_clin = clin_data["days_to_clin"]
         m_score = 50.0
         if days_to_clin <= 0: m_score = 95.0
@@ -405,21 +375,16 @@ def main():
         elif days_to_clin < 180: m_score = 75.0
         elif days_to_clin < 365: m_score = 60.0
         
-        # ---------------------------------------------------------
-        # 最终加权公式 & 溢价时间推算
-        # ---------------------------------------------------------
         base_s_score = (c_score * 0.3) + (t_score * 0.4) + (m_score * 0.2) + (v_score * 0.1)
         final_score = base_s_score * 1.15 if market_data["has_anomaly"] else base_s_score
         final_score = round(min(final_score, 99.5), 1) 
         
-        # 交易时间预测 (Min-Time Algorithm)
         min_days = min(days_to_clin, market_data["days_to_opt"]) * 0.8
         if min_days < 30: predicted_time = "14-30 Days (Imminent)"
         elif min_days < 90: predicted_time = "1-3 Months"
         elif min_days < 180: predicted_time = "3-6 Months"
         else: predicted_time = "TBD / Event Driven"
         
-        # 预计溢价计算 (Premium Formula)
         v_adj = max(0, (v_score - 50) / 100.0) * 35.0
         t_adj = max(0, (t_score - 50) / 100.0) * 25.0
         prem_val = 40.0 + v_adj + t_adj
@@ -427,14 +392,12 @@ def main():
 
         print(f"[{ticker}] 计算完毕 | C:{c_score:.1f} T:{t_score:.1f} M:{m_score:.1f} V:{v_score:.1f} | 最终分: {final_score}")
 
-        # 将真实分数打包，传给 AI 大脑
         quant_scores = {
             "c_score": c_score, "t_score": t_score, "m_score": m_score, 
             "v_score": v_score, "final_score": final_score, "est_premium": est_premium
         }
         ai_digest = get_ai_digest(ticker, market_data, clin_data, quant_scores)
         
-        # AI 容灾处理 (缝合历史研报)
         if ai_digest.startswith("FAILED_TIMEOUT"):
             print(f"⚠️ [{ticker}] AI 分析超时，尝试调用历史研报...")
             sec_warning_flag = 'AI_TIMEOUT' 
@@ -448,7 +411,6 @@ def main():
         success_count += 1
         error_log_str = " | ".join(error_logs) if error_logs else None 
         
-        # 组装入库数据 (全量真数据)
         db_record = {
             "ticker": ticker,
             "name": name,
@@ -470,13 +432,11 @@ def main():
         if "deal_info" in target and target["deal_info"]:
              db_record["deal_info"] = target["deal_info"]
         
-        # 更新主表
         try:
             supabase.table('assets').upsert(db_record).execute()
         except Exception as e:
             print(f"❌ {ticker} 写入 assets 失败: {e}")
             
-        # 历史暗储：写入日志表
         try:
             history_record = {
                 "ticker": ticker,
@@ -490,7 +450,7 @@ def main():
 
     summary_msg = f"成功跑通: {success_count}条，失败拦截: {fail_count}条。"
     send_alert("BioQuantix 日常更新完成", summary_msg)
-    print("🎉 所有医药标的 Phase 3 量化闭环执行结束！")
+    print("🎉 所有医药标的 Phase 4 量化闭环执行结束！")
 
 if __name__ == "__main__":
     main()

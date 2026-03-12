@@ -4,9 +4,10 @@ import {
   ArrowLeft, CheckCircle2, Database, Cpu, Scale, Crosshair, TerminalSquare, History, Beaker
 } from 'lucide-react';
 
-const SUPABASE_URL = 'https://erdsylieacekhyfkibfr.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_YLjZ8sqaZtzY84w4VcpyWA_wNydkldi';
-const isSupabaseConfigured = SUPABASE_URL.startsWith('http');
+// Phase 4: 使用环境变量彻底隐藏数据库密钥
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const isSupabaseConfigured = SUPABASE_URL && SUPABASE_URL.startsWith('http');
 
 const App = () => {
   const [view, setView] = useState('landing'); 
@@ -18,7 +19,7 @@ const App = () => {
   const [pipelineGapsData, setPipelineGapsData] = useState({ 'Metabolic': [], 'Autoimmune': [] });
   const [isLoading, setIsLoading] = useState(true);
 
-  // 15个完整 Fallback 数据（含真实的 factors, shadow_signals 和预测窗口，保障断网完美演示）
+  // Fallback 保底数据维持不变，保障无网络/无密钥时的演示效果
   const fallbackData = [
     {
       ticker: 'ALT', name: 'Altimmune', score: 94.5, target_area: 'Metabolic', is_past_deal: false, warning_flag: null,
@@ -116,7 +117,6 @@ const App = () => {
     }
   ];
 
-  // 默认保底图谱数据
   const defaultGaps = {
     'Metabolic': [
       { name: 'PFE', target: 'MASH / Obesity', level: 92, color: 'bg-blue-500' },
@@ -140,14 +140,12 @@ const App = () => {
           return;
         }
         
-        // 1. 获取核心资产数据
         const assetsResp = await fetch(`${SUPABASE_URL}/rest/v1/assets?select=*`, {
           headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
         });
         const aData = await assetsResp.json();
         setAssetData(aData && aData.length > 0 ? aData : fallbackData);
 
-        // 2. 获取动态缺口图谱数据
         const gapsResp = await fetch(`${SUPABASE_URL}/rest/v1/mnc_pipeline_gaps?select=*`, {
           headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
         });
@@ -188,26 +186,32 @@ const App = () => {
   const sortedList = [...baseFiltered].sort((a, b) => b.score - a.score);
 
   const activeList = sortedList.map((item, index) => {
+    // Phase 4 核心修正：严格按照 >= 80 锁定，隐藏判定规则
     let isLocked = false;
-    if (!showPastDeals && targetArea === 'Autoimmune' && index < 3) isLocked = true;
+    if (!showPastDeals && item.score >= 80) isLocked = true;
 
     const rawSignals = item.shadow_signals && Array.isArray(item.shadow_signals) && item.shadow_signals.length > 0
         ? item.shadow_signals 
         : [{ type: 'SYSTEM', date: 'T-1 EOD', desc: 'No abnormal institutional activity detected currently.', mood: 'NORMAL' }];
 
+    // Phase 4 核心修正：基于分数的动态文案解释
+    const cashDesc = item.cash_score >= 80 ? 'Critical runway < 6 months' : (item.cash_score <= 40 ? 'Adequate cash buffer > 2 years' : 'Moderate runway pressure');
+    const scarcityDesc = item.scarcity_score >= 90 ? 'Extreme target scarcity' : (item.scarcity_score >= 70 ? 'High competition density' : 'Standard target density');
+    const milestoneDesc = item.milestone_score >= 90 ? 'Imminent clinical catalyst' : (item.milestone_score >= 70 ? 'Near-term readout expected' : 'Long-term development phase');
+    const valDesc = item.valuation_score >= 80 ? 'Trading near/below tangible cash' : (item.valuation_score >= 60 ? 'Moderate value gap' : 'Premium valuation priced in');
+
     return {
       ...item,
-      // Phase 3: 时间与溢价直读后端真数据，如果没抓到就显示 Checking Data...
       time: item.is_past_deal ? 'REALIZED' : (item.predicted_time || "Checking Data..."),
       status: item.is_past_deal ? 'ACQUIRED' : (item.score >= 85 ? 'IMMINENT' : 'IN-FOCUS'),
       upside: item.is_past_deal ? 'REALIZED' : (item.estimated_premium || "TBD"),
       locked: isLocked, 
       category: item.target_area,
       factors: [
-        { label: 'Cash Pressure', score: Math.round(item.cash_score || 50), color: 'from-blue-500 to-cyan-400', desc: 'R&D burn rate vs SEC cash reserves' },
-        { label: 'Asset Scarcity', score: Math.round(item.scarcity_score || 50), color: 'from-cyan-500 to-teal-400', desc: 'Target competition density mapping' },
-        { label: 'Catalyst Timing', score: Math.round(item.milestone_score || 50), color: 'from-indigo-500 to-blue-500', desc: 'Real-time ClinicalTrials.gov countdown' },
-        { label: 'Value Gap', score: Math.round(item.valuation_score || 50), color: 'from-sky-400 to-cyan-300', desc: 'Market Cap vs Tangible Cash Value' }
+        { label: 'Cash Pressure', score: Math.round(item.cash_score || 50), color: 'from-blue-500 to-cyan-400', desc: cashDesc },
+        { label: 'Asset Scarcity', score: Math.round(item.scarcity_score || 50), color: 'from-cyan-500 to-teal-400', desc: scarcityDesc },
+        { label: 'Catalyst Timing', score: Math.round(item.milestone_score || 50), color: 'from-indigo-500 to-blue-500', desc: milestoneDesc },
+        { label: 'Value Gap', score: Math.round(item.valuation_score || 50), color: 'from-sky-400 to-cyan-300', desc: valDesc }
       ],
       display_signals: rawSignals
     };
@@ -305,6 +309,7 @@ const App = () => {
          </div>
         )}
 
+        {/* Phase 4 核心修正：优化激发渴望感的升级文案 */}
         {view === 'upgrade' && (
           <div id="upgrade" className="max-w-5xl mx-auto py-12 px-6">
             <button onClick={() => setView('dashboard')} className="flex items-center gap-2 text-slate-500 hover:text-white mb-8 transition-all font-bold text-xs">
@@ -313,7 +318,7 @@ const App = () => {
             <div className="text-center mb-12">
               <h2 className="text-4xl font-black text-white mb-4 tracking-tight">Unlock Institutional Intelligence</h2>
               <p className="text-slate-400 text-lg max-w-2xl mx-auto">
-                Targets with Scores {'>'} 80 and Live DeepSeek Analysis are restricted to Pro members.
+                Unlock complete institutional data, advanced predictive signals, and premium features. Upgrade to Pro.
               </p>
             </div>
             <div className="grid md:grid-cols-3 gap-6">
@@ -478,8 +483,20 @@ const App = () => {
                         </h2>
                         <div className="flex gap-2">
                           <span className="px-2.5 py-1 bg-slate-800 border border-slate-700 text-slate-400 text-[10px] rounded-md font-bold uppercase">{activeAsset.category}</span>
+                          
+                          {/* Phase 4 核心修正：动态 S/A/B 徽章及 Hover 释义 */}
                           <span className={`px-2.5 py-1 text-[10px] rounded-md font-bold uppercase ${showPastDeals || targetArea === 'Autoimmune' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-cyan-500/10 text-cyan-400'}`}>
-                            {showPastDeals ? 'M&A Validated' : 'S-Class Target'}
+                            {showPastDeals ? 'M&A Validated' : (
+                              <div className="group/badge relative flex items-center gap-1 cursor-help">
+                                {activeAsset.score >= 90 ? 'S-Class Asset' : (activeAsset.score >= 80 ? 'A-Class Target' : 'B-Class Watchlist')}
+                                <AlertCircle size={10} className="text-slate-500" />
+                                <div className="absolute top-full mt-1 left-0 w-64 p-2 bg-slate-800 border border-slate-700 text-[9px] text-slate-300 rounded opacity-0 invisible group-hover/badge:opacity-100 group-hover/badge:visible transition-all z-50 shadow-xl whitespace-normal normal-case font-normal leading-relaxed">
+                                  <span className="font-bold text-cyan-400">S-Class (90+):</span> Extremely scarce asset with imminent catalysts.<br/>
+                                  <span className="font-bold text-blue-400">A-Class (80+):</span> High-potential buyout target.<br/>
+                                  <span className="font-bold text-slate-400">B-Class (&lt;80):</span> Monitor for future developments.
+                                </div>
+                              </div>
+                            )}
                           </span>
                         </div>
                       </div>
@@ -607,7 +624,7 @@ const App = () => {
                 Institutional-Grade Quantitative Intelligence
               </div>
               <p className="text-[11px] text-slate-700 font-bold uppercase tracking-widest">
-                Model v2.7.0-LTS • Datacenter: US-East
+                Model v2.8.0-LTS • Datacenter: US-East
               </p>
             </div>
             <div className="p-4 bg-slate-800/30 border border-slate-700/50 rounded-xl">
@@ -638,6 +655,7 @@ const App = () => {
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
         .group\\/tooltip:hover .absolute { visibility: visible; opacity: 1; }
+        .group\\/badge:hover .absolute { visibility: visible; opacity: 1; }
       `}} />
     </div>
   );
