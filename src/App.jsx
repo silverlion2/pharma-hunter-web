@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+// 修复：确保 createClient 被正确导入
+import { createClient } from '@supabase/supabase-js';
 import { 
   TrendingUp, Search, AlertCircle, Clock, Zap, Lock, Target, ShieldCheck, Activity,
   ArrowLeft, CheckCircle2, Database, Cpu, Scale, Crosshair, TerminalSquare, History, Beaker,
@@ -18,8 +20,19 @@ const SUPABASE_URL = getEnv('VITE_SUPABASE_URL');
 const SUPABASE_ANON_KEY = getEnv('VITE_SUPABASE_ANON_KEY');
 const isSupabaseConfigured = SUPABASE_URL && SUPABASE_URL.startsWith('http');
 
-// 初始化 Supabase 客户端用于 Auth (已恢复真实连接)
-const supabase = isSupabaseConfigured ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+// 修复：安全初始化 Supabase 客户端。如果没有环境变量，不要返回 null，而是返回一个 mock 对象，防止后续方法调用报错白屏
+const supabase = isSupabaseConfigured 
+  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) 
+  : {
+      auth: {
+        getSession: async () => ({ data: { session: null } }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+        signUp: async () => ({ error: null }),
+        signInWithPassword: async () => ({ error: null }),
+        resetPasswordForEmail: async () => ({ error: null }),
+        signOut: async () => ({ error: null }),
+      }
+    };
 
 // Phase 5.2 新增: 全权限测试账户列表 (硬编码免死金牌)
 const SUPER_ADMIN_EMAILS = ['admin@bioquantix.com', 'test@bioquantix.com'];
@@ -306,8 +319,6 @@ const App = () => {
   };
 
   useEffect(() => {
-    if (!supabase) return;
-
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       determineUserRole(session?.user);
@@ -465,7 +476,7 @@ const App = () => {
     setAuthLoading(true);
     setAuthError('');
     
-    if (!supabase) {
+    if (!isSupabaseConfigured) {
       setTimeout(() => {
         if (authMode === 'signup') {
           setAuthMode('login');
@@ -528,9 +539,7 @@ const App = () => {
   };
 
   const handleLogout = async () => {
-    if (supabase) {
-      await supabase.auth.signOut();
-    }
+    await supabase.auth.signOut();
     setSession(null);
     setUserRole('visitor'); 
     setView('landing');
