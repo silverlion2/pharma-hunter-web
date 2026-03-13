@@ -58,6 +58,42 @@ except Exception as e:
     print(f"❌ SEC 字典拉取失败: {e}")
     send_alert("系统警告", "SEC字典拉取失败，财务抓取将全面降级。")
 
+def get_sec_shares(cik):
+    """核心算力增强：多标签、按日期排序的安全 SEC 股本解析器"""
+    try:
+        sec_url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"
+        sec_resp = requests.get(sec_url, headers=SEC_HEADERS, timeout=8)
+        if sec_resp.status_code != 200:
+            return 0
+            
+        facts = sec_resp.json().get('facts', {})
+        
+        def extract_latest(tag_list):
+            if not tag_list: return 0
+            # 过滤掉 0 和负数，并且严格按照财报截止日期 (end) 倒序排列，防修正案作祟
+            valid = [x for x in tag_list if x.get('val', 0) > 0]
+            if not valid: return 0
+            valid.sort(key=lambda x: x.get('end', '1970-01-01'), reverse=True)
+            return float(valid[0]['val'])
+
+        # 医药公司常用于披露总股本的 4 大高频 XBRL 标签 (优先级依次递减)
+        candidates = [
+            ('dei', 'EntityCommonStockSharesOutstanding'),
+            ('us-gaap', 'CommonStockSharesOutstanding'),
+            ('us-gaap', 'WeightedAverageNumberOfSharesOutstandingBasic'),
+            ('us-gaap', 'WeightedAverageNumberOfDilutedSharesOutstanding')
+        ]
+        
+        for domain, tag in candidates:
+            s_list = facts.get(domain, {}).get(tag, {}).get('units', {}).get('shares', [])
+            latest_shares = extract_latest(s_list)
+            if latest_shares > 0:
+                return latest_shares
+                
+        return 0
+    except Exception as e:
+        return 0
+
 # 【差分更新触发器】MarketData Earnings API
 def check_earnings_catalyst(ticker):
     """
@@ -238,22 +274,9 @@ def fetch_market_data(ticker_symbol):
 
     # 2. 算力兜底算市值: 彻底拉黑 Yahoo，直接提取 SEC 最新披露股本 × MarketData 最新收盘价
     if result["price"] != "N/A" and ticker_symbol in CIK_DICT:
-        try:
-            cik = CIK_DICT[ticker_symbol]
-            sec_url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"
-            sec_resp = requests.get(sec_url, headers=SEC_HEADERS, timeout=5)
-            if sec_resp.status_code == 200:
-                facts = sec_resp.json().get('facts', {})
-                # 优先获取 DEI 标准披露的总流通股本
-                shares_data = facts.get('dei', {}).get('EntityCommonStockSharesOutstanding', {}).get('units', {}).get('shares', [])
-                if not shares_data:
-                    # 备用获取 GAAP 标准披露
-                    shares_data = facts.get('us-gaap', {}).get('CommonStockSharesOutstanding', {}).get('units', {}).get('shares', [])
-                
-                if shares_data:
-                    result["market_cap"] = float(shares_data[-1]['val']) * float(result["price"])
-        except:
-            pass
+        shares = get_sec_shares(CIK_DICT[ticker_symbol])
+        if shares > 0:
+            result["market_cap"] = shares * float(result["price"])
 
     # 3. 获取期权异动
     try:
@@ -418,28 +441,19 @@ def run_universe_expansion():
         except Exception:
             pass
 
-        # 2. 纯算力计算市值 (彻底废弃 Yahoo，使用 SEC 真实股本 × 收盘价)
+        # 2. 纯算力计算市值 (使用升级版的 SEC 股本解析器 × 收盘价)
+        shares = 0
         if price > 0:
-            try:
-                sec_url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"
-                sec_resp = requests.get(sec_url, headers=SEC_HEADERS, timeout=5)
-                if sec_resp.status_code == 200:
-                    facts = sec_resp.json().get('facts', {})
-                    shares_data = facts.get('dei', {}).get('EntityCommonStockSharesOutstanding', {}).get('units', {}).get('shares', [])
-                    if not shares_data:
-                        shares_data = facts.get('us-gaap', {}).get('CommonStockSharesOutstanding', {}).get('units', {}).get('shares', [])
-                    
-                    if shares_data:
-                        market_cap = float(shares_data[-1]['val']) * price
-                        print(f"  ⚡ 算力计算成功: 股本({int(shares_data[-1]['val'])}) × 收盘价(${price}) = 市值 ${market_cap / 1e9:.3f}B")
-            except Exception:
-                pass
+            shares = get_sec_shares(cik)
+            if shares > 0:
+                market_cap = shares * price
+                print(f"  ⚡ 算力计算成功: 股本({int(shares):,}) × 收盘价(${price}) = 市值 ${market_cap / 1e9:.3f}B")
 
         if market_cap > 15_000_000_000:
             print(f"  ❌ [DROP] 巨头买方剔除 (市值 > $15B)")
             continue
         elif market_cap <= 0:
-            print(f"  ❌ [DROP] 查无市值或已退市")
+            print(f"  ❌ [DROP] 查无市值或已退市 (Debug -> Price: ${price}, SEC Shares: {int(shares)})")
             continue
         else:
             print(f"  ✅ [PASS] 市值符合被收购区间: ${market_cap / 1e9:.3f}B")
