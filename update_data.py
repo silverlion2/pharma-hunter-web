@@ -59,7 +59,7 @@ except Exception as e:
     send_alert("系统警告", "SEC字典拉取失败，财务抓取将全面降级。")
 
 def get_sec_shares(cik):
-    """核心算力增强：多标签、按日期排序的安全 SEC 股本解析器"""
+    """核心算力增强：多标签、按日期排序的安全 SEC 股本解析器 (完美兼容 ADR 与老牌巨头)"""
     try:
         sec_url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"
         sec_resp = requests.get(sec_url, headers=SEC_HEADERS, timeout=8)
@@ -76,12 +76,16 @@ def get_sec_shares(cik):
             valid.sort(key=lambda x: x.get('end', '1970-01-01'), reverse=True)
             return float(valid[0]['val'])
 
-        # 医药公司常用于披露总股本的 4 大高频 XBRL 标签 (优先级依次递减)
+        # 医药公司常用于披露总股本的 8 大高频 XBRL 标签 (包含 IFRS 国际标准以兼容 AZN/NVO 等 ADR)
         candidates = [
             ('dei', 'EntityCommonStockSharesOutstanding'),
             ('us-gaap', 'CommonStockSharesOutstanding'),
+            ('us-gaap', 'SharesOutstanding'),
+            ('us-gaap', 'CommonStockSharesIssued'),
             ('us-gaap', 'WeightedAverageNumberOfSharesOutstandingBasic'),
-            ('us-gaap', 'WeightedAverageNumberOfDilutedSharesOutstanding')
+            ('us-gaap', 'WeightedAverageNumberOfDilutedSharesOutstanding'),
+            ('ifrs-full', 'NumberOfSharesOutstanding'),
+            ('ifrs-full', 'WeightedAverageNumberOfOrdinarySharesOutstanding')
         ]
         
         for domain, tag in candidates:
@@ -260,25 +264,50 @@ def fetch_market_data(ticker_symbol):
     headers = {"Authorization": f"Bearer {MARKETDATA_TOKEN}"} if MARKETDATA_TOKEN else {}
     yesterday_str = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
     
-    # 1. 获取稳定收盘价: 通过 MarketData Candles 拉取过去 7 天最新的日线收盘价
+    # 1. 价格双擎与基础市值获取 (Quotes -> Candles)
     try:
-        to_date = datetime.now()
-        from_date = to_date - timedelta(days=7)
-        c_url = f"https://api.marketdata.app/v1/stocks/candles/D/{ticker_symbol}/?from={from_date.strftime('%Y-%m-%d')}&to={to_date.strftime('%Y-%m-%d')}"
-        c_resp = requests.get(c_url, headers=headers, timeout=10).json()
-        if c_resp.get('s') == 'ok':
-            c_arr = c_resp.get('c', [])
-            if c_arr: result["price"] = float(c_arr[-1])
-    except Exception as e:
-        result["error"] = f"Candles API Error: {str(e)}"
+        q_url = f"https://api.marketdata.app/v1/stocks/quotes/{ticker_symbol}/"
+        q_resp = requests.get(q_url, headers=headers, timeout=5).json()
+        if q_resp.get('s') == 'ok':
+            result["price"] = float(q_resp.get('last', [0])[0])
+            # [新增防线] 尝试从 Quotes 顺带拿市值
+            mc_arr = q_resp.get('marketcap', [])
+            if mc_arr and mc_arr[0]:
+                result["market_cap"] = float(mc_arr[0])
+    except Exception:
+        pass
 
-    # 2. 算力兜底算市值: 彻底拉黑 Yahoo，直接提取 SEC 最新披露股本 × MarketData 最新收盘价
-    if result["price"] != "N/A" and ticker_symbol in CIK_DICT:
+    if result["price"] == "N/A" or result["price"] <= 0:
+        try:
+            to_date = datetime.now()
+            from_date = to_date - timedelta(days=7)
+            c_url = f"https://api.marketdata.app/v1/stocks/candles/D/{ticker_symbol}/?from={from_date.strftime('%Y-%m-%d')}&to={to_date.strftime('%Y-%m-%d')}"
+            c_resp = requests.get(c_url, headers=headers, timeout=5).json()
+            if c_resp.get('s') == 'ok':
+                c_arr = c_resp.get('c', [])
+                if c_arr: result["price"] = float(c_arr[-1])
+        except Exception as e:
+            result["error"] = f"Price API Error: {str(e)}"
+
+    # 2. 市值兜底防线 A: 如果 Quotes 没拿到市值，调用专业的 MarketData Profile 接口
+    if result["market_cap"] <= 0:
+        try:
+            p_url = f"https://api.marketdata.app/v1/stocks/profile/{ticker_symbol}/"
+            p_resp = requests.get(p_url, headers=headers, timeout=5).json()
+            if p_resp.get('s') == 'ok':
+                mc_arr = p_resp.get('marketcap', [])
+                if mc_arr and mc_arr[0]:
+                    result["market_cap"] = float(mc_arr[0])
+        except Exception:
+            pass
+
+    # 3. 市值终极防线 B: 如果 Profile 也瘫痪，调用 SEC 官方股本乘以收盘价计算
+    if result["market_cap"] <= 0 and result["price"] != "N/A" and result["price"] > 0 and ticker_symbol in CIK_DICT:
         shares = get_sec_shares(CIK_DICT[ticker_symbol])
         if shares > 0:
             result["market_cap"] = shares * float(result["price"])
 
-    # 3. 获取期权异动
+    # 4. 获取期权异动
     try:
         opt_url = f"https://api.marketdata.app/v1/options/chain/{ticker_symbol}?date={yesterday_str}"
         opt_resp = requests.get(opt_url, headers=headers, timeout=10).json()
@@ -428,26 +457,51 @@ def run_universe_expansion():
         market_cap = 0
         price = 0
         
-        # 1. 拿最新价格 (最稳定的 MarketData Candles 历史日线)
+        # 1. 拿最新价格与基础市值 (价格双擎: 优先 Quotes, 兜底 Candles)
+        headers = {"Authorization": f"Bearer {MARKETDATA_TOKEN}"} if MARKETDATA_TOKEN else {}
         try:
-            headers = {"Authorization": f"Bearer {MARKETDATA_TOKEN}"} if MARKETDATA_TOKEN else {}
-            to_date = datetime.now()
-            from_date = to_date - timedelta(days=7)
-            url = f"https://api.marketdata.app/v1/stocks/candles/D/{ticker}/?from={from_date.strftime('%Y-%m-%d')}&to={to_date.strftime('%Y-%m-%d')}"
-            resp = requests.get(url, headers=headers, timeout=5)
-            if resp.status_code == 200 and resp.json().get('s') == 'ok':
-                c_arr = resp.json().get('c', [])
-                if c_arr: price = float(c_arr[-1])
+            q_url = f"https://api.marketdata.app/v1/stocks/quotes/{ticker}/"
+            q_resp = requests.get(q_url, headers=headers, timeout=5).json()
+            if q_resp.get('s') == 'ok':
+                price = float(q_resp.get('last', [0])[0])
+                # [新增] 顺带从 Quotes 提取市值
+                mc_arr = q_resp.get('marketcap', [])
+                if mc_arr and mc_arr[0]:
+                    market_cap = float(mc_arr[0])
         except Exception:
             pass
 
-        # 2. 纯算力计算市值 (使用升级版的 SEC 股本解析器 × 收盘价)
+        if price <= 0:
+            try:
+                to_date = datetime.now()
+                from_date = to_date - timedelta(days=7)
+                c_url = f"https://api.marketdata.app/v1/stocks/candles/D/{ticker}/?from={from_date.strftime('%Y-%m-%d')}&to={to_date.strftime('%Y-%m-%d')}"
+                c_resp = requests.get(c_url, headers=headers, timeout=5).json()
+                if c_resp.get('s') == 'ok':
+                    c_arr = c_resp.get('c', [])
+                    if c_arr: price = float(c_arr[-1])
+            except Exception:
+                pass
+
+        # 2. 市值三擎矩阵: 若 Quotes 无市值 -> 调用 Profile 接口 -> 终极 SEC 算力
+        if market_cap <= 0:
+            try:
+                p_url = f"https://api.marketdata.app/v1/stocks/profile/{ticker}/"
+                p_resp = requests.get(p_url, headers=headers, timeout=5).json()
+                if p_resp.get('s') == 'ok':
+                    mc_arr = p_resp.get('marketcap', [])
+                    if mc_arr and mc_arr[0]:
+                        market_cap = float(mc_arr[0])
+                        print(f"  ⚡ MarketData Profile 获取市值成功: ${market_cap / 1e9:.3f}B")
+            except Exception:
+                pass
+
         shares = 0
-        if price > 0:
+        if market_cap <= 0 and price > 0:
             shares = get_sec_shares(cik)
             if shares > 0:
                 market_cap = shares * price
-                print(f"  ⚡ 算力计算成功: 股本({int(shares):,}) × 收盘价(${price}) = 市值 ${market_cap / 1e9:.3f}B")
+                print(f"  ⚡ SEC 算力计算成功: 股本({int(shares):,}) × 收盘价(${price}) = 市值 ${market_cap / 1e9:.3f}B")
 
         if market_cap > 15_000_000_000:
             print(f"  ❌ [DROP] 巨头买方剔除 (市值 > $15B)")
