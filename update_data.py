@@ -59,7 +59,7 @@ BIOTECH_SEED_UNIVERSE = [
 # ==========================================
 SEC_HEADERS = {"User-Agent": "BioQuantix Founder contact@bioquantix.com"}
 CIK_DICT = {}
-NAME_DICT = {} # 新增：用于 FDA 管线查询的公司全称映射字典
+NAME_DICT = {} 
 
 try:
     print("📥 正在拉取 SEC Ticker-CIK 字典存入内存...")
@@ -67,7 +67,7 @@ try:
     sec_resp.raise_for_status()
     sec_dict_raw = sec_resp.json()
     CIK_DICT = {item['ticker']: str(item['cik_str']).zfill(10) for item in sec_dict_raw.values()}
-    NAME_DICT = {item['ticker']: item['title'] for item in sec_dict_raw.values()} # 同步生成 Ticker->Name
+    NAME_DICT = {item['ticker']: item['title'] for item in sec_dict_raw.values()} 
     print("✅ SEC 字典加载成功！")
 except Exception as e:
     print(f"❌ SEC 字典拉取失败: {e}")
@@ -189,20 +189,48 @@ def fetch_market_data(ticker_symbol):
     if not MARKETDATA_TOKEN:
         result["options_signal"] = "Normal (Token Missing)"
         result["error"] = "MARKETDATA_TOKEN_MISSING"
-        return result
+        # 移除 return，允许用兜底拿市值
         
-    headers = {"Authorization": f"Bearer {MARKETDATA_TOKEN}"}
+    headers = {"Authorization": f"Bearer {MARKETDATA_TOKEN}"} if MARKETDATA_TOKEN else {}
     yesterday_str = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
     
+    # 【修复 1】: 放弃依赖盘中 quotes 接口，改用更稳定的 profile 接口拿市值
     try:
-        q_url = f"https://api.marketdata.app/v1/stocks/quotes/{ticker_symbol}/"
-        q_resp = requests.get(q_url, headers=headers, timeout=10).json()
-        if q_resp.get('s') == 'ok':
-            result["price"] = float(q_resp.get('last', [0])[0])
-            result["market_cap"] = float(q_resp.get('marketcap', [0])[0])
+        p_url = f"https://api.marketdata.app/v1/stocks/profile/{ticker_symbol}/"
+        p_resp = requests.get(p_url, headers=headers, timeout=10).json()
+        if p_resp.get('s') == 'ok':
+            result["market_cap"] = float(p_resp.get('marketcap', [0])[0])
     except Exception as e:
-        result["error"] = f"Quotes API Error: {str(e)}"
-        
+        result["error"] = f"Profile API Error: {str(e)}"
+
+    # [保留] Yahoo 原生 HTTP API 兜底 (双重保险)
+    if result["market_cap"] == 0:
+        try:
+            yh_url = f"https://query2.finance.yahoo.com/v10/finance/quoteSummary/{ticker_symbol}?modules=summaryDetail"
+            yh_headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+            yh_resp = requests.get(yh_url, headers=yh_headers, timeout=5)
+            if yh_resp.status_code == 200:
+                res_arr = yh_resp.json().get("quoteSummary", {}).get("result", [])
+                if res_arr and len(res_arr) > 0:
+                    summary = res_arr[0].get("summaryDetail", {})
+                    mc_raw = summary.get("marketCap", {}).get("raw", 0)
+                    price_raw = summary.get("previousClose", {}).get("raw", 0)
+                    
+                    if mc_raw: result["market_cap"] = float(mc_raw)
+                    if price_raw and result["price"] == "N/A": result["price"] = float(price_raw)
+        except Exception:
+            pass
+
+    # [获取价格] 如果没拿到价格，尝试获取一次每日闭盘价历史
+    if result["price"] == "N/A":
+        try:
+            c_url = f"https://api.marketdata.app/v1/stocks/candles/D/{ticker_symbol}/?from={(datetime.now() - timedelta(days=5)).strftime('%Y-%m-%d')}&to={datetime.now().strftime('%Y-%m-%d')}"
+            c_resp = requests.get(c_url, headers=headers, timeout=10).json()
+            if c_resp.get('s') == 'ok':
+                result["price"] = float(c_resp.get('c', [0])[-1]) # 拿最新一天的收盘价
+        except Exception:
+            pass
+
     try:
         opt_url = f"https://api.marketdata.app/v1/options/chain/{ticker_symbol}?date={yesterday_str}"
         opt_resp = requests.get(opt_url, headers=headers, timeout=10).json()
@@ -305,37 +333,61 @@ def get_ai_digest(ticker, market_data, clin_data, quant_scores):
 # ==========================================
 def run_universe_expansion():
     print("=== 🚀 启动 BioQuantix 数据池扩容引擎 (Phase 6) ===")
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        print("🚨 错误: 环境变量 VITE_SUPABASE_URL 或 VITE_SUPABASE_ANON_KEY 缺失，将只在本地打印结果！")
+        is_dry_run = True
+    else:
+        is_dry_run = False
+
     valid_assets = []
     
     for ticker in BIOTECH_SEED_UNIVERSE:
         name = NAME_DICT.get(ticker, ticker)
         print(f"\n🔍 正在评估标的: {ticker} ({name})...")
         
-        # 1. 过滤市值 (MarketData API)
+        # 1. 过滤市值 (MarketData Profile API + Yahoo 兜底)
+        market_cap = 0
         try:
             headers = {"Authorization": f"Bearer {MARKETDATA_TOKEN}"} if MARKETDATA_TOKEN else {}
-            url = f"https://api.marketdata.app/v1/stocks/quotes/{ticker}/"
+            # 【修复 2】: 扩容部分同样换成 profile 接口
+            url = f"https://api.marketdata.app/v1/stocks/profile/{ticker}/"
             resp = requests.get(url, headers=headers, timeout=5)
             if resp.status_code == 200 and resp.json().get('s') == 'ok':
                 mc_arr = resp.json().get('marketcap', [])
                 market_cap = float(mc_arr[0]) if mc_arr else 0
-                
-                # 核心逻辑：只剔除 >15B 的巨头 和 退市/查不到市值的公司，彻底保留微盘小公司
-                if market_cap > 15_000_000_000:
-                    print(f"  ❌ [DROP] 巨头买方剔除 (市值 > $15B): ${market_cap / 1e9:.3f}B")
-                    continue
-                elif market_cap <= 0:
-                    print(f"  ❌ [DROP] 查无市值或已退市")
-                    continue
-                else:
-                    print(f"  ✅ [PASS] 市值符合被收购区间: ${market_cap / 1e9:.3f}B")
             else:
-                print(f"  ⚠️ [WARN] 获取市值失败，跳过。")
-                continue
-            time.sleep(0.2) # 防止 API 频率限制
+                print(f"  ⚠️ [WARN] MarketData Profile 获取失败 (HTTP {resp.status_code}): {resp.text[:80]}")
         except Exception as e:
-            print(f"  ⚠️ [ERROR] 接口异常: {e}")
+            print(f"  ⚠️ [ERROR] MarketData 接口异常: {e}")
+
+        # [兜底] 如果 MarketData 限流报错导致得不到市值，用 Yahoo 原生请求挽救
+        if market_cap <= 0:
+            print(f"  🔄 触发备用市值抓取通道 (Yahoo Native API)...")
+            try:
+                yh_url = f"https://query2.finance.yahoo.com/v10/finance/quoteSummary/{ticker}?modules=summaryDetail"
+                yh_headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+                yh_resp = requests.get(yh_url, headers=yh_headers, timeout=5)
+                if yh_resp.status_code == 200:
+                    res_arr = yh_resp.json().get("quoteSummary", {}).get("result", [])
+                    if res_arr and len(res_arr) > 0:
+                        mc_raw = res_arr[0].get("summaryDetail", {}).get("marketCap", {}).get("raw", 0)
+                        if mc_raw:
+                            market_cap = float(mc_raw)
+                            print(f"  ✅ [PASS] 备用通道获取市值成功: ${market_cap / 1e9:.3f}B")
+            except Exception as fallback_e:
+                print(f"  ⚠️ [ERROR] 备用通道亦失败: {fallback_e}")
+
+        # 核心逻辑：只剔除 >15B 的巨头 和 退市/查不到市值的公司，彻底保留微盘小公司
+        if market_cap > 15_000_000_000:
+            print(f"  ❌ [DROP] 巨头买方剔除 (市值 > $15B): ${market_cap / 1e9:.3f}B")
             continue
+        elif market_cap <= 0:
+            print(f"  ❌ [DROP] 查无市值或已退市")
+            continue
+        else:
+            print(f"  ✅ [PASS] 市值符合被收购区间: ${market_cap / 1e9:.3f}B")
+            
+        time.sleep(0.2) # 防止 API 频率限制
 
         # 2. FDA 临床管线验证
         clin_data = fetch_clinical_trials(name)
@@ -345,7 +397,6 @@ def run_universe_expansion():
             
         print(f"  🌟 [SUCCESS] 纳入标的池！管线阶段: {clin_data['phase']}")
         
-        # 自动分配一个默认赛道 (后续可在后台进一步人工细化)
         target_area = "Oncology" if hash(ticker) % 2 == 0 else "Metabolic"
         if "autoimmune" in clin_data['desc'].lower(): target_area = "Autoimmune"
         
@@ -358,7 +409,11 @@ def run_universe_expansion():
             "is_past_deal": False
         })
 
-    # 3. 批量 Upsert 写入 Watchlist 表，供日常 Engine 使用
+    if is_dry_run:
+        print("\n[Dry Run] 环境变量缺失，跳过写入 Supabase，流程演示成功。")
+        return
+
+    # 3. 批量 Upsert 写入 Watchlist 表
     print(f"\n开始将 {len(valid_assets)} 条优质标的写入 Watchlist 数据库...")
     for asset in valid_assets:
         try:
