@@ -549,10 +549,146 @@ def run_universe_expansion():
     send_alert("BioQuantix 扩容完成", summary)
 
 # ==========================================
-# 6. 自动化日常主流程 (引入差分过滤优化)
+# 6. 自动化日常主流程 (引入多线程并发与智能差分)
 # ==========================================
+import concurrent.futures
+
+def process_single_target(target, TARGET_SCARCITY_MAP, db_assets_map):
+    """处理单个标的的核心逻辑，被多线程调用"""
+    ticker = target["ticker"]
+    name = target["name"]
+    mechanism = target.get("mechanism", "Unknown")
+    print(f"  [Thread] ⏳ 开始处理标的: {ticker}")
+    
+    historical_data = db_assets_map.get(ticker)
+    
+    clin_data = fetch_clinical_trials(name)
+    market_data = fetch_market_data(ticker)
+    
+    error_logs = []
+    sec_warning_flag = None
+    
+    earnings_info = check_earnings_catalyst(ticker)
+    
+    if market_data["error"]:
+        error_logs.append(f"MarketData Error: {market_data['error']}")
+        if historical_data and historical_data.get('shadow_signals'):
+            market_data["raw_signals"] = historical_data['shadow_signals']
+        else:
+            market_data["raw_signals"] = [{"type": "SYSTEM", "date": "T-1 EOD", "desc": "Data source feedback delayed.", "mood": "DELAYED"}]
+
+    if earnings_info["needs_financial_update"] or not historical_data:
+        fin_data, sec_error_detail = fetch_financials_dual_layer(ticker)
+        if fin_data is None:
+            sec_warning_flag = 'SEC_MISSING' 
+            error_logs.append(f"Financials Error: {sec_error_detail}")
+            c_score = historical_data['cash_score'] if historical_data and historical_data.get('cash_score') else 50.0
+        else:
+            c_score = fin_data["c_score"]
+    else:
+        c_score = historical_data['cash_score'] if historical_data and historical_data.get('cash_score') else 50.0
+        fin_data = {"cash": 1, "runway": 1} 
+    
+    t_score = TARGET_SCARCITY_MAP.get(mechanism, 60.0)
+    
+    v_score = 50.0
+    if fin_data and market_data["market_cap"] > 0 and fin_data.get("cash", 0) > 0:
+        historic_cash = historical_data.get('raw_cash') if historical_data else 0
+        calc_cash = fin_data.get("cash") if fin_data.get("cash") > 1 else historic_cash
+        
+        if calc_cash and calc_cash > 0:
+            p_cash_ratio = market_data["market_cap"] / calc_cash
+            v_score = max(10.0, min(100.0, 105.0 - (p_cash_ratio * 10.0)))
+        elif historical_data and historical_data.get('valuation_score'):
+            v_score = historical_data['valuation_score']
+    elif historical_data and historical_data.get('valuation_score'):
+        v_score = historical_data['valuation_score']
+
+    days_to_clin = clin_data["days_to_clin"]
+    m_score = 50.0
+    if days_to_clin <= 0: m_score = 95.0
+    elif days_to_clin < 90: m_score = 90.0
+    elif days_to_clin < 180: m_score = 75.0
+    elif days_to_clin < 365: m_score = 60.0
+    
+    base_s_score = (c_score * 0.3) + (t_score * 0.4) + (m_score * 0.2) + (v_score * 0.1)
+    final_score = base_s_score * 1.15 if market_data["has_anomaly"] else base_s_score
+    final_score = round(min(final_score, 99.5), 1) 
+    
+    min_days = min(days_to_clin, market_data["days_to_opt"]) * 0.8
+    if min_days < 30: predicted_time = "14-30 Days (Imminent)"
+    elif min_days < 90: predicted_time = "1-3 Months"
+    elif min_days < 180: predicted_time = "3-6 Months"
+    else: predicted_time = "TBD / Event Driven"
+
+    if earnings_info["next_earnings_date"] != "TBD":
+        predicted_time = f"{predicted_time} (Earnings: {earnings_info['next_earnings_date']})"
+    
+    v_adj = max(0, (v_score - 50) / 100.0) * 35.0
+    t_adj = max(0, (t_score - 50) / 100.0) * 25.0
+    prem_val = 40.0 + v_adj + t_adj
+    est_premium = f"+{int(prem_val)}% ~ +{int(prem_val + 15)}%"
+
+    # [优化 2: AI 分析按需触发] 如果分数变化不大且没有期权异动，复用历史 AI 小作文以节省时间
+    score_diff = abs(final_score - (historical_data.get('score', 0) if historical_data else 0))
+    if historical_data and score_diff < 2.0 and not market_data["has_anomaly"] and historical_data.get('digest'):
+        ai_digest = historical_data['digest']
+        # print(f"  [Thread] ⚡ {ticker} 分数无大变动，复用历史 AI 摘要以提速")
+    else:
+        quant_scores = {
+            "c_score": c_score, "t_score": t_score, "m_score": m_score, 
+            "v_score": v_score, "final_score": final_score, "est_premium": est_premium
+        }
+        ai_digest = get_ai_digest(ticker, market_data, clin_data, quant_scores)
+        if ai_digest.startswith("FAILED_TIMEOUT"):
+            sec_warning_flag = 'AI_TIMEOUT' 
+            error_logs.append(f"AI Error: {ai_digest}")
+            if historical_data and historical_data.get('digest'):
+                ai_digest = historical_data['digest']
+            else:
+                ai_digest = "Data source feedback delayed. Maintaining neutral observation status.\n\nVERDICT: Neutral."
+        
+    error_log_str = " | ".join(error_logs) if error_logs else None 
+    
+    db_record = {
+        "ticker": ticker,
+        "name": name,
+        "score": final_score,
+        "cash_score": c_score,
+        "scarcity_score": t_score,
+        "milestone_score": m_score,
+        "valuation_score": v_score,
+        "predicted_time": predicted_time,
+        "estimated_premium": est_premium,
+        "shadow_signals": market_data["raw_signals"], 
+        "digest": ai_digest,
+        "target_area": target["target_area"],
+        "is_past_deal": target["is_past_deal"],
+        "warning_flag": sec_warning_flag,
+        "error_log": error_log_str 
+    }
+    
+    if fin_data and fin_data.get("cash", 0) > 1:
+        db_record["raw_cash"] = fin_data.get("cash")
+
+    if "deal_info" in target and target["deal_info"]:
+         db_record["deal_info"] = target["deal_info"]
+
+    history_record = None
+    if sec_warning_flag or error_log_str: # 只在有警告时记录历史日志，防止表过大
+        history_record = {
+            "ticker": ticker,
+            "score": final_score,
+            "warning_flag": sec_warning_flag,
+            "error_log": error_log_str
+        }
+
+    return {"status": "success", "ticker": ticker, "record": db_record, "history": history_record}
+
+
 def main():
-    print("🚀 BioQuantix EOD Auto-Update Engine Started (Phase 6 Core)...")
+    print("🚀 BioQuantix EOD Auto-Update Engine Started (Phase 6 Core - Concurrent)...")
+    start_time = time.time()
     
     TARGET_SCARCITY_MAP = {}
     try:
@@ -575,166 +711,71 @@ def main():
         print(f"❌ 读取 watchlist 失败: {e}")
         return
 
+    # 预先拉取所有历史资产数据，建立内存字典，避免在循环中反复查询数据库
+    db_assets_map = {}
+    try:
+        hist_resp = supabase.table('assets').select('*').execute()
+        for row in hist_resp.data:
+            db_assets_map[row['ticker']] = row
+    except:
+        print("⚠️ 预加载历史数据失败，将进行回退模式。")
+
     success_count = 0
     fail_count = 0
+    records_to_upsert = []
+    history_logs_to_insert = []
 
-    for target in targets:
-        ticker = target["ticker"]
-        name = target["name"]
-        mechanism = target.get("mechanism", "Unknown")
-        print(f"\n⏳ 正在处理标的: [{ticker}] {name}")
+    print(f"⚡ 开始多线程并发处理 {len(targets)} 个标的...")
+    # [优化 1: 启用多线程池] 设置 max_workers=5 (可以根据服务器情况调大至 10)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        # 提交所有任务给线程池
+        futures = {executor.submit(process_single_target, target, TARGET_SCARCITY_MAP, db_assets_map): target for target in targets}
         
-        historical_data = None
+        # 收集结果
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                result = future.result()
+                if result["status"] == "success":
+                    records_to_upsert.append(result["record"])
+                    if result["history"]:
+                        history_logs_to_insert.append(result["history"])
+                    success_count += 1
+                    print(f"  ✅ [{result['ticker']}] 计算完毕 | 分数: {result['record']['score']}")
+            except Exception as exc:
+                target_name = futures[future]["ticker"]
+                print(f"  ❌ [{target_name}] 线程抛出异常: {exc}")
+                fail_count += 1
+
+    # [优化 3: 批量入库] 将跑完的数据分批一次性写入，极大减少数据库耗时
+    print(f"\n📦 正在将 {len(records_to_upsert)} 条数据批量写入数据库...")
+    if records_to_upsert:
         try:
-            hist_resp = supabase.table('assets').select('*').eq('ticker', ticker).execute()
-            if hist_resp.data and len(hist_resp.data) > 0:
-                historical_data = hist_resp.data[0]
+            # Supabase upsert 支持批量数组
+            for i in range(0, len(records_to_upsert), 50): # 分批次写入，防止 payload 过大
+                chunk = records_to_upsert[i:i+50]
+                supabase.table('assets').upsert(chunk).execute()
+            print("  ✅ 资产数据覆盖成功！")
+        except Exception as e:
+            print(f"  ❌ 批量写入 assets 失败: {e}")
+            
+    if history_logs_to_insert:
+        try:
+            for i in range(0, len(history_logs_to_insert), 50):
+                chunk = history_logs_to_insert[i:i+50]
+                supabase.table('assets_history_log').insert(chunk).execute()
         except:
             pass
 
-        clin_data = fetch_clinical_trials(name)
-        market_data = fetch_market_data(ticker)
-        
-        error_logs = []
-        sec_warning_flag = None
-        
-        # 【触发器】: 检查过去14天是否发了财报 (MarketData Earnings API)
-        earnings_info = check_earnings_catalyst(ticker)
-        
-        if market_data["error"]:
-            error_logs.append(f"MarketData Error: {market_data['error']}")
-            if historical_data and historical_data.get('shadow_signals'):
-                market_data["raw_signals"] = historical_data['shadow_signals']
-            else:
-                market_data["raw_signals"] = [{"type": "SYSTEM", "date": "T-1 EOD", "desc": "Data source feedback delayed.", "mood": "DELAYED"}]
-
-        # 【差分更新核心逻辑】
-        if earnings_info["needs_financial_update"] or not historical_data:
-            print(f"  -> 检测到财报更新或无历史缓存，触发 SEC 深度抓取...")
-            fin_data, sec_error_detail = fetch_financials_dual_layer(ticker)
-            
-            if fin_data is None:
-                sec_warning_flag = 'SEC_MISSING' 
-                error_logs.append(f"Financials Error: {sec_error_detail}")
-                c_score = historical_data['cash_score'] if historical_data and historical_data.get('cash_score') else 50.0
-            else:
-                c_score = fin_data["c_score"]
-        else:
-            print(f"  -> 财报未处于披露期，跳过 SEC 爬取，直接复用历史财务缓存...")
-            c_score = historical_data['cash_score'] if historical_data and historical_data.get('cash_score') else 50.0
-            fin_data = {"cash": 1, "runway": 1} # 虚拟占位，保证下面 v_score 如果需重算时不报错
-        
-        t_score = TARGET_SCARCITY_MAP.get(mechanism, 60.0)
-        
-        # V_score 连续性衰减公式
-        v_score = 50.0
-        # 如果财务更新了，或者市值变动了，重算估值洼地得分
-        if fin_data and market_data["market_cap"] > 0 and fin_data.get("cash", 0) > 0:
-            # 取真实的或者昨天历史的 cash 记录进行动态重算
-            historic_cash = historical_data.get('raw_cash') if historical_data else 0
-            calc_cash = fin_data.get("cash") if fin_data.get("cash") > 1 else historic_cash
-            
-            if calc_cash and calc_cash > 0:
-                p_cash_ratio = market_data["market_cap"] / calc_cash
-                v_score = max(10.0, min(100.0, 105.0 - (p_cash_ratio * 10.0)))
-            elif historical_data and historical_data.get('valuation_score'):
-                v_score = historical_data['valuation_score']
-        elif historical_data and historical_data.get('valuation_score'):
-            v_score = historical_data['valuation_score']
-
-        days_to_clin = clin_data["days_to_clin"]
-        m_score = 50.0
-        if days_to_clin <= 0: m_score = 95.0
-        elif days_to_clin < 90: m_score = 90.0
-        elif days_to_clin < 180: m_score = 75.0
-        elif days_to_clin < 365: m_score = 60.0
-        
-        base_s_score = (c_score * 0.3) + (t_score * 0.4) + (m_score * 0.2) + (v_score * 0.1)
-        final_score = base_s_score * 1.15 if market_data["has_anomaly"] else base_s_score
-        final_score = round(min(final_score, 99.5), 1) 
-        
-        min_days = min(days_to_clin, market_data["days_to_opt"]) * 0.8
-        if min_days < 30: predicted_time = "14-30 Days (Imminent)"
-        elif min_days < 90: predicted_time = "1-3 Months"
-        elif min_days < 180: predicted_time = "3-6 Months"
-        else: predicted_time = "TBD / Event Driven"
-
-        # 加入未来财报 Catalyst 展示
-        if earnings_info["next_earnings_date"] != "TBD":
-            predicted_time = f"{predicted_time} (Earnings: {earnings_info['next_earnings_date']})"
-        
-        v_adj = max(0, (v_score - 50) / 100.0) * 35.0
-        t_adj = max(0, (t_score - 50) / 100.0) * 25.0
-        prem_val = 40.0 + v_adj + t_adj
-        est_premium = f"+{int(prem_val)}% ~ +{int(prem_val + 15)}%"
-
-        print(f"[{ticker}] 计算完毕 | C:{c_score:.1f} T:{t_score:.1f} M:{m_score:.1f} V:{v_score:.1f} | 最终分: {final_score}")
-
-        quant_scores = {
-            "c_score": c_score, "t_score": t_score, "m_score": m_score, 
-            "v_score": v_score, "final_score": final_score, "est_premium": est_premium
-        }
-        ai_digest = get_ai_digest(ticker, market_data, clin_data, quant_scores)
-        
-        if ai_digest.startswith("FAILED_TIMEOUT"):
-            sec_warning_flag = 'AI_TIMEOUT' 
-            error_logs.append(f"AI Error: {ai_digest}")
-            if historical_data and historical_data.get('digest'):
-                ai_digest = historical_data['digest']
-            else:
-                ai_digest = "Data source feedback delayed. Maintaining neutral observation status.\n\nVERDICT: Neutral."
-            
-        success_count += 1
-        error_log_str = " | ".join(error_logs) if error_logs else None 
-        
-        db_record = {
-            "ticker": ticker,
-            "name": name,
-            "score": final_score,
-            "cash_score": c_score,
-            "scarcity_score": t_score,
-            "milestone_score": m_score,
-            "valuation_score": v_score,
-            "predicted_time": predicted_time,
-            "estimated_premium": est_premium,
-            "shadow_signals": market_data["raw_signals"], 
-            "digest": ai_digest,
-            "target_area": target["target_area"],
-            "is_past_deal": target["is_past_deal"],
-            "warning_flag": sec_warning_flag,
-            "error_log": error_log_str 
-        }
-        
-        if fin_data and fin_data.get("cash", 0) > 1:
-            db_record["raw_cash"] = fin_data.get("cash")
-
-        if "deal_info" in target and target["deal_info"]:
-             db_record["deal_info"] = target["deal_info"]
-        
-        try:
-            supabase.table('assets').upsert(db_record).execute()
-        except Exception as e:
-            print(f"❌ {ticker} 写入 assets 失败: {e}")
-            
-        try:
-            history_record = {
-                "ticker": ticker,
-                "score": final_score,
-                "warning_flag": sec_warning_flag,
-                "error_log": error_log_str
-            }
-            supabase.table('assets_history_log').insert(history_record).execute()
-        except Exception as e:
-            pass 
-
-    summary_msg = f"成功跑通: {success_count}条，失败拦截: {fail_count}条。"
+    end_time = time.time()
+    elapsed_minutes = (end_time - start_time) / 60
+    summary_msg = f"并发跑通: {success_count}条，失败: {fail_count}条。总耗时: {elapsed_minutes:.1f}分钟。"
     send_alert("BioQuantix 日常更新完成", summary_msg)
-    print("🎉 所有医药标的 Phase 6 量化闭环执行结束！")
+    print(f"🎉 所有医药标的 Phase 6 量化闭环执行结束！\n📊 {summary_msg}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="BioQuantix 数据管理引擎")
     parser.add_argument("--expand", action="store_true", help="执行宇宙扩容: SEC SIC过滤 -> FDA 验证 -> 入库 Watchlist")
-    parser.add_argument("--daily", action="store_true", help="执行日常更新: 引入差分控制，避免无效的 SEC 爬取")
+    parser.add_argument("--daily", action="store_true", help="执行日常更新: 引入差分控制与多线程并发优化")
     
     args = parser.parse_args()
     
