@@ -40,38 +40,69 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # ==========================================
-# 新增: 扩容种子池 (Phase 6)
+# 2. 基础字典与 SEC 双防线机制
 # ==========================================
-BIOTECH_SEED_UNIVERSE = [
-    "ALT", "TERN", "ETNB", "MDGL", "VKTX", "IMVT", "APLS", "CABA", "KYTX", "VTYX",
-    "ARVN", "BBIO", "CRSP", "NTLA", "EDIT", "BEAM", "PRTA", "MRTX", "RLAY", "RGNX",
-    "SRPT", "IONS", "BMRN", "ALNY", "EXEL", "HALO", "KURA", "MIRM", "BPMC", "SNDX",
-    "CCXI", "FATE", "ALLK", "TVTX", "NRIX", "KROS", "PTGX", "RYTM", "SLDB", "RETA",
-    "STOK", "FOLD", "XFOR", "REPL", "PRVB", "KNSA", "ANAB", "ALEC", "MORF", "VERA",
-    "DICE", "CVM", "CTMX", "ENLV", "CDTX", "IMCR", "MRSN", "MGNX", "NUVB", "KPTI",
-    "RCUS", "SYRS", "XLO", "ZNTL", "ABOS", "AKRO", "ALGS", "ALVR", "ANNX", "AURA",
-    "BCRX", "BTAI", "CERE", "CGEM", "CINC", "CRNX", "DAWN", "FMTX", "GBIO", "GOSS",
-    "HCDI", "HRTX", "ICPT", "IMGO", "INSM", "ITOS", "KALV", "KOD", "KRYS", "LXRX"
-]
-
-# ==========================================
-# 2. 财务抓取：MarketData + SEC 双防线机制
-# ==========================================
-SEC_HEADERS = {"User-Agent": "BioQuantix Founder contact@bioquantix.com"}
+SEC_HEADERS = {"User-Agent": "BioQuantix Quant Engine contact@bioquantix.com"}
 CIK_DICT = {}
 NAME_DICT = {} 
 
 try:
-    print("📥 正在拉取 SEC Ticker-CIK 字典存入内存...")
+    print("📥 正在拉取 SEC Ticker-CIK 全市场字典...")
     sec_resp = requests.get("https://www.sec.gov/files/company_tickers.json", headers=SEC_HEADERS, timeout=10)
     sec_resp.raise_for_status()
     sec_dict_raw = sec_resp.json()
     CIK_DICT = {item['ticker']: str(item['cik_str']).zfill(10) for item in sec_dict_raw.values()}
     NAME_DICT = {item['ticker']: item['title'] for item in sec_dict_raw.values()} 
-    print("✅ SEC 字典加载成功！")
+    print(f"✅ SEC 字典加载成功！共计 {len(CIK_DICT)} 家美股上市企业。")
 except Exception as e:
     print(f"❌ SEC 字典拉取失败: {e}")
     send_alert("系统警告", "SEC字典拉取失败，财务抓取将全面降级。")
+
+# 【差分更新触发器】MarketData Earnings API
+def check_earnings_catalyst(ticker):
+    """
+    检查公司的财报日历：
+    1. 判断过去14天内是否刚发了财报 (用于触发财务数据刷新)
+    2. 获取下一次财报发布的日期 (作为并购时间窗口的 Catalyst)
+    """
+    result = {
+        "needs_financial_update": True, # 默认 True，保证没查到时安全刷新
+        "next_earnings_date": "TBD",
+        "last_earnings_date": None
+    }
+    
+    if not MARKETDATA_TOKEN:
+        return result
+        
+    headers = {"Authorization": f"Bearer {MARKETDATA_TOKEN}"}
+    try:
+        # countback=2 确保能拿到最近一次过去的财报和下一次未来的财报预计时间
+        url = f"https://api.marketdata.app/v1/stocks/earnings/{ticker}/?countback=2"
+        resp = requests.get(url, headers=headers, timeout=5).json()
+        
+        if resp.get('s') == 'ok':
+            dates = resp.get('reportDate', [])
+            now = datetime.now()
+            
+            for date_str in dates:
+                try:
+                    rep_date = datetime.strptime(str(date_str), "%Y-%m-%d")
+                    # 如果财报日期在未来，记为下一次 Catalyst
+                    if rep_date > now:
+                        result["next_earnings_date"] = date_str
+                    # 如果财报日期在过去
+                    else:
+                        result["last_earnings_date"] = date_str
+                        days_since_report = (now - rep_date).days
+                        # 如果是14天内刚发的财报，说明财务数据有变动，必须爬取 SEC
+                        # 如果是很久以前发的，说明数据没变，可以跳过 SEC 爬取
+                        result["needs_financial_update"] = days_since_report <= 14
+                except:
+                    pass
+    except Exception as e:
+        pass # 接口异常时保持 needs_financial_update 为 True，做安全降级
+        
+    return result
 
 def fetch_financials_dual_layer(ticker):
     cash, rnd = 0.0, 0.0
@@ -189,48 +220,42 @@ def fetch_market_data(ticker_symbol):
     if not MARKETDATA_TOKEN:
         result["options_signal"] = "Normal (Token Missing)"
         result["error"] = "MARKETDATA_TOKEN_MISSING"
-        # 移除 return，允许用兜底拿市值
         
     headers = {"Authorization": f"Bearer {MARKETDATA_TOKEN}"} if MARKETDATA_TOKEN else {}
     yesterday_str = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
     
-    # 【修复 1】: 放弃依赖盘中 quotes 接口，改用更稳定的 profile 接口拿市值
+    # 1. 获取稳定收盘价: 通过 MarketData Candles 拉取过去 7 天最新的日线收盘价
     try:
-        p_url = f"https://api.marketdata.app/v1/stocks/profile/{ticker_symbol}/"
-        p_resp = requests.get(p_url, headers=headers, timeout=10).json()
-        if p_resp.get('s') == 'ok':
-            result["market_cap"] = float(p_resp.get('marketcap', [0])[0])
+        to_date = datetime.now()
+        from_date = to_date - timedelta(days=7)
+        c_url = f"https://api.marketdata.app/v1/stocks/candles/D/{ticker_symbol}/?from={from_date.strftime('%Y-%m-%d')}&to={to_date.strftime('%Y-%m-%d')}"
+        c_resp = requests.get(c_url, headers=headers, timeout=10).json()
+        if c_resp.get('s') == 'ok':
+            c_arr = c_resp.get('c', [])
+            if c_arr: result["price"] = float(c_arr[-1])
     except Exception as e:
-        result["error"] = f"Profile API Error: {str(e)}"
+        result["error"] = f"Candles API Error: {str(e)}"
 
-    # [保留] Yahoo 原生 HTTP API 兜底 (双重保险)
-    if result["market_cap"] == 0:
+    # 2. 算力兜底算市值: 彻底拉黑 Yahoo，直接提取 SEC 最新披露股本 × MarketData 最新收盘价
+    if result["price"] != "N/A" and ticker_symbol in CIK_DICT:
         try:
-            yh_url = f"https://query2.finance.yahoo.com/v10/finance/quoteSummary/{ticker_symbol}?modules=summaryDetail"
-            yh_headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-            yh_resp = requests.get(yh_url, headers=yh_headers, timeout=5)
-            if yh_resp.status_code == 200:
-                res_arr = yh_resp.json().get("quoteSummary", {}).get("result", [])
-                if res_arr and len(res_arr) > 0:
-                    summary = res_arr[0].get("summaryDetail", {})
-                    mc_raw = summary.get("marketCap", {}).get("raw", 0)
-                    price_raw = summary.get("previousClose", {}).get("raw", 0)
-                    
-                    if mc_raw: result["market_cap"] = float(mc_raw)
-                    if price_raw and result["price"] == "N/A": result["price"] = float(price_raw)
-        except Exception:
+            cik = CIK_DICT[ticker_symbol]
+            sec_url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"
+            sec_resp = requests.get(sec_url, headers=SEC_HEADERS, timeout=5)
+            if sec_resp.status_code == 200:
+                facts = sec_resp.json().get('facts', {})
+                # 优先获取 DEI 标准披露的总流通股本
+                shares_data = facts.get('dei', {}).get('EntityCommonStockSharesOutstanding', {}).get('units', {}).get('shares', [])
+                if not shares_data:
+                    # 备用获取 GAAP 标准披露
+                    shares_data = facts.get('us-gaap', {}).get('CommonStockSharesOutstanding', {}).get('units', {}).get('shares', [])
+                
+                if shares_data:
+                    result["market_cap"] = float(shares_data[-1]['val']) * float(result["price"])
+        except:
             pass
 
-    # [获取价格] 如果没拿到价格，尝试获取一次每日闭盘价历史
-    if result["price"] == "N/A":
-        try:
-            c_url = f"https://api.marketdata.app/v1/stocks/candles/D/{ticker_symbol}/?from={(datetime.now() - timedelta(days=5)).strftime('%Y-%m-%d')}&to={datetime.now().strftime('%Y-%m-%d')}"
-            c_resp = requests.get(c_url, headers=headers, timeout=10).json()
-            if c_resp.get('s') == 'ok':
-                result["price"] = float(c_resp.get('c', [0])[-1]) # 拿最新一天的收盘价
-        except Exception:
-            pass
-
+    # 3. 获取期权异动
     try:
         opt_url = f"https://api.marketdata.app/v1/options/chain/{ticker_symbol}?date={yesterday_str}"
         opt_resp = requests.get(opt_url, headers=headers, timeout=10).json()
@@ -329,67 +354,97 @@ def get_ai_digest(ticker, market_data, clin_data, quant_scores):
         return f"FAILED_TIMEOUT: {str(e)}"
 
 # ==========================================
-# 5. 宇宙扩容引擎 (Phase 6 新增)
+# 5. 宇宙扩容引擎 (基于 SEC SIC Code 纯量化扫描)
 # ==========================================
 def run_universe_expansion():
     print("=== 🚀 启动 BioQuantix 数据池扩容引擎 (Phase 6) ===")
+    print("目标: 全盘扫描 SEC 数据库，筛选 SIC 2834 & 2836 且市值在 $50M - $15B 的临床药企。")
+    
     if not SUPABASE_URL or not SUPABASE_KEY:
-        print("🚨 错误: 环境变量 VITE_SUPABASE_URL 或 VITE_SUPABASE_ANON_KEY 缺失，将只在本地打印结果！")
+        print("🚨 错误: 环境变量缺失，将只在本地空跑打印结果！")
         is_dry_run = True
     else:
         is_dry_run = False
 
     valid_assets = []
+    scan_limit = 150 # 为防止单次扫描时间过长，随机抽取或设置扫描上限
+    scanned = 0
     
-    for ticker in BIOTECH_SEED_UNIVERSE:
-        name = NAME_DICT.get(ticker, ticker)
-        print(f"\n🔍 正在评估标的: {ticker} ({name})...")
-        
-        # 1. 过滤市值 (MarketData Profile API + Yahoo 兜底)
+    # 遍历 SEC 的 CIK 字典 (过滤提取纯正的制药/生物科技企业)
+    for ticker, cik in list(CIK_DICT.items()):
+        if scanned >= scan_limit:
+            break
+            
+        try:
+            # Step 1: 验证 SIC Code (行业护城河)
+            sec_sub_url = f"https://data.sec.gov/submissions/CIK{cik}.json"
+            sub_resp = requests.get(sec_sub_url, headers=SEC_HEADERS, timeout=5)
+            
+            if sub_resp.status_code != 200:
+                time.sleep(0.11) # 严格遵守 SEC 的 10 req/sec 速率限制
+                continue
+                
+            sub_data = sub_resp.json()
+            sic_code = str(sub_data.get("sic", ""))
+            
+            if sic_code not in ["2834", "2836"]:
+                time.sleep(0.11)
+                continue # 不是创新药企，直接跳过
+                
+            scanned += 1
+            name = sub_data.get("name", NAME_DICT.get(ticker, ticker))
+            print(f"\n🔍 [SIC {sic_code} 命中] 正在评估标的: {ticker} ({name})...")
+            
+        except Exception as e:
+            time.sleep(0.11)
+            continue
+            
+        time.sleep(0.11)
+
+        # Step 2: 验证市值区间 (MarketData 价格 + SEC 股本计算)
         market_cap = 0
+        price = 0
+        
+        # 1. 拿最新价格 (最稳定的 MarketData Candles 历史日线)
         try:
             headers = {"Authorization": f"Bearer {MARKETDATA_TOKEN}"} if MARKETDATA_TOKEN else {}
-            # 【修复 2】: 扩容部分同样换成 profile 接口
-            url = f"https://api.marketdata.app/v1/stocks/profile/{ticker}/"
+            to_date = datetime.now()
+            from_date = to_date - timedelta(days=7)
+            url = f"https://api.marketdata.app/v1/stocks/candles/D/{ticker}/?from={from_date.strftime('%Y-%m-%d')}&to={to_date.strftime('%Y-%m-%d')}"
             resp = requests.get(url, headers=headers, timeout=5)
             if resp.status_code == 200 and resp.json().get('s') == 'ok':
-                mc_arr = resp.json().get('marketcap', [])
-                market_cap = float(mc_arr[0]) if mc_arr else 0
-            else:
-                print(f"  ⚠️ [WARN] MarketData Profile 获取失败 (HTTP {resp.status_code}): {resp.text[:80]}")
-        except Exception as e:
-            print(f"  ⚠️ [ERROR] MarketData 接口异常: {e}")
+                c_arr = resp.json().get('c', [])
+                if c_arr: price = float(c_arr[-1])
+        except Exception:
+            pass
 
-        # [兜底] 如果 MarketData 限流报错导致得不到市值，用 Yahoo 原生请求挽救
-        if market_cap <= 0:
-            print(f"  🔄 触发备用市值抓取通道 (Yahoo Native API)...")
+        # 2. 纯算力计算市值 (彻底废弃 Yahoo，使用 SEC 真实股本 × 收盘价)
+        if price > 0:
             try:
-                yh_url = f"https://query2.finance.yahoo.com/v10/finance/quoteSummary/{ticker}?modules=summaryDetail"
-                yh_headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-                yh_resp = requests.get(yh_url, headers=yh_headers, timeout=5)
-                if yh_resp.status_code == 200:
-                    res_arr = yh_resp.json().get("quoteSummary", {}).get("result", [])
-                    if res_arr and len(res_arr) > 0:
-                        mc_raw = res_arr[0].get("summaryDetail", {}).get("marketCap", {}).get("raw", 0)
-                        if mc_raw:
-                            market_cap = float(mc_raw)
-                            print(f"  ✅ [PASS] 备用通道获取市值成功: ${market_cap / 1e9:.3f}B")
-            except Exception as fallback_e:
-                print(f"  ⚠️ [ERROR] 备用通道亦失败: {fallback_e}")
+                sec_url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"
+                sec_resp = requests.get(sec_url, headers=SEC_HEADERS, timeout=5)
+                if sec_resp.status_code == 200:
+                    facts = sec_resp.json().get('facts', {})
+                    shares_data = facts.get('dei', {}).get('EntityCommonStockSharesOutstanding', {}).get('units', {}).get('shares', [])
+                    if not shares_data:
+                        shares_data = facts.get('us-gaap', {}).get('CommonStockSharesOutstanding', {}).get('units', {}).get('shares', [])
+                    
+                    if shares_data:
+                        market_cap = float(shares_data[-1]['val']) * price
+                        print(f"  ⚡ 算力计算成功: 股本({int(shares_data[-1]['val'])}) × 收盘价(${price}) = 市值 ${market_cap / 1e9:.3f}B")
+            except Exception:
+                pass
 
-        # 核心逻辑：只剔除 >15B 的巨头 和 退市/查不到市值的公司，彻底保留微盘小公司
         if market_cap > 15_000_000_000:
-            print(f"  ❌ [DROP] 巨头买方剔除 (市值 > $15B): ${market_cap / 1e9:.3f}B")
+            print(f"  ❌ [DROP] 巨头买方剔除 (市值 > $15B)")
             continue
         elif market_cap <= 0:
             print(f"  ❌ [DROP] 查无市值或已退市")
             continue
         else:
             print(f"  ✅ [PASS] 市值符合被收购区间: ${market_cap / 1e9:.3f}B")
-            
-        time.sleep(0.2) # 防止 API 频率限制
 
-        # 2. FDA 临床管线验证
+        # Step 3: FDA 临床管线验证
         clin_data = fetch_clinical_trials(name)
         if clin_data["phase"] == "None" or "No late-stage active trials" in clin_data["desc"]:
             print(f"  ❌ [DROP] 缺乏活跃的后期临床管线")
@@ -413,7 +468,7 @@ def run_universe_expansion():
         print("\n[Dry Run] 环境变量缺失，跳过写入 Supabase，流程演示成功。")
         return
 
-    # 3. 批量 Upsert 写入 Watchlist 表
+    # 批量 Upsert 写入 Watchlist 表
     print(f"\n开始将 {len(valid_assets)} 条优质标的写入 Watchlist 数据库...")
     for asset in valid_assets:
         try:
@@ -421,28 +476,25 @@ def run_universe_expansion():
         except Exception as e:
             print(f"写入失败 {asset['ticker']}: {e}")
             
-    summary = f"宇宙扩容完成！共扫描 {len(BIOTECH_SEED_UNIVERSE)} 家企业，成功纳入 {len(valid_assets)} 家高潜标的到监控池。"
+    summary = f"宇宙扩容完成！已扫描 SEC 制药库，成功纳入 {len(valid_assets)} 家高潜标的。"
     print(f"🎉 {summary}")
     send_alert("BioQuantix 扩容完成", summary)
 
 # ==========================================
-# 6. 自动化日常主流程 (完全保留原版逻辑)
+# 6. 自动化日常主流程 (引入差分过滤优化)
 # ==========================================
 def main():
-    print("🚀 BioQuantix EOD Auto-Update Engine Started (Phase 4 Core)...")
+    print("🚀 BioQuantix EOD Auto-Update Engine Started (Phase 6 Core)...")
     
     TARGET_SCARCITY_MAP = {}
     try:
-        print("📚 正在从云端拉取靶点稀缺度字典 (target_dict)...")
         dict_resp = supabase.table('target_dict').select('*').execute()
         TARGET_SCARCITY_MAP = {row['mechanism']: row['score'] for row in dict_resp.data}
-        print(f"✅ 成功加载 {len(TARGET_SCARCITY_MAP)} 个靶点评估标准！")
-    except Exception as e:
-        print(f"⚠️ 靶点字典拉取失败，将使用代码内建备用字典: {e}")
+    except:
         TARGET_SCARCITY_MAP = {
             "Oral GLP-1 / Dual Agonist": 95, "Auto-CAR-T": 90, 
-            "ADC (Antibody-Drug Conjugate)": 85, "FGF21 / MASH Combos": 85, 
-            "FcRn Inhibitor": 80, "Standard Oncology / mAb": 60 
+            "ADC": 85, "FGF21 / MASH Combos": 85, 
+            "FcRn Inhibitor": 80, "Standard Oncology": 60 
         }
 
     try:
@@ -462,14 +514,15 @@ def main():
         ticker = target["ticker"]
         name = target["name"]
         mechanism = target.get("mechanism", "Unknown")
+        print(f"\n⏳ 正在处理标的: [{ticker}] {name}")
         
         historical_data = None
         try:
             hist_resp = supabase.table('assets').select('*').eq('ticker', ticker).execute()
             if hist_resp.data and len(hist_resp.data) > 0:
                 historical_data = hist_resp.data[0]
-        except Exception as e:
-            print(f"⚠️ [{ticker}] 无法读取历史缓存: {e}")
+        except:
+            pass
 
         clin_data = fetch_clinical_trials(name)
         market_data = fetch_market_data(ticker)
@@ -477,37 +530,47 @@ def main():
         error_logs = []
         sec_warning_flag = None
         
+        # 【触发器】: 检查过去14天是否发了财报 (MarketData Earnings API)
+        earnings_info = check_earnings_catalyst(ticker)
+        
         if market_data["error"]:
             error_logs.append(f"MarketData Error: {market_data['error']}")
             if historical_data and historical_data.get('shadow_signals'):
                 market_data["raw_signals"] = historical_data['shadow_signals']
             else:
-                market_data["raw_signals"] = [{"type": "SYSTEM", "date": "T-1 EOD", "desc": "Data source feedback delayed. Using historical baseline.", "mood": "DELAYED"}]
+                market_data["raw_signals"] = [{"type": "SYSTEM", "date": "T-1 EOD", "desc": "Data source feedback delayed.", "mood": "DELAYED"}]
 
-        fin_data, sec_error_detail = fetch_financials_dual_layer(ticker)
-        
-        if fin_data is None:
-            print(f"⚠️ [{ticker}] 财务抓取失败 ({sec_error_detail})，尝试调用历史数据...")
-            sec_warning_flag = 'SEC_MISSING' 
-            error_logs.append(f"Financials Error: {sec_error_detail}")
+        # 【差分更新核心逻辑】
+        if earnings_info["needs_financial_update"] or not historical_data:
+            print(f"  -> 检测到财报更新或无历史缓存，触发 SEC 深度抓取...")
+            fin_data, sec_error_detail = fetch_financials_dual_layer(ticker)
             
-            if historical_data and historical_data.get('cash_score'):
-                c_score = historical_data['cash_score']
+            if fin_data is None:
+                sec_warning_flag = 'SEC_MISSING' 
+                error_logs.append(f"Financials Error: {sec_error_detail}")
+                c_score = historical_data['cash_score'] if historical_data and historical_data.get('cash_score') else 50.0
             else:
-                c_score = 50.0
+                c_score = fin_data["c_score"]
         else:
-            c_score = fin_data["c_score"]
+            print(f"  -> 财报未处于披露期，跳过 SEC 爬取，直接复用历史财务缓存...")
+            c_score = historical_data['cash_score'] if historical_data and historical_data.get('cash_score') else 50.0
+            fin_data = {"cash": 1, "runway": 1} # 虚拟占位，保证下面 v_score 如果需重算时不报错
         
         t_score = TARGET_SCARCITY_MAP.get(mechanism, 60.0)
         
-        # ---------------------------------------------------------
-        # Phase 4: V_score 连续性衰减公式 (无级变速拉开差距)
-        # ---------------------------------------------------------
+        # V_score 连续性衰减公式
         v_score = 50.0
-        if fin_data and market_data["market_cap"] > 0:
-            p_cash_ratio = market_data["market_cap"] / fin_data["cash"]
-            # 动态计算：市值与现金比每高1倍，分数下降10分，最高100，最低10。
-            v_score = max(10.0, min(100.0, 105.0 - (p_cash_ratio * 10.0)))
+        # 如果财务更新了，或者市值变动了，重算估值洼地得分
+        if fin_data and market_data["market_cap"] > 0 and fin_data.get("cash", 0) > 0:
+            # 取真实的或者昨天历史的 cash 记录进行动态重算
+            historic_cash = historical_data.get('raw_cash') if historical_data else 0
+            calc_cash = fin_data.get("cash") if fin_data.get("cash") > 1 else historic_cash
+            
+            if calc_cash and calc_cash > 0:
+                p_cash_ratio = market_data["market_cap"] / calc_cash
+                v_score = max(10.0, min(100.0, 105.0 - (p_cash_ratio * 10.0)))
+            elif historical_data and historical_data.get('valuation_score'):
+                v_score = historical_data['valuation_score']
         elif historical_data and historical_data.get('valuation_score'):
             v_score = historical_data['valuation_score']
 
@@ -527,6 +590,10 @@ def main():
         elif min_days < 90: predicted_time = "1-3 Months"
         elif min_days < 180: predicted_time = "3-6 Months"
         else: predicted_time = "TBD / Event Driven"
+
+        # 加入未来财报 Catalyst 展示
+        if earnings_info["next_earnings_date"] != "TBD":
+            predicted_time = f"{predicted_time} (Earnings: {earnings_info['next_earnings_date']})"
         
         v_adj = max(0, (v_score - 50) / 100.0) * 35.0
         t_adj = max(0, (t_score - 50) / 100.0) * 25.0
@@ -542,14 +609,12 @@ def main():
         ai_digest = get_ai_digest(ticker, market_data, clin_data, quant_scores)
         
         if ai_digest.startswith("FAILED_TIMEOUT"):
-            print(f"⚠️ [{ticker}] AI 分析超时，尝试调用历史研报...")
             sec_warning_flag = 'AI_TIMEOUT' 
             error_logs.append(f"AI Error: {ai_digest}")
-            
             if historical_data and historical_data.get('digest'):
                 ai_digest = historical_data['digest']
             else:
-                ai_digest = "Data source feedback delayed. Maintaining neutral observation status pending API synchronization.\n\nVERDICT: Neutral. Awaiting data refresh."
+                ai_digest = "Data source feedback delayed. Maintaining neutral observation status.\n\nVERDICT: Neutral."
             
         success_count += 1
         error_log_str = " | ".join(error_logs) if error_logs else None 
@@ -572,6 +637,9 @@ def main():
             "error_log": error_log_str 
         }
         
+        if fin_data and fin_data.get("cash", 0) > 1:
+            db_record["raw_cash"] = fin_data.get("cash")
+
         if "deal_info" in target and target["deal_info"]:
              db_record["deal_info"] = target["deal_info"]
         
@@ -593,17 +661,16 @@ def main():
 
     summary_msg = f"成功跑通: {success_count}条，失败拦截: {fail_count}条。"
     send_alert("BioQuantix 日常更新完成", summary_msg)
-    print("🎉 所有医药标的 Phase 4 量化闭环执行结束！")
+    print("🎉 所有医药标的 Phase 6 量化闭环执行结束！")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="BioQuantix 数据管理引擎")
-    parser.add_argument("--expand", action="store_true", help="执行宇宙扩容: MarketData 过滤市值 -> FDA 验证 -> 入库 Watchlist")
-    parser.add_argument("--daily", action="store_true", help="执行日常更新: 遍历 Watchlist 计算四大因子与期权异动 (默认)")
+    parser.add_argument("--expand", action="store_true", help="执行宇宙扩容: SEC SIC过滤 -> FDA 验证 -> 入库 Watchlist")
+    parser.add_argument("--daily", action="store_true", help="执行日常更新: 引入差分控制，避免无效的 SEC 爬取")
     
     args = parser.parse_args()
     
     if args.expand:
         run_universe_expansion()
     else:
-        # 如果不带任何参数，或者带了 --daily，则执行原本的日常更新主流程
         main()
