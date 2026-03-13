@@ -3,6 +3,7 @@ import requests
 import json
 import math
 import time
+import argparse
 from datetime import datetime, timedelta
 from supabase import create_client, Client
 
@@ -39,10 +40,26 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # ==========================================
+# 新增: 扩容种子池 (Phase 6)
+# ==========================================
+BIOTECH_SEED_UNIVERSE = [
+    "ALT", "TERN", "ETNB", "MDGL", "VKTX", "IMVT", "APLS", "CABA", "KYTX", "VTYX",
+    "ARVN", "BBIO", "CRSP", "NTLA", "EDIT", "BEAM", "PRTA", "MRTX", "RLAY", "RGNX",
+    "SRPT", "IONS", "BMRN", "ALNY", "EXEL", "HALO", "KURA", "MIRM", "BPMC", "SNDX",
+    "CCXI", "FATE", "ALLK", "TVTX", "NRIX", "KROS", "PTGX", "RYTM", "SLDB", "RETA",
+    "STOK", "FOLD", "XFOR", "REPL", "PRVB", "KNSA", "ANAB", "ALEC", "MORF", "VERA",
+    "DICE", "CVM", "CTMX", "ENLV", "CDTX", "IMCR", "MRSN", "MGNX", "NUVB", "KPTI",
+    "RCUS", "SYRS", "XLO", "ZNTL", "ABOS", "AKRO", "ALGS", "ALVR", "ANNX", "AURA",
+    "BCRX", "BTAI", "CERE", "CGEM", "CINC", "CRNX", "DAWN", "FMTX", "GBIO", "GOSS",
+    "HCDI", "HRTX", "ICPT", "IMGO", "INSM", "ITOS", "KALV", "KOD", "KRYS", "LXRX"
+]
+
+# ==========================================
 # 2. 财务抓取：MarketData + SEC 双防线机制
 # ==========================================
 SEC_HEADERS = {"User-Agent": "BioQuantix Founder contact@bioquantix.com"}
 CIK_DICT = {}
+NAME_DICT = {} # 新增：用于 FDA 管线查询的公司全称映射字典
 
 try:
     print("📥 正在拉取 SEC Ticker-CIK 字典存入内存...")
@@ -50,6 +67,7 @@ try:
     sec_resp.raise_for_status()
     sec_dict_raw = sec_resp.json()
     CIK_DICT = {item['ticker']: str(item['cik_str']).zfill(10) for item in sec_dict_raw.values()}
+    NAME_DICT = {item['ticker']: item['title'] for item in sec_dict_raw.values()} # 同步生成 Ticker->Name
     print("✅ SEC 字典加载成功！")
 except Exception as e:
     print(f"❌ SEC 字典拉取失败: {e}")
@@ -283,7 +301,77 @@ def get_ai_digest(ticker, market_data, clin_data, quant_scores):
         return f"FAILED_TIMEOUT: {str(e)}"
 
 # ==========================================
-# 5. 自动化主流程
+# 5. 宇宙扩容引擎 (Phase 6 新增)
+# ==========================================
+def run_universe_expansion():
+    print("=== 🚀 启动 BioQuantix 数据池扩容引擎 (Phase 6) ===")
+    valid_assets = []
+    
+    for ticker in BIOTECH_SEED_UNIVERSE:
+        name = NAME_DICT.get(ticker, ticker)
+        print(f"\n🔍 正在评估标的: {ticker} ({name})...")
+        
+        # 1. 过滤市值 (MarketData API)
+        try:
+            headers = {"Authorization": f"Bearer {MARKETDATA_TOKEN}"} if MARKETDATA_TOKEN else {}
+            url = f"https://api.marketdata.app/v1/stocks/quotes/{ticker}/"
+            resp = requests.get(url, headers=headers, timeout=5)
+            if resp.status_code == 200 and resp.json().get('s') == 'ok':
+                mc_arr = resp.json().get('marketcap', [])
+                market_cap = float(mc_arr[0]) if mc_arr else 0
+                
+                # 核心逻辑：只剔除 >15B 的巨头 和 退市/查不到市值的公司，彻底保留微盘小公司
+                if market_cap > 15_000_000_000:
+                    print(f"  ❌ [DROP] 巨头买方剔除 (市值 > $15B): ${market_cap / 1e9:.3f}B")
+                    continue
+                elif market_cap <= 0:
+                    print(f"  ❌ [DROP] 查无市值或已退市")
+                    continue
+                else:
+                    print(f"  ✅ [PASS] 市值符合被收购区间: ${market_cap / 1e9:.3f}B")
+            else:
+                print(f"  ⚠️ [WARN] 获取市值失败，跳过。")
+                continue
+            time.sleep(0.2) # 防止 API 频率限制
+        except Exception as e:
+            print(f"  ⚠️ [ERROR] 接口异常: {e}")
+            continue
+
+        # 2. FDA 临床管线验证
+        clin_data = fetch_clinical_trials(name)
+        if clin_data["phase"] == "None" or "No late-stage active trials" in clin_data["desc"]:
+            print(f"  ❌ [DROP] 缺乏活跃的后期临床管线")
+            continue
+            
+        print(f"  🌟 [SUCCESS] 纳入标的池！管线阶段: {clin_data['phase']}")
+        
+        # 自动分配一个默认赛道 (后续可在后台进一步人工细化)
+        target_area = "Oncology" if hash(ticker) % 2 == 0 else "Metabolic"
+        if "autoimmune" in clin_data['desc'].lower(): target_area = "Autoimmune"
+        
+        valid_assets.append({
+            "ticker": ticker,
+            "name": name,
+            "mechanism": "TBD",
+            "target_area": target_area,
+            "is_active": True,
+            "is_past_deal": False
+        })
+
+    # 3. 批量 Upsert 写入 Watchlist 表，供日常 Engine 使用
+    print(f"\n开始将 {len(valid_assets)} 条优质标的写入 Watchlist 数据库...")
+    for asset in valid_assets:
+        try:
+            supabase.table('watchlist').upsert(asset).execute()
+        except Exception as e:
+            print(f"写入失败 {asset['ticker']}: {e}")
+            
+    summary = f"宇宙扩容完成！共扫描 {len(BIOTECH_SEED_UNIVERSE)} 家企业，成功纳入 {len(valid_assets)} 家高潜标的到监控池。"
+    print(f"🎉 {summary}")
+    send_alert("BioQuantix 扩容完成", summary)
+
+# ==========================================
+# 6. 自动化日常主流程 (完全保留原版逻辑)
 # ==========================================
 def main():
     print("🚀 BioQuantix EOD Auto-Update Engine Started (Phase 4 Core)...")
@@ -453,4 +541,14 @@ def main():
     print("🎉 所有医药标的 Phase 4 量化闭环执行结束！")
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="BioQuantix 数据管理引擎")
+    parser.add_argument("--expand", action="store_true", help="执行宇宙扩容: MarketData 过滤市值 -> FDA 验证 -> 入库 Watchlist")
+    parser.add_argument("--daily", action="store_true", help="执行日常更新: 遍历 Watchlist 计算四大因子与期权异动 (默认)")
+    
+    args = parser.parse_args()
+    
+    if args.expand:
+        run_universe_expansion()
+    else:
+        # 如果不带任何参数，或者带了 --daily，则执行原本的日常更新主流程
+        main()

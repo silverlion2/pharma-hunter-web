@@ -1,11 +1,22 @@
-name: BioQuantix Daily EOD Data Batch
+name: BioQuantix Data Pipeline
 
 on:
   schedule:
-    # 周二至周六 UTC 11点 (对应美东时间早晨 6:00)
+    # 日常更新：周二至周六 UTC 11点 (对应美东时间早晨 6:00)
     # 避开深夜 MarketData 结算盲区，确保抓取到前一天的完整 EOD 历史数据
     - cron: '0 11 * * 2-6' 
-  workflow_dispatch: # 允许你随时手动点击运行
+    # 每月扩容：每月 1 号 UTC 12点，自动执行宇宙扩容，寻找新标的
+    - cron: '0 12 1 * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: '选择运行模式 (daily: 日常更新, expand: 宇宙扩容)'
+        required: true
+        default: 'daily'
+        type: choice
+        options:
+          - daily
+          - expand
 
 jobs:
   update-data:
@@ -23,11 +34,23 @@ jobs:
         # 仅安装必要的 requests (调用API) 和 supabase (写库)
         run: pip install requests supabase
 
-      - name: Run EOD Scraper and AI Engine
+      - name: Determine Run Mode
+        id: check_mode
+        # 根据触发方式(手动选择 或 不同的定时任务)动态决定运行参数
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "RUN_MODE=--${{ github.event.inputs.mode }}" >> $GITHUB_ENV
+          elif [ "${{ github.event.schedule }}" = "0 12 1 * *" ]; then
+            echo "RUN_MODE=--expand" >> $GITHUB_ENV
+          else
+            echo "RUN_MODE=--daily" >> $GITHUB_ENV
+          fi
+
+      - name: Run BioQuantix Engine
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           DEEPSEEK_KEY: ${{ secrets.DEEPSEEK_KEY }}
           MARKETDATA_TOKEN: ${{ secrets.MARKETDATA_TOKEN }}
-          BARK_KEY: ${{ secrets.BARK_KEY }} # 【新增】给程序注入手机报警权限
-        run: python update_data.py
+          BARK_KEY: ${{ secrets.BARK_KEY }} # 给程序注入手机报警权限
+        run: python update_data.py $RUN_MODE
