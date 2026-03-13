@@ -410,7 +410,7 @@ def get_ai_digest(ticker, market_data, clin_data, quant_scores):
 # ==========================================
 def run_universe_expansion():
     print("=== 🚀 启动 BioQuantix 数据池扩容引擎 (Phase 6) ===")
-    print("目标: 全盘扫描 SEC 数据库，筛选 SIC 2834 & 2836 且市值在 $50M - $15B 的临床药企。")
+    print("目标: 全盘扫描 SEC 数据库，筛选 SIC 2834 & 2836 且市值在 $50M - $30B 的临床药企。")
     
     if not SUPABASE_URL or not SUPABASE_KEY:
         print("🚨 错误: 环境变量缺失，将只在本地空跑打印结果！")
@@ -503,8 +503,8 @@ def run_universe_expansion():
                 market_cap = shares * price
                 print(f"  ⚡ SEC 算力计算成功: 股本({int(shares):,}) × 收盘价(${price}) = 市值 ${market_cap / 1e9:.3f}B")
 
-        if market_cap > 15_000_000_000:
-            print(f"  ❌ [DROP] 巨头买方剔除 (市值 > $15B)")
+        if market_cap > 30_000_000_000:
+            print(f"  ❌ [DROP] 巨头买方剔除 (市值 > $30B)")
             continue
         elif market_cap <= 0:
             print(f"  ❌ [DROP] 查无市值或已退市 (Debug -> Price: ${price}, SEC Shares: {int(shares)})")
