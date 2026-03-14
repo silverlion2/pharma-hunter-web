@@ -337,7 +337,7 @@ def fetch_market_data(ticker_symbol):
     return result
 
 def fetch_latest_news(ticker):
-    """MarketData News API (Beta): 获取标的最新一条新闻标题"""
+    """MarketData News API (Beta): 获取标的最新一条新闻标题并附上日期"""
     if not MARKETDATA_TOKEN:
         return "No recent news"
     try:
@@ -346,8 +346,32 @@ def fetch_latest_news(ticker):
         resp = requests.get(url, headers=headers, timeout=8).json()
         if resp.get('s') == 'ok':
             headlines = resp.get('headline', [])
+            pub_dates = resp.get('publicationDate', [])
+            updated_dates = resp.get('updated', [])
+            
             if headlines and len(headlines) > 0:
-                return str(headlines[0])[:120]
+                headline_text = str(headlines[0])[:120]
+                date_str = ""
+                
+                # Fetch either publication date or updated date
+                raw_date = None
+                if pub_dates and len(pub_dates) > 0: raw_date = pub_dates[0]
+                elif updated_dates and len(updated_dates) > 0: raw_date = updated_dates[0]
+                
+                if raw_date:
+                    try:
+                        # MarketData usually returns Unix timestamp or ISO string
+                        if isinstance(raw_date, (int, float)):
+                            dt = datetime.fromtimestamp(raw_date)
+                            date_str = f"[{dt.strftime('%m/%d')}] "
+                        else:
+                            # Try parsing ISO 8601 subset if string
+                            dt = datetime.strptime(str(raw_date)[:10], "%Y-%m-%d")
+                            date_str = f"[{dt.strftime('%m/%d')}] "
+                    except:
+                        pass
+                
+                return f"{date_str}{headline_text}"
         return "No recent news"
     except Exception:
         return "No recent news"

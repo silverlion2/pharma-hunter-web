@@ -11,32 +11,28 @@ const FeedbackWidget = () => {
     e.preventDefault();
     setStatus('loading');
     
-    // 1. 发送到 Supabase (使用官方 SDK + 极限 Debug 探针)
+    // 1. 发送到 Supabase
     if (isSupabaseConfigured) {
       try {
-        console.log("准备向 Supabase 写入:", formData); // 打印写入前的数据，确认不是空的
-        
         const payload = {
-          name: formData.name || 'Anonymous', // 如果名字没填，给个默认值防止报错
+          name: formData.name || 'Anonymous',
           email: formData.email,
           message: formData.message
         };
 
-        const { error, status: responseStatus } = await supabase
+        const { error } = await supabase
           .from('contact_leads')
-          .insert([payload]); // SDK 会自动将对象转化为数组插入
+          .insert([payload]);
           
         if (error) {
-          // 如果这里报错，99.9% 的可能是你在 Supabase 后台没有给 contact_leads 开启 RLS 匿名写入权限！
-          console.error(`❌ [Supabase SDK 写入失败] 状态码: ${responseStatus}`);
-          console.error("❌ [错误详情]:", error.message);
-          console.error("❌ [调试建议]: 请检查 Supabase -> Authentication -> Policies -> 找到 contact_leads 表 -> 必须添加允许 INSERT 的策略。");
-        } else {
-          console.log(`✅ [Supabase SDK 写入成功] 数据已进入表内。状态码: ${responseStatus}`);
+          console.error("❌ [Feedback Error]:", error.message);
         }
       } catch (err) {
-        console.error("❌ [Supabase 客户端崩溃]:", err);
+        console.error("❌ [Supabase Client Crash]:", err);
       }
+    } else {
+      // Simulate network delay for UX when offline/demo mode
+      await new Promise(resolve => setTimeout(resolve, 800));
     }
 
     // 2. 发送到 Bark Webhook 

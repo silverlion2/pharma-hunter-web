@@ -238,8 +238,7 @@ const App = () => {
       category: item.target_area,
       factors: [
         { label: 'Cash Pressure', score: Math.round(item.cash_score || 50), color: 'from-blue-500 to-cyan-400', desc: cashDesc, raw: item.cash_amount || '—' },
-        { label: 'Asset Scarcity', score: Math.round(item.scarcity_score || 50), color: 'from-cyan-500 to-teal-400', desc: scarcityDesc, raw: item.market_cap || '—' },
-        { label: 'Catalyst Timing', score: Math.round(item.milestone_score || 50), color: 'from-indigo-500 to-blue-500', desc: milestoneDesc, raw: item.predicted_time ? item.predicted_time.split(' ')[0] : '—' },
+        { label: 'Catalyst Timing', score: Math.round(item.milestone_score || 50), color: 'from-indigo-500 to-blue-500', desc: milestoneDesc, raw: item.predicted_time || 'TBD' },
         { label: 'Value Gap', score: Math.round(item.valuation_score || 50), color: 'from-sky-400 to-cyan-300', desc: valDesc, raw: item.runway_years || '—' }
       ],
       display_signals: rawSignals
@@ -397,7 +396,7 @@ const App = () => {
           <div className="mb-6 flex items-center justify-between gap-3 px-5 py-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold">
             <div className="flex items-center gap-3">
               <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0 animate-pulse" />
-              DEMO MODE — Displaying sample data. Auto-refreshing every 30s.
+              Displaying offline context. Waiting for live data refresh from server...
             </div>
             <button 
               onClick={() => fetchDataRef.current && fetchDataRef.current(true)}
