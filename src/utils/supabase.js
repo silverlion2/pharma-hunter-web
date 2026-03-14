@@ -2,15 +2,20 @@ import { createClient } from '@supabase/supabase-js';
 
 export const getEnv = (key) => {
   try {
-    return import.meta.env[key] || '';
+    const val = import.meta.env[key];
+    return val ? val.trim() : '';
   } catch {
     return '';
   }
 };
 
-const SUPABASE_URL = getEnv('VITE_SUPABASE_URL');
+let SUPABASE_URL = getEnv('VITE_SUPABASE_URL');
+if (SUPABASE_URL && !SUPABASE_URL.startsWith('http')) {
+  SUPABASE_URL = 'https://' + SUPABASE_URL;
+}
+
 const SUPABASE_ANON_KEY = getEnv('VITE_SUPABASE_ANON_KEY');
-export const isSupabaseConfigured = SUPABASE_URL && SUPABASE_URL.startsWith('http');
+export const isSupabaseConfigured = SUPABASE_URL.length > 0 && SUPABASE_ANON_KEY.length > 0;
 
 export const supabase = isSupabaseConfigured 
   ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) 
