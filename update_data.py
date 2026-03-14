@@ -3,7 +3,9 @@ import requests
 import json
 import math
 import time
+import random
 import argparse
+import concurrent.futures
 from datetime import datetime, timedelta
 from supabase import create_client, Client
 
@@ -59,7 +61,7 @@ except Exception as e:
     send_alert("系统警告", "SEC字典拉取失败，财务抓取将全面降级。")
 
 def get_sec_shares(cik):
-    """核心算力增强：多标签、按日期排序的安全 SEC 股本解析器 (完美兼容 ADR 与老牌巨头)"""
+    """核心算力增强：多标签、按日期排序的安全 SEC 股本解析器"""
     try:
         sec_url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"
         sec_resp = requests.get(sec_url, headers=SEC_HEADERS, timeout=8)
@@ -70,13 +72,11 @@ def get_sec_shares(cik):
         
         def extract_latest(tag_list):
             if not tag_list: return 0
-            # 过滤掉 0 和负数，并且严格按照财报截止日期 (end) 倒序排列，防修正案作祟
             valid = [x for x in tag_list if x.get('val', 0) > 0]
             if not valid: return 0
             valid.sort(key=lambda x: x.get('end', '1970-01-01'), reverse=True)
             return float(valid[0]['val'])
 
-        # 医药公司常用于披露总股本的 8 大高频 XBRL 标签 (包含 IFRS 国际标准以兼容 AZN/NVO 等 ADR)
         candidates = [
             ('dei', 'EntityCommonStockSharesOutstanding'),
             ('us-gaap', 'CommonStockSharesOutstanding'),
@@ -95,18 +95,13 @@ def get_sec_shares(cik):
                 return latest_shares
                 
         return 0
-    except Exception as e:
+    except Exception:
         return 0
 
 # 【差分更新触发器】MarketData Earnings API
 def check_earnings_catalyst(ticker):
-    """
-    检查公司的财报日历：
-    1. 判断过去14天内是否刚发了财报 (用于触发财务数据刷新)
-    2. 获取下一次财报发布的日期 (作为并购时间窗口的 Catalyst)
-    """
     result = {
-        "needs_financial_update": True, # 默认 True，保证没查到时安全刷新
+        "needs_financial_update": True, 
         "next_earnings_date": "TBD",
         "last_earnings_date": None
     }
@@ -116,7 +111,6 @@ def check_earnings_catalyst(ticker):
         
     headers = {"Authorization": f"Bearer {MARKETDATA_TOKEN}"}
     try:
-        # countback=2 确保能拿到最近一次过去的财报和下一次未来的财报预计时间
         url = f"https://api.marketdata.app/v1/stocks/earnings/{ticker}/?countback=2"
         resp = requests.get(url, headers=headers, timeout=5).json()
         
@@ -127,20 +121,16 @@ def check_earnings_catalyst(ticker):
             for date_str in dates:
                 try:
                     rep_date = datetime.strptime(str(date_str), "%Y-%m-%d")
-                    # 如果财报日期在未来，记为下一次 Catalyst
                     if rep_date > now:
                         result["next_earnings_date"] = date_str
-                    # 如果财报日期在过去
                     else:
                         result["last_earnings_date"] = date_str
                         days_since_report = (now - rep_date).days
-                        # 如果是14天内刚发的财报，说明财务数据有变动，必须爬取 SEC
-                        # 如果是很久以前发的，说明数据没变，可以跳过 SEC 爬取
                         result["needs_financial_update"] = days_since_report <= 14
                 except:
                     pass
-    except Exception as e:
-        pass # 接口异常时保持 needs_financial_update 为 True，做安全降级
+    except Exception:
+        pass 
         
     return result
 
@@ -177,21 +167,18 @@ def fetch_financials_dual_layer(ticker):
             
             if resp.status_code == 200:
                 facts = resp.json().get('facts', {}).get('us-gaap', {})
-                
                 for tag in ['CashAndCashEquivalentsAtCarryingValue', 'Cash', 'CashAndCashEquivalentsAtCarryingValueIncludingDiscontinuedOperations']:
                     if tag in facts:
                         d = facts[tag].get('units', {}).get('USD', [])
                         if d: 
                             cash = float(d[-1]['val'])
                             break
-                            
                 for tag in ['ResearchAndDevelopmentExpense', 'ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost']:
                     if tag in facts:
                         d = facts[tag].get('units', {}).get('USD', [])
                         if d: 
                             rnd = float(d[-1]['val']) * 4.0
                             break
-                
                 if cash > 0 and rnd > 0:
                     source = "SEC"
                 else:
@@ -201,7 +188,7 @@ def fetch_financials_dual_layer(ticker):
         except Exception as e:
             error_details.append(f"SEC Exception: {str(e)}")
 
-    if cash == 0 or rnd == 0:
+    if cash <= 0 or rnd <= 0:
         return None, " | ".join(error_details) if error_details else "FINANCIALS_MISSING"
 
     runway_years = cash / rnd
@@ -264,13 +251,11 @@ def fetch_market_data(ticker_symbol):
     headers = {"Authorization": f"Bearer {MARKETDATA_TOKEN}"} if MARKETDATA_TOKEN else {}
     yesterday_str = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
     
-    # 1. 价格双擎与基础市值获取 (Quotes -> Candles)
     try:
         q_url = f"https://api.marketdata.app/v1/stocks/quotes/{ticker_symbol}/"
         q_resp = requests.get(q_url, headers=headers, timeout=5).json()
         if q_resp.get('s') == 'ok':
             result["price"] = float(q_resp.get('last', [0])[0])
-            # [新增防线] 尝试从 Quotes 顺带拿市值
             mc_arr = q_resp.get('marketcap', [])
             if mc_arr and mc_arr[0]:
                 result["market_cap"] = float(mc_arr[0])
@@ -289,7 +274,6 @@ def fetch_market_data(ticker_symbol):
         except Exception as e:
             result["error"] = f"Price API Error: {str(e)}"
 
-    # 2. 市值兜底防线 A: 如果 Quotes 没拿到市值，调用专业的 MarketData Profile 接口
     if result["market_cap"] <= 0:
         try:
             p_url = f"https://api.marketdata.app/v1/stocks/profile/{ticker_symbol}/"
@@ -301,13 +285,11 @@ def fetch_market_data(ticker_symbol):
         except Exception:
             pass
 
-    # 3. 市值终极防线 B: 如果 Profile 也瘫痪，调用 SEC 官方股本乘以收盘价计算
     if result["market_cap"] <= 0 and result["price"] != "N/A" and result["price"] > 0 and ticker_symbol in CIK_DICT:
         shares = get_sec_shares(CIK_DICT[ticker_symbol])
         if shares > 0:
             result["market_cap"] = shares * float(result["price"])
 
-    # 4. 获取期权异动
     try:
         opt_url = f"https://api.marketdata.app/v1/options/chain/{ticker_symbol}?date={yesterday_str}"
         opt_resp = requests.get(opt_url, headers=headers, timeout=10).json()
@@ -336,7 +318,6 @@ def fetch_market_data(ticker_symbol):
                     desc = f"Strike ${strike} Call Sweep (Vol: {int(vol)}/OI: {int(oi)})"
                     anomalies.append(desc)
                     result["raw_signals"].append({"type": "OPTIONS", "date": "T-1 EOD", "desc": desc, "mood": "HIGH-INTENT"})
-                    
                     try:
                         exp_date = datetime.strptime(str(expirations[i]), "%Y-%m-%d")
                         opt_days = (exp_date - datetime.now()).days
@@ -349,7 +330,6 @@ def fetch_market_data(ticker_symbol):
                 result["options_signal"] = f"Institutional OTM Call Sweeps Detected: {', '.join(anomalies[:2])}"
                 result["has_anomaly"] = True
                 result["days_to_opt"] = min_opt_days
-
     except Exception as e:
         result["options_signal"] = f"Options Data Error: {str(e)}"
         if not result["error"]: result["error"] = f"Options API Error: {str(e)}"
@@ -419,21 +399,19 @@ def run_universe_expansion():
         is_dry_run = False
 
     valid_assets = []
-    scan_limit = 150 # 为防止单次扫描时间过长，随机抽取或设置扫描上限
+    scan_limit = 150 
     scanned = 0
     
-    # 遍历 SEC 的 CIK 字典 (过滤提取纯正的制药/生物科技企业)
     for ticker, cik in list(CIK_DICT.items()):
         if scanned >= scan_limit:
             break
             
         try:
-            # Step 1: 验证 SIC Code (行业护城河)
             sec_sub_url = f"https://data.sec.gov/submissions/CIK{cik}.json"
             sub_resp = requests.get(sec_sub_url, headers=SEC_HEADERS, timeout=5)
             
             if sub_resp.status_code != 200:
-                time.sleep(0.11) # 严格遵守 SEC 的 10 req/sec 速率限制
+                time.sleep(0.11) 
                 continue
                 
             sub_data = sub_resp.json()
@@ -441,30 +419,26 @@ def run_universe_expansion():
             
             if sic_code not in ["2834", "2836"]:
                 time.sleep(0.11)
-                continue # 不是创新药企，直接跳过
+                continue 
                 
             scanned += 1
             name = sub_data.get("name", NAME_DICT.get(ticker, ticker))
             print(f"\n🔍 [SIC {sic_code} 命中] 正在评估标的: {ticker} ({name})...")
-            
         except Exception as e:
             time.sleep(0.11)
             continue
             
         time.sleep(0.11)
 
-        # Step 2: 验证市值区间 (MarketData 价格 + SEC 股本计算)
         market_cap = 0
         price = 0
-        
-        # 1. 拿最新价格与基础市值 (价格双擎: 优先 Quotes, 兜底 Candles)
         headers = {"Authorization": f"Bearer {MARKETDATA_TOKEN}"} if MARKETDATA_TOKEN else {}
+        
         try:
             q_url = f"https://api.marketdata.app/v1/stocks/quotes/{ticker}/"
             q_resp = requests.get(q_url, headers=headers, timeout=5).json()
             if q_resp.get('s') == 'ok':
                 price = float(q_resp.get('last', [0])[0])
-                # [新增] 顺带从 Quotes 提取市值
                 mc_arr = q_resp.get('marketcap', [])
                 if mc_arr and mc_arr[0]:
                     market_cap = float(mc_arr[0])
@@ -483,7 +457,6 @@ def run_universe_expansion():
             except Exception:
                 pass
 
-        # 2. 市值三擎矩阵: 若 Quotes 无市值 -> 调用 Profile 接口 -> 终极 SEC 算力
         if market_cap <= 0:
             try:
                 p_url = f"https://api.marketdata.app/v1/stocks/profile/{ticker}/"
@@ -512,7 +485,6 @@ def run_universe_expansion():
         else:
             print(f"  ✅ [PASS] 市值符合被收购区间: ${market_cap / 1e9:.3f}B")
 
-        # Step 3: FDA 临床管线验证
         clin_data = fetch_clinical_trials(name)
         if clin_data["phase"] == "None" or "No late-stage active trials" in clin_data["desc"]:
             print(f"  ❌ [DROP] 缺乏活跃的后期临床管线")
@@ -536,7 +508,6 @@ def run_universe_expansion():
         print("\n[Dry Run] 环境变量缺失，跳过写入 Supabase，流程演示成功。")
         return
 
-    # 批量 Upsert 写入 Watchlist 表
     print(f"\n开始将 {len(valid_assets)} 条优质标的写入 Watchlist 数据库...")
     for asset in valid_assets:
         try:
@@ -551,12 +522,13 @@ def run_universe_expansion():
 # ==========================================
 # 6. 自动化日常主流程 (引入多线程并发与智能差分)
 # ==========================================
-import concurrent.futures
-
 def process_single_target(target, TARGET_SCARCITY_MAP, db_assets_map):
     """处理单个标的的核心逻辑，被多线程调用"""
-    ticker = target["ticker"]
-    name = target["name"]
+    # [修复1：并发限流防御] 随机引入 0.5 到 2 秒的微小延迟，打散 MarketData 的并发峰值，防止 Http 429 报错
+    time.sleep(random.uniform(0.5, 2.0))
+    
+    ticker = target.get("ticker", "UNKNOWN")
+    name = target.get("name", "Unknown")
     mechanism = target.get("mechanism", "Unknown")
     print(f"  [Thread] ⏳ 开始处理标的: {ticker}")
     
@@ -611,9 +583,15 @@ def process_single_target(target, TARGET_SCARCITY_MAP, db_assets_map):
     elif days_to_clin < 180: m_score = 75.0
     elif days_to_clin < 365: m_score = 60.0
     
+    # 确保分数全部是浮点数，防止向数据库写入 None 导致整批奔溃
+    c_score = float(c_score or 50.0)
+    t_score = float(t_score or 50.0)
+    m_score = float(m_score or 50.0)
+    v_score = float(v_score or 50.0)
+    
     base_s_score = (c_score * 0.3) + (t_score * 0.4) + (m_score * 0.2) + (v_score * 0.1)
-    final_score = base_s_score * 1.15 if market_data["has_anomaly"] else base_s_score
-    final_score = round(min(final_score, 99.5), 1) 
+    final_score = base_s_score * 1.15 if market_data.get("has_anomaly") else base_s_score
+    final_score = float(round(min(final_score, 99.5), 1))
     
     min_days = min(days_to_clin, market_data["days_to_opt"]) * 0.8
     if min_days < 30: predicted_time = "14-30 Days (Imminent)"
@@ -629,24 +607,27 @@ def process_single_target(target, TARGET_SCARCITY_MAP, db_assets_map):
     prem_val = 40.0 + v_adj + t_adj
     est_premium = f"+{int(prem_val)}% ~ +{int(prem_val + 15)}%"
 
-    # [优化 2: AI 分析按需触发] 如果分数变化不大且没有期权异动，复用历史 AI 小作文以节省时间
+    # [优化: AI 分析按需触发] 如果分数变化不大且没有期权异动，复用历史 AI 小作文以节省时间
     score_diff = abs(final_score - (historical_data.get('score', 0) if historical_data else 0))
     if historical_data and score_diff < 2.0 and not market_data["has_anomaly"] and historical_data.get('digest'):
         ai_digest = historical_data['digest']
-        # print(f"  [Thread] ⚡ {ticker} 分数无大变动，复用历史 AI 摘要以提速")
     else:
         quant_scores = {
             "c_score": c_score, "t_score": t_score, "m_score": m_score, 
             "v_score": v_score, "final_score": final_score, "est_premium": est_premium
         }
         ai_digest = get_ai_digest(ticker, market_data, clin_data, quant_scores)
-        if ai_digest.startswith("FAILED_TIMEOUT"):
+        
+        # [修复2：防止新标的 AI 超时写入 None 导致数据库崩溃]
+        if ai_digest and ai_digest.startswith("FAILED_TIMEOUT"):
             sec_warning_flag = 'AI_TIMEOUT' 
             error_logs.append(f"AI Error: {ai_digest}")
             if historical_data and historical_data.get('digest'):
                 ai_digest = historical_data['digest']
             else:
                 ai_digest = "Data source feedback delayed. Maintaining neutral observation status.\n\nVERDICT: Neutral."
+        elif not ai_digest:
+            ai_digest = "Analysis generation failed due to API limits. Defaulting to neutral."
         
     error_log_str = " | ".join(error_logs) if error_logs else None 
     
@@ -658,29 +639,29 @@ def process_single_target(target, TARGET_SCARCITY_MAP, db_assets_map):
         "scarcity_score": t_score,
         "milestone_score": m_score,
         "valuation_score": v_score,
-        "predicted_time": predicted_time,
-        "estimated_premium": est_premium,
-        "shadow_signals": market_data["raw_signals"], 
-        "digest": ai_digest,
-        "target_area": target["target_area"],
-        "is_past_deal": target["is_past_deal"],
-        "warning_flag": sec_warning_flag,
-        "error_log": error_log_str 
+        "predicted_time": str(predicted_time),
+        "estimated_premium": str(est_premium),
+        "shadow_signals": market_data.get("raw_signals", []), 
+        "digest": str(ai_digest),
+        "target_area": str(target.get("target_area", "TBD")),
+        "is_past_deal": bool(target.get("is_past_deal", False)),
+        "warning_flag": str(sec_warning_flag) if sec_warning_flag else None,
+        "error_log": str(error_log_str) if error_log_str else None 
     }
     
     if fin_data and fin_data.get("cash", 0) > 1:
-        db_record["raw_cash"] = fin_data.get("cash")
+        db_record["raw_cash"] = float(fin_data.get("cash"))
 
     if "deal_info" in target and target["deal_info"]:
-         db_record["deal_info"] = target["deal_info"]
+         db_record["deal_info"] = str(target["deal_info"])
 
     history_record = None
-    if sec_warning_flag or error_log_str: # 只在有警告时记录历史日志，防止表过大
+    if sec_warning_flag or error_log_str:
         history_record = {
             "ticker": ticker,
             "score": final_score,
-            "warning_flag": sec_warning_flag,
-            "error_log": error_log_str
+            "warning_flag": str(sec_warning_flag) if sec_warning_flag else None,
+            "error_log": str(error_log_str) if error_log_str else None 
         }
 
     return {"status": "success", "ticker": ticker, "record": db_record, "history": history_record}
@@ -711,7 +692,6 @@ def main():
         print(f"❌ 读取 watchlist 失败: {e}")
         return
 
-    # 预先拉取所有历史资产数据，建立内存字典，避免在循环中反复查询数据库
     db_assets_map = {}
     try:
         hist_resp = supabase.table('assets').select('*').execute()
@@ -726,49 +706,56 @@ def main():
     history_logs_to_insert = []
 
     print(f"⚡ 开始多线程并发处理 {len(targets)} 个标的...")
-    # [优化 1: 启用多线程池] 设置 max_workers=5 (可以根据服务器情况调大至 10)
+    # 维持最大 5 个线程，以防打穿免费 API 限额
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-        # 提交所有任务给线程池
         futures = {executor.submit(process_single_target, target, TARGET_SCARCITY_MAP, db_assets_map): target for target in targets}
         
-        # 收集结果
         for future in concurrent.futures.as_completed(futures):
             try:
                 result = future.result()
-                if result["status"] == "success":
+                if result and result["status"] == "success":
                     records_to_upsert.append(result["record"])
                     if result["history"]:
                         history_logs_to_insert.append(result["history"])
                     success_count += 1
                     print(f"  ✅ [{result['ticker']}] 计算完毕 | 分数: {result['record']['score']}")
             except Exception as exc:
-                target_name = futures[future]["ticker"]
-                print(f"  ❌ [{target_name}] 线程抛出异常: {exc}")
+                target_name = futures[future].get("ticker", "Unknown")
+                print(f"  ❌ [{target_name}] 线程抛出内部异常，跳过该标的: {exc}")
                 fail_count += 1
 
-    # [优化 3: 批量入库] 将跑完的数据分批一次性写入，极大减少数据库耗时
-    print(f"\n📦 正在将 {len(records_to_upsert)} 条数据批量写入数据库...")
+    # [修复3：化整为零的数据库降级写入机制] 
+    # 防止因为一条数据错误导致整个 50 条的 batch 写入全部失败
+    print(f"\n📦 正在将 {len(records_to_upsert)} 条数据写入数据库...")
     if records_to_upsert:
-        try:
-            # Supabase upsert 支持批量数组
-            for i in range(0, len(records_to_upsert), 50): # 分批次写入，防止 payload 过大
-                chunk = records_to_upsert[i:i+50]
+        for i in range(0, len(records_to_upsert), 50):
+            chunk = records_to_upsert[i:i+50]
+            try:
+                # 首先尝试高效的批量写入
                 supabase.table('assets').upsert(chunk).execute()
-            print("  ✅ 资产数据覆盖成功！")
-        except Exception as e:
-            print(f"  ❌ 批量写入 assets 失败: {e}")
+                print(f"  ✅ 成功批量写入批次 {i//50 + 1} ({len(chunk)} 条)")
+            except Exception as batch_err:
+                print(f"  ⚠️ 批次 {i//50 + 1} 批量写入失败，自动降级为单条安全写入保护... (原因: {batch_err})")
+                # 降级为单条循环写入，哪条错就跳过哪条，绝不牵连无辜
+                for record in chunk:
+                    try:
+                        supabase.table('assets').upsert(record).execute()
+                    except Exception as single_err:
+                        print(f"  ❌ 放弃写入异常标的 [{record.get('ticker')}]: {single_err}")
+                        fail_count += 1
+                        success_count -= 1 
             
     if history_logs_to_insert:
-        try:
-            for i in range(0, len(history_logs_to_insert), 50):
-                chunk = history_logs_to_insert[i:i+50]
+        for i in range(0, len(history_logs_to_insert), 50):
+            chunk = history_logs_to_insert[i:i+50]
+            try:
                 supabase.table('assets_history_log').insert(chunk).execute()
-        except:
-            pass
+            except:
+                pass
 
     end_time = time.time()
     elapsed_minutes = (end_time - start_time) / 60
-    summary_msg = f"并发跑通: {success_count}条，失败: {fail_count}条。总耗时: {elapsed_minutes:.1f}分钟。"
+    summary_msg = f"并发跑通: {success_count}条，失败抛弃: {fail_count}条。总耗时: {elapsed_minutes:.1f}分钟。"
     send_alert("BioQuantix 日常更新完成", summary_msg)
     print(f"🎉 所有医药标的 Phase 6 量化闭环执行结束！\n📊 {summary_msg}")
 
