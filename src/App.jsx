@@ -89,7 +89,11 @@ const App = () => {
               // Calculate average scarcity per area dynamically to use as urgency
               const scarcityByArea = {};
               assetData.forEach(asset => {
-                const area = asset.target_area || 'Others';
+                let area = 'Others';
+                if (asset.target_area && asset.target_area.trim() !== '' && asset.target_area.toLowerCase() !== 'none') {
+                    area = asset.target_area.trim();
+                }
+                
                 if (!scarcityByArea[area]) scarcityByArea[area] = { total: 0, count: 0 };
                 // Default to 50 if no score exists
                 scarcityByArea[area].total += (asset.scarcity_score || 50);
@@ -103,7 +107,11 @@ const App = () => {
 
               const grouped = {};
               gData.forEach(row => {
-                  const area = row.target_area || 'Others';
+                  let area = 'Others';
+                  if (row.target_area && row.target_area.trim() !== '' && row.target_area.toLowerCase() !== 'none') {
+                      area = row.target_area.trim();
+                  }
+                  
                   if (!grouped[area]) {
                       grouped[area] = [];
                   }
@@ -146,7 +154,13 @@ const App = () => {
   }, [pipelineGapsData]);
 
   const availableAreas = React.useMemo(() => {
-    const uniqueAreas = Array.from(new Set(assetData.map(a => a.target_area || 'Others')));
+    const rawAreas = assetData.map(a => {
+      if (!a.target_area || a.target_area.trim() === '' || a.target_area.toLowerCase() === 'none') {
+          return 'Others';
+      }
+      return a.target_area.trim();
+    });
+    const uniqueAreas = Array.from(new Set(rawAreas));
     
     uniqueAreas.sort((a, b) => {
       // "Others" always goes last
@@ -168,7 +182,13 @@ const App = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [availableAreas, targetArea]);
 
-  const baseFiltered = assetData.filter(a => (a.target_area || 'Others') === targetArea && a.is_past_deal === showPastDeals);
+  const baseFiltered = assetData.filter(a => {
+      let areaForAsset = 'Others';
+      if (a.target_area && a.target_area.trim() !== '' && a.target_area.toLowerCase() !== 'none') {
+          areaForAsset = a.target_area.trim();
+      }
+      return areaForAsset === targetArea && a.is_past_deal === showPastDeals;
+  });
   const sortedList = [...baseFiltered].sort((a, b) => b.score - a.score);
 
   const activeList = sortedList.map((item) => {
