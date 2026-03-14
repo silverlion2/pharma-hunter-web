@@ -22,6 +22,9 @@ const App = () => {
   // 修复：初始化时直接赋予保底数据，平滑过渡真实数据，防止异步导致的白屏
   const [assetData, setAssetData] = useState(fallbackData);
   const [pipelineGapsData, setPipelineGapsData] = useState(defaultGaps);
+  const [usingMockData, setUsingMockData] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const fetchDataRef = React.useRef(null);
 
   // Phase 5.2 新增: 认证状态
   const [userRole, setUserRole] = useState('visitor'); // 'visitor', 'free', 'pro', 'admin'
@@ -65,11 +68,13 @@ const App = () => {
   };
 
   useEffect(() => {
-    async function fetchAllData() {
+    async function fetchAllData(manual = false) {
+      if (manual) setIsRefreshing(true);
       try {
         if (!isSupabaseConfigured) {
           setAssetData(fallbackData);
           setPipelineGapsData(defaultGaps);
+          setUsingMockData(true);
           return;
         }
         
@@ -77,7 +82,9 @@ const App = () => {
           headers: { 'apikey': supabase.supabaseKey, 'Authorization': `Bearer ${supabase.supabaseKey}` }
         });
         const aData = await assetsResp.json();
-        setAssetData(aData && aData.length > 0 ? aData : fallbackData);
+        const usingRealAssets = aData && aData.length > 0;
+        setAssetData(usingRealAssets ? aData : fallbackData);
+        setUsingMockData(!usingRealAssets);
 
         const gapsResp = await fetch(`${supabase.supabaseUrl}/rest/v1/mnc_pipeline_gaps?select=*`, {
           headers: { 'apikey': supabase.supabaseKey, 'Authorization': `Bearer ${supabase.supabaseKey}` }
@@ -138,11 +145,18 @@ const App = () => {
       } catch {
         setAssetData(fallbackData);
         setPipelineGapsData(defaultGaps);
+        setUsingMockData(true);
+      } finally {
+        setIsRefreshing(false);
       }
     }
+    fetchDataRef.current = fetchAllData;
     fetchAllData();
+    // Auto-refresh every 30 seconds when Supabase is configured, to pick up live data as soon as it becomes available
+    const refreshInterval = isSupabaseConfigured ? setInterval(fetchAllData, 30_000) : null;
+    return () => { if (refreshInterval) clearInterval(refreshInterval); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assetData]); // We add assetData to dependency array because we depend on it to calculate scarcity now
+  }, [assetData]);
 
   const pipelineMaxUrgencies = React.useMemo(() => {
     const urgencies = {};
@@ -375,6 +389,22 @@ const App = () => {
         setAuthMode={setAuthMode}
         handleLogout={handleLogout}
       >
+
+        {usingMockData && (view === 'dashboard' || view === 'landing' || view === 'upgrade') && (
+          <div className="mb-6 flex items-center justify-between gap-3 px-5 py-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold">
+            <div className="flex items-center gap-3">
+              <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0 animate-pulse" />
+              DEMO MODE — Displaying sample data. Auto-refreshing every 30s.
+            </div>
+            <button 
+              onClick={() => fetchDataRef.current && fetchDataRef.current(true)}
+              disabled={isRefreshing}
+              className="ml-4 px-3 py-1 rounded-lg border border-amber-500/40 hover:bg-amber-500/20 transition-colors font-black tracking-widest text-[9px] disabled:opacity-50 shrink-0"
+            >
+              {isRefreshing ? 'REFRESHING...' : '↻ REFRESH NOW'}
+            </button>
+          </div>
+        )}
 
         {view === 'landing' && <Landing setView={setView} setShowPastDeals={setShowPastDeals} />}
 
