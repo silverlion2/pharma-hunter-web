@@ -86,14 +86,34 @@ const App = () => {
         if (gapsResp.ok) {
            const gData = await gapsResp.json();
            if (gData && gData.length > 0) {
+              // Calculate average scarcity per area dynamically to use as urgency
+              const scarcityByArea = {};
+              assetData.forEach(asset => {
+                const area = asset.target_area || 'Others';
+                if (!scarcityByArea[area]) scarcityByArea[area] = { total: 0, count: 0 };
+                // Default to 50 if no score exists
+                scarcityByArea[area].total += (asset.scarcity_score || 50);
+                scarcityByArea[area].count += 1;
+              });
+              
+              const averageScarcityByArea = {};
+              Object.keys(scarcityByArea).forEach(area => {
+                averageScarcityByArea[area] = Math.round(scarcityByArea[area].total / scarcityByArea[area].count);
+              });
+
               const grouped = {};
               gData.forEach(row => {
-                  if (!grouped[row.target_area]) {
-                      grouped[row.target_area] = [];
+                  const area = row.target_area || 'Others';
+                  if (!grouped[area]) {
+                      grouped[area] = [];
                   }
-                  grouped[row.target_area].push({
-                      name: row.mnc_name, target: row.target_area, 
-                      level: row.urgency_level, color: row.color_code || 'bg-cyan-500'
+                  
+                  // Override database urgency level with dynamically calculated average asset scarcity
+                  const unifiedUrgency = averageScarcityByArea[area] || row.urgency_level || 50;
+                  
+                  grouped[area].push({
+                      name: row.mnc_name, target: area, 
+                      level: unifiedUrgency, color: row.color_code || 'bg-cyan-500'
                   });
               });
               Object.keys(grouped).forEach(k => {
@@ -113,11 +133,33 @@ const App = () => {
       }
     }
     fetchAllData();
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assetData]); // We add assetData to dependency array because we depend on it to calculate scarcity now
+
+  const pipelineMaxUrgencies = React.useMemo(() => {
+    const urgencies = {};
+    Object.keys(pipelineGapsData).forEach(area => {
+      const maxLevel = pipelineGapsData[area].length > 0 ? pipelineGapsData[area][0].level : 0;
+      urgencies[area] = maxLevel;
+    });
+    return urgencies;
+  }, [pipelineGapsData]);
 
   const availableAreas = React.useMemo(() => {
-    return Array.from(new Set(assetData.map(a => a.target_area))).filter(Boolean);
-  }, [assetData]);
+    const uniqueAreas = Array.from(new Set(assetData.map(a => a.target_area || 'Others')));
+    
+    uniqueAreas.sort((a, b) => {
+      // "Others" always goes last
+      if (a === 'Others') return 1;
+      if (b === 'Others') return -1;
+      
+      const urgencyA = pipelineMaxUrgencies[a] || 0;
+      const urgencyB = pipelineMaxUrgencies[b] || 0;
+      
+      return urgencyB - urgencyA; // Descending by urgency
+    });
+    return uniqueAreas;
+  }, [assetData, pipelineMaxUrgencies]);
 
   useEffect(() => {
     if (availableAreas.length > 0 && !availableAreas.includes(targetArea)) {
@@ -126,7 +168,7 @@ const App = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [availableAreas, targetArea]);
 
-  const baseFiltered = assetData.filter(a => a.target_area === targetArea && a.is_past_deal === showPastDeals);
+  const baseFiltered = assetData.filter(a => (a.target_area || 'Others') === targetArea && a.is_past_deal === showPastDeals);
   const sortedList = [...baseFiltered].sort((a, b) => b.score - a.score);
 
   const activeList = sortedList.map((item) => {
