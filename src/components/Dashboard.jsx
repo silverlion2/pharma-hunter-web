@@ -35,7 +35,7 @@ const Dashboard = ({
               </h2>
             </div>
             
-            <div className="divide-y divide-slate-800/30">
+            <div className="divide-y divide-slate-800/30 overflow-y-auto max-h-[500px] custom-scrollbar">
               {activeList.map((item) => (
                 <div 
                   key={item.ticker}
@@ -205,7 +205,7 @@ const Dashboard = ({
               <section className={`lg:col-span-7 bg-slate-950 border rounded-[2rem] p-6 relative ${showPastDeals || targetArea === 'Autoimmune' ? 'border-indigo-500/20' : 'border-slate-800/60'}`}>
                 <h3 className={`text-sm font-black uppercase flex items-center gap-2 mb-4 ${showPastDeals || targetArea === 'Autoimmune' ? 'text-indigo-400' : 'text-cyan-400'}`}>
                   <Database className="w-4 h-4" /> 
-                  {showPastDeals ? 'Historical T-7 Digest & Outcome' : 'DeepSeek Model Digest'}
+                  {showPastDeals ? 'Historical T-7 Digest & Outcome' : 'AI Model Digest'}
                 </h3>
                 <article className="space-y-4 text-slate-400 text-sm leading-relaxed overflow-y-auto max-h-[300px] pr-2 custom-scrollbar">
                   {safeDigest.split('\n').filter(line => line.trim() !== '').map((paragraph, index) => (

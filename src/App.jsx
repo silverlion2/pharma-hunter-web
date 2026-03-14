@@ -11,8 +11,7 @@ import FeedbackWidget from './components/FeedbackWidget';
 import Landing from './components/Landing';
 import AuthModal from './components/AuthModal';
 import Dashboard from './components/Dashboard';
-
-const SUPER_ADMIN_EMAILS = ['admin@bioquantix.com', 'test@bioquantix.com'];
+import Layout from './components/Layout';
 
 const App = () => {
   const [view, setView] = useState('landing'); 
@@ -64,11 +63,9 @@ const App = () => {
       return;
     }
     
-    if (SUPER_ADMIN_EMAILS.includes(user.email)) {
-      setUserRole('admin');
-      return;
-    }
-    setUserRole('free'); 
+    // Check if user has an assigned role in metadata, defaulting to 'free'
+    const role = user?.app_metadata?.role || user?.user_metadata?.role || 'free';
+    setUserRole(role);
   };
 
   useEffect(() => {
@@ -208,7 +205,10 @@ const App = () => {
         } else if (authMode === 'login') {
           setShowAuthModal(false);
           showToast("Sign in successful (Mock).");
-          const mockUser = { email: authEmail || 'test@bioquantix.com' };
+          const mockUser = { 
+            email: authEmail || 'test@bioquantix.com',
+            user_metadata: { role: authEmail === 'admin@bioquantix.com' || authEmail === 'test@bioquantix.com' ? 'admin' : 'free' }
+          };
           setSession({ user: mockUser });
           determineUserRole(mockUser);
         } else if (authMode === 'forgot') {
@@ -298,73 +298,16 @@ const App = () => {
   return (
     <div className="min-h-screen bg-[#0A0C10] text-slate-200 font-sans tracking-tight selection:bg-cyan-500 selection:text-slate-900 flex flex-col">
       <ToastNotification />
-      <div className="max-w-[1440px] mx-auto p-4 md:p-8 flex-grow w-full relative">
-        
-        {/* Header */}
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 border-b border-slate-800/60 pb-8">
-          <div className="flex items-center gap-4 cursor-pointer group" onClick={() => {setView('landing'); setShowPastDeals(false);}}>
-            <div className="p-2.5 bg-cyan-500 rounded-xl shadow-lg shadow-cyan-500/10 group-hover:bg-cyan-400 transition-colors">
-              <TerminalSquare className="text-slate-900 w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-black tracking-tighter text-white flex items-center gap-2 group-hover:text-cyan-400 transition-colors">
-                BIOQUANTIX 
-                {view === 'dashboard' && <span className="bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded text-[9px] font-mono border border-slate-700 uppercase">Terminal</span>}
-              </h1>
-              <p className="text-slate-500 text-[11px] font-medium mt-0.5">Quantitative Bio-Pharma Intelligence</p>
-            </div>
-          </div>
-          
-          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto text-xs justify-end">
-            {view === 'dashboard' && (
-              <div className="flex bg-slate-900 border border-slate-800 rounded-xl p-1 mr-2">
-                <button 
-                  onClick={() => setShowPastDeals(false)} 
-                  className={`px-4 py-2 rounded-lg font-black transition-all flex items-center gap-2 ${!showPastDeals ? 'bg-cyan-500/10 text-cyan-400' : 'text-slate-500 hover:text-slate-300'}`}
-                >
-                  <Target size={14}/> Live Radar
-                </button>
-                <button 
-                  onClick={() => setShowPastDeals(true)} 
-                  className={`px-4 py-2 rounded-lg font-black transition-all flex items-center gap-2 ${showPastDeals ? 'bg-indigo-500/10 text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}
-                >
-                  <History size={14}/> Past Deals
-                </button>
-              </div>
-            )}
-            
-            {userRole === 'visitor' ? (
-              <button 
-                onClick={() => { setAuthMode('login'); setShowAuthModal(true); }} 
-                className="bg-slate-800/50 hover:bg-slate-800 text-slate-300 border border-slate-700 font-bold px-4 py-2.5 rounded-xl transition-all flex items-center gap-2"
-              >
-                <LogIn className="w-3.5 h-3.5" /> SIGN IN
-              </button>
-            ) : (
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-2 rounded-xl">
-                  <User className="w-3.5 h-3.5 text-slate-400" />
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">
-                    {userRole === 'admin' ? 'SUPER ADMIN' : (userRole === 'pro' ? 'PRO TIER' : 'BASIC EXPLORER')}
-                  </span>
-                </div>
-                <button 
-                  onClick={handleLogout}
-                  className="p-2.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all"
-                  title="Sign Out"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            )}
-
-            {(userRole === 'visitor' || userRole === 'free') && (
-              <button onClick={() => setView('upgrade')} className="bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-black px-5 py-2.5 rounded-xl transition-all flex items-center gap-2 hover:bg-cyan-500/20 shadow-lg shadow-cyan-500/5">
-                <ShieldCheck className="w-3.5 h-3.5" /> UPGRADE PRO
-              </button>
-            )}
-          </div>
-        </header>
+      <Layout 
+        view={view}
+        setView={setView}
+        showPastDeals={showPastDeals}
+        setShowPastDeals={setShowPastDeals}
+        userRole={userRole}
+        setShowAuthModal={setShowAuthModal}
+        setAuthMode={setAuthMode}
+        handleLogout={handleLogout}
+      >
 
         {view === 'landing' && <Landing setView={setView} setShowPastDeals={setShowPastDeals} />}
 
@@ -454,35 +397,7 @@ const App = () => {
           />
         )}
         
-        <footer className="mt-20 py-10 border-t border-slate-900 w-full">
-          <div className="grid md:grid-cols-2 gap-8 items-start mb-10">
-            <div>
-              <div className="text-[10px] text-slate-500 font-mono tracking-[0.3em] uppercase flex items-center gap-2 mb-2">
-                <ShieldCheck size={14} className="text-slate-600" />
-                Institutional-Grade Quantitative Intelligence
-              </div>
-              <p className="text-[11px] text-slate-700 font-bold uppercase tracking-widest">
-                Model v2.8.0-LTS • Datacenter: US-East
-              </p>
-            </div>
-            <div className="p-4 bg-slate-800/30 border border-slate-700/50 rounded-xl">
-              <div className="text-[10px] font-black text-slate-400 uppercase mb-1 flex items-center gap-2">
-                <AlertCircle size={14} /> Information Analytics Disclaimer
-              </div>
-              <p className="text-xs text-slate-500 leading-relaxed italic">
-                BioQuantix provides algorithmic data aggregation and market intelligence for informational purposes only. We are not a registered investment advisor. The intelligence provided does not constitute financial advice. Past data is not indicative of future results.
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] text-slate-500 font-black uppercase tracking-widest">
-            <span>© 2026 BioQuantix Digital Terminal • Data Intelligence</span>
-            <div className="flex gap-6">
-               <a href="/terms.html" className="hover:text-cyan-400 transition-colors">Terms of Service</a>
-               <a href="/privacy.html" className="hover:text-cyan-400 transition-colors">Privacy Policy</a>
-               <a href="/refund.html" className="hover:text-cyan-400 transition-colors">Refund Policy</a>
-            </div>
-          </div>
-        </footer>
+      </Layout>
 
         <FeedbackWidget />
 
@@ -500,7 +415,7 @@ const App = () => {
           handleAuth={handleAuth}
         />
 
-      </div>
+
       
       <style dangerouslySetInnerHTML={{ __html: `
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700;800&display=swap');

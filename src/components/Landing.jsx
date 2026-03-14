@@ -7,7 +7,7 @@ const Landing = ({ setView, setShowPastDeals }) => {
       <div className="text-center mb-16 relative">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-cyan-500/10 blur-[120px] rounded-full pointer-events-none" />
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800/50 border border-slate-700 text-cyan-400 text-xs font-black uppercase tracking-widest mb-8">
-          <Zap size={14} className="fill-cyan-400" /> Powered by DeepSeek AI & FDA Data
+          <Zap size={14} className="fill-cyan-400" /> Powered by AI & Indepth Industry Data
         </div>
         <h1 className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tighter leading-tight">
           Algorithmic Bio-Pharma <br />
