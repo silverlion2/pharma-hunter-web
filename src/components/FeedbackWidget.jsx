@@ -22,7 +22,7 @@ const FeedbackWidget = () => {
           message: formData.message
         };
 
-        const { data, error, status: responseStatus } = await supabase
+        const { error, status: responseStatus } = await supabase
           .from('contact_leads')
           .insert([payload]); // SDK 会自动将对象转化为数组插入
           

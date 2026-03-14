@@ -22,10 +22,8 @@ const App = () => {
   // 修复：初始化时直接赋予保底数据，平滑过渡真实数据，防止异步导致的白屏
   const [assetData, setAssetData] = useState(fallbackData);
   const [pipelineGapsData, setPipelineGapsData] = useState(defaultGaps);
-  const [isLoading, setIsLoading] = useState(true);
 
   // Phase 5.2 新增: 认证状态
-  const [session, setSession] = useState(null);
   const [userRole, setUserRole] = useState('visitor'); // 'visitor', 'free', 'pro', 'admin'
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState('login'); // 'login', 'signup', 'forgot'
@@ -43,14 +41,12 @@ const App = () => {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
       determineUserRole(session?.user);
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
       determineUserRole(session?.user);
     });
 
@@ -74,7 +70,6 @@ const App = () => {
         if (!isSupabaseConfigured) {
           setAssetData(fallbackData);
           setPipelineGapsData(defaultGaps);
-          setIsLoading(false);
           return;
         }
         
@@ -91,17 +86,19 @@ const App = () => {
         if (gapsResp.ok) {
            const gData = await gapsResp.json();
            if (gData && gData.length > 0) {
-              const grouped = { 'Metabolic': [], 'Autoimmune': [] };
+              const grouped = {};
               gData.forEach(row => {
-                  if (grouped[row.target_area]) {
-                      grouped[row.target_area].push({
-                          name: row.mnc_name, target: row.target_area, 
-                          level: row.urgency_level, color: row.color_code || 'bg-cyan-500'
-                      });
+                  if (!grouped[row.target_area]) {
+                      grouped[row.target_area] = [];
                   }
+                  grouped[row.target_area].push({
+                      name: row.mnc_name, target: row.target_area, 
+                      level: row.urgency_level, color: row.color_code || 'bg-cyan-500'
+                  });
               });
-              grouped['Metabolic'].sort((a,b) => b.level - a.level);
-              grouped['Autoimmune'].sort((a,b) => b.level - a.level);
+              Object.keys(grouped).forEach(k => {
+                  grouped[k].sort((a,b) => b.level - a.level);
+              });
               setPipelineGapsData(grouped);
            } else {
               setPipelineGapsData(defaultGaps);
@@ -110,15 +107,24 @@ const App = () => {
            setPipelineGapsData(defaultGaps);
         }
 
-      } catch (err) {
+      } catch {
         setAssetData(fallbackData);
         setPipelineGapsData(defaultGaps);
-      } finally {
-        setIsLoading(false);
       }
     }
     fetchAllData();
   }, []);
+
+  const availableAreas = React.useMemo(() => {
+    return Array.from(new Set(assetData.map(a => a.target_area))).filter(Boolean);
+  }, [assetData]);
+
+  useEffect(() => {
+    if (availableAreas.length > 0 && !availableAreas.includes(targetArea)) {
+      setTargetArea(availableAreas[0]);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [availableAreas, targetArea]);
 
   const baseFiltered = assetData.filter(a => a.target_area === targetArea && a.is_past_deal === showPastDeals);
   const sortedList = [...baseFiltered].sort((a, b) => b.score - a.score);
@@ -173,6 +179,7 @@ const App = () => {
         setSelectedTicker(firstAvailable.ticker);
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [targetArea, showPastDeals, assetData, userRole, view]);
 
   const activeAsset = activeList.find(a => a.ticker === selectedTicker) || activeList[0] || fallbackData[0];
@@ -209,7 +216,6 @@ const App = () => {
             email: authEmail || 'test@bioquantix.com',
             user_metadata: { role: authEmail === 'admin@bioquantix.com' || authEmail === 'test@bioquantix.com' ? 'admin' : 'free' }
           };
-          setSession({ user: mockUser });
           determineUserRole(mockUser);
         } else if (authMode === 'forgot') {
           if (!authEmail) {
@@ -264,7 +270,6 @@ const App = () => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    setSession(null);
     setUserRole('visitor'); 
     setView('landing');
     showToast("Successfully logged out. Premium assets locked.");
@@ -374,6 +379,7 @@ const App = () => {
         
         {view === 'dashboard' && (
           <Dashboard
+            availableAreas={availableAreas}
             targetArea={targetArea}
             setTargetArea={setTargetArea}
             showPastDeals={showPastDeals}

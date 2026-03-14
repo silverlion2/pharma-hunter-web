@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 export const getEnv = (key) => {
   try {
     return import.meta.env[key] || '';
-  } catch (e) {
+  } catch {
     return '';
   }
 };

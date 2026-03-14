@@ -2,7 +2,7 @@ import React from 'react';
 import { TrendingUp, AlertCircle, Cpu, Clock, Database, Activity, Lock, CheckCircle2 } from 'lucide-react';
 
 const Dashboard = ({
-  targetArea, setTargetArea, showPastDeals, themeColorText, themeColorBg,
+  availableAreas = ['Metabolic', 'Autoimmune'], targetArea, setTargetArea, showPastDeals, themeColorText, themeColorBg,
   activeList, currentGaps, activeAsset, safeTicker, safeName, safeCategory,
   safeScore, safeDealInfo, userRole, safeFactors, safeTime, safeUpside,
   safeDigest, safeSignals, handleSelect
@@ -10,18 +10,15 @@ const Dashboard = ({
   return (
     <>
       <div className="mb-8 flex gap-4 border-b border-slate-800/50 pb-4 overflow-x-auto custom-scrollbar">
-        <button 
-          onClick={() => setTargetArea('Metabolic')}
-          className={`px-5 py-2.5 rounded-full text-xs font-black tracking-widest transition-all border whitespace-nowrap ${targetArea === 'Metabolic' ? 'bg-cyan-500 text-slate-900 border-cyan-500 shadow-lg shadow-cyan-500/20' : 'bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-600'}`}
-        >
-          METABOLIC / LIVER
-        </button>
-        <button 
-          onClick={() => setTargetArea('Autoimmune')}
-          className={`px-5 py-2.5 rounded-full text-xs font-black tracking-widest transition-all border whitespace-nowrap ${targetArea === 'Autoimmune' ? 'bg-indigo-500 text-white border-indigo-500 shadow-lg shadow-indigo-500/20' : 'bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-600'}`}
-        >
-          AUTOIMMUNE / IMMUNOLOGY
-        </button>
+        {availableAreas.map(area => (
+          <button 
+            key={area}
+            onClick={() => setTargetArea(area)}
+            className={`px-5 py-2.5 rounded-full text-xs font-black tracking-widest transition-all border whitespace-nowrap ${targetArea === area ? (area === 'Autoimmune' ? 'bg-indigo-500 text-white border-indigo-500 shadow-lg shadow-indigo-500/20' : 'bg-cyan-500 text-slate-900 border-cyan-500 shadow-lg shadow-cyan-500/20') : 'bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-600'}`}
+          >
+            {area.toUpperCase()}
+          </button>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
