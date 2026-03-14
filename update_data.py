@@ -336,6 +336,34 @@ def fetch_market_data(ticker_symbol):
 
     return result
 
+def fetch_latest_news(ticker):
+    """MarketData News API (Beta): 获取标的最新一条新闻标题"""
+    if not MARKETDATA_TOKEN:
+        return "No recent news"
+    try:
+        headers = {"Authorization": f"Bearer {MARKETDATA_TOKEN}"}
+        url = f"https://api.marketdata.app/v1/stocks/news/?symbol={ticker}&countback=1"
+        resp = requests.get(url, headers=headers, timeout=8).json()
+        if resp.get('s') == 'ok':
+            headlines = resp.get('headline', [])
+            if headlines and len(headlines) > 0:
+                return str(headlines[0])[:120]
+        return "No recent news"
+    except Exception:
+        return "No recent news"
+
+def format_cash_display(cash_val):
+    """将原始美元数字格式化为简洁的前端显示 (e.g. $150M, $4.2B)"""
+    if not cash_val or cash_val <= 0:
+        return "—"
+    if cash_val >= 1_000_000_000:
+        return f"${cash_val / 1_000_000_000:.1f}B"
+    elif cash_val >= 1_000_000:
+        return f"${cash_val / 1_000_000:.0f}M"
+    elif cash_val >= 1_000:
+        return f"${cash_val / 1_000:.0f}K"
+    return f"${cash_val:.0f}"
+
 # ==========================================
 # 4. AI M&A 分析大脑
 # ==========================================
@@ -536,6 +564,7 @@ def process_single_target(target, TARGET_SCARCITY_MAP, db_assets_map):
     
     clin_data = fetch_clinical_trials(name)
     market_data = fetch_market_data(ticker)
+    news_headline = fetch_latest_news(ticker)
     
     error_logs = []
     sec_warning_flag = None
@@ -646,7 +675,11 @@ def process_single_target(target, TARGET_SCARCITY_MAP, db_assets_map):
         "target_area": str(target.get("target_area", "TBD")),
         "is_past_deal": bool(target.get("is_past_deal", False)),
         "warning_flag": str(sec_warning_flag) if sec_warning_flag else None,
-        "error_log": str(error_log_str) if error_log_str else None 
+        "error_log": str(error_log_str) if error_log_str else None,
+        "latest_news_headline": str(news_headline) if news_headline else None,
+        "market_cap": format_cash_display(market_data.get("market_cap", 0)),
+        "cash_amount": format_cash_display(fin_data.get("cash", 0) if fin_data else 0),
+        "runway_years": f"~{fin_data['runway']:.1f} Yrs" if fin_data and fin_data.get('runway') else "—"
     }
     
     if fin_data and fin_data.get("cash", 0) > 1:

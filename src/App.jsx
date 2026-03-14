@@ -237,10 +237,10 @@ const App = () => {
       locked: isLocked, 
       category: item.target_area,
       factors: [
-        { label: 'Cash Pressure', score: Math.round(item.cash_score || 50), color: 'from-blue-500 to-cyan-400', desc: cashDesc },
-        { label: 'Asset Scarcity', score: Math.round(item.scarcity_score || 50), color: 'from-cyan-500 to-teal-400', desc: scarcityDesc },
-        { label: 'Catalyst Timing', score: Math.round(item.milestone_score || 50), color: 'from-indigo-500 to-blue-500', desc: milestoneDesc },
-        { label: 'Value Gap', score: Math.round(item.valuation_score || 50), color: 'from-sky-400 to-cyan-300', desc: valDesc }
+        { label: 'Cash Pressure', score: Math.round(item.cash_score || 50), color: 'from-blue-500 to-cyan-400', desc: cashDesc, raw: item.cash_amount || '—' },
+        { label: 'Asset Scarcity', score: Math.round(item.scarcity_score || 50), color: 'from-cyan-500 to-teal-400', desc: scarcityDesc, raw: item.market_cap || '—' },
+        { label: 'Catalyst Timing', score: Math.round(item.milestone_score || 50), color: 'from-indigo-500 to-blue-500', desc: milestoneDesc, raw: item.predicted_time ? item.predicted_time.split(' ')[0] : '—' },
+        { label: 'Value Gap', score: Math.round(item.valuation_score || 50), color: 'from-sky-400 to-cyan-300', desc: valDesc, raw: item.runway_years || '—' }
       ],
       display_signals: rawSignals
     };
@@ -366,6 +366,9 @@ const App = () => {
   const safeFactors = activeAsset.factors || [];
   const safeSignals = activeAsset.display_signals || [];
   const safeDigest = activeAsset.digest || "AI strategic digest is compiling recent regulatory footprints...";
+  const safeCashAmount = activeAsset.cash_amount || '—';
+  const safeNewsHeadline = activeAsset.latest_news_headline || 'No recent news';
+  const safeMarketCap = activeAsset.market_cap || '—';
 
   const ToastNotification = () => (
     <div className={`fixed top-4 right-4 z-[9999] transition-all duration-500 transform ${toast.visible ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0 pointer-events-none'}`}>
@@ -491,6 +494,9 @@ const App = () => {
             safeUpside={safeUpside}
             safeDigest={safeDigest}
             safeSignals={safeSignals}
+            safeCashAmount={safeCashAmount}
+            safeNewsHeadline={safeNewsHeadline}
+            safeMarketCap={safeMarketCap}
             handleSelect={handleSelect}
           />
         )}

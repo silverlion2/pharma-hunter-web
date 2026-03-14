@@ -1,11 +1,11 @@
 import React from 'react';
-import { TrendingUp, AlertCircle, Cpu, Clock, Database, Activity, Lock, CheckCircle2 } from 'lucide-react';
+import { TrendingUp, AlertCircle, Cpu, Clock, Database, Activity, Lock, CheckCircle2, DollarSign, Newspaper, BarChart3 } from 'lucide-react';
 
 const Dashboard = ({
   availableAreas = ['Metabolic', 'Autoimmune'], targetArea, setTargetArea, showPastDeals, themeColorText, themeColorBg,
   activeList, currentGaps, activeAsset, safeTicker, safeName, safeCategory,
   safeScore, safeDealInfo, userRole, safeFactors, safeTime, safeUpside,
-  safeDigest, safeSignals, handleSelect
+  safeDigest, safeSignals, safeCashAmount, safeNewsHeadline, safeMarketCap, handleSelect
 }) => {
   return (
     <>
@@ -156,15 +156,36 @@ const Dashboard = ({
             )}
 
             {!showPastDeals && (
+              <div className="flex flex-wrap items-stretch gap-3 mb-8">
+                <div className="flex items-center gap-2 px-4 py-2 bg-blue-500/5 border border-blue-500/20 rounded-xl">
+                  <DollarSign className="w-3.5 h-3.5 text-blue-400" />
+                  <span className="text-[9px] text-slate-500 font-black uppercase tracking-wider">Cash</span>
+                  <span className="text-sm font-mono font-black text-blue-400">{safeCashAmount}</span>
+                </div>
+                <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
+                  <BarChart3 className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-[9px] text-slate-500 font-black uppercase tracking-wider">Mkt Cap</span>
+                  <span className="text-sm font-mono font-black text-emerald-400">{safeMarketCap}</span>
+                </div>
+                <div className="flex items-center gap-2 px-4 py-2 bg-violet-500/5 border border-violet-500/20 rounded-xl flex-1 min-w-0">
+                  <Newspaper className="w-3.5 h-3.5 text-violet-400 shrink-0" />
+                  <span className="text-[9px] text-slate-500 font-black uppercase tracking-wider shrink-0">News</span>
+                  <span className="text-xs text-violet-300 italic truncate" title={safeNewsHeadline}>{safeNewsHeadline}</span>
+                </div>
+              </div>
+            )}
+
+            {!showPastDeals && (
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
                 {safeFactors.map((f, i) => (
-                  <div key={i} className="bg-white/[0.02] border border-white/[0.05] rounded-xl px-4 py-3 flex flex-col justify-center">
-                    <div className="flex justify-between items-end mb-2">
+                  <div key={i} className="bg-white/[0.02] border border-white/[0.05] rounded-xl px-4 py-3 flex flex-col justify-center group/card hover:border-white/[0.1] transition-all">
+                    <div className="flex justify-between items-start mb-2">
                       <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{f.label}</span>
-                      <span className="text-lg font-mono font-black text-white leading-none">{f.score}%</span>
+                      <span className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded bg-white/[0.04] ${f.score >= 80 ? 'text-cyan-400' : f.score >= 50 ? 'text-slate-300' : 'text-slate-500'}`}>{f.score}%</span>
                     </div>
+                    <div className="text-lg font-mono font-black text-white leading-none mb-2 tracking-tight">{f.raw}</div>
                     <div className="h-1 w-full bg-slate-950 rounded-full overflow-hidden mb-2">
-                      <div className={`h-full bg-gradient-to-r ${f.color}`} style={{ width: `${f.score}%` }} />
+                      <div className={`h-full bg-gradient-to-r ${f.color} transition-all duration-700`} style={{ width: `${f.score}%` }} />
                     </div>
                     <p className="text-[9px] text-slate-600 font-medium uppercase leading-tight truncate">{f.desc}</p>
                   </div>
