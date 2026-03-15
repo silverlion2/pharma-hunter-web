@@ -1,5 +1,5 @@
 import React from 'react';
-import { TerminalSquare, Target, History, LogIn, User, LogOut, ShieldCheck, AlertCircle } from 'lucide-react';
+import { TerminalSquare, Target, History, LogIn, User, LogOut, ShieldCheck, AlertCircle, MessageSquare } from 'lucide-react';
 import Button from './ui/Button';
 
 const Layout = ({ 
@@ -84,6 +84,18 @@ const Layout = ({
               UPGRADE PRO
             </Button>
           )}
+
+          {/* Discord Native Button */}
+          <a 
+            href="https://discord.gg/your-invite-link-here" 
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 font-black transition-all rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 shadow-lg transform active:scale-95 bg-[#5865F2] hover:bg-[#4752C4] text-white px-4 py-2.5 text-sm"
+            title="Join our Discord Community"
+          >
+            <MessageSquare className="w-4 h-4" />
+            DISCORD
+          </a>
         </div>
       </header>
 

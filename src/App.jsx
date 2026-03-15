@@ -17,7 +17,7 @@ if (typeof window !== 'undefined') {
   });
 }
 
-import FeedbackWidget from './components/FeedbackWidget';
+
 import Landing from './components/Landing';
 import AuthModal from './components/AuthModal';
 import Dashboard from './components/Dashboard';
@@ -879,7 +879,6 @@ const App = () => {
           </div>
         )}
 
-        <FeedbackWidget />
 
         <AuthModal 
           showAuthModal={showAuthModal}
