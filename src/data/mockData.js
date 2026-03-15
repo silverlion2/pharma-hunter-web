@@ -1,7 +1,7 @@
 export const fallbackData = [
   {
     ticker: 'ALT', name: 'Altimmune', score: 94.5, target_area: 'Metabolic', is_past_deal: false, warning_flag: null,
-    cash_score: 82.0, scarcity_score: 95.0, milestone_score: 100.0, valuation_score: 88.0,
+    clinical_score: 85.0, cash_score: 82.0, scarcity_score: 95.0, milestone_score: 100.0, valuation_score: 88.0,
     cash_amount: '$48M', runway_years: '~0.6 Yrs', market_cap: '$580M',
     latest_news_headline: 'Altimmune reports positive Pemvidutide Phase 2 liver fat reduction data',
     predicted_time: '14-30 Days (Imminent)', estimated_premium: '+65% ~ +80%',
@@ -10,7 +10,7 @@ export const fallbackData = [
   },
   {
     ticker: 'TERN', name: 'Terns Pharma', score: 88.0, target_area: 'Metabolic', is_past_deal: false, warning_flag: 'AI_TIMEOUT',
-    cash_score: 70.0, scarcity_score: 95.0, milestone_score: 75.0, valuation_score: 80.0,
+    clinical_score: 85.0, cash_score: 70.0, scarcity_score: 95.0, milestone_score: 75.0, valuation_score: 80.0,
     cash_amount: '$120M', runway_years: '~1.4 Yrs', market_cap: '$720M',
     latest_news_headline: 'Terns Pharma advances TERN-601 oral GLP-1 into dose-ranging study',
     predicted_time: '1-3 Months', estimated_premium: '+55% ~ +70%',
@@ -19,7 +19,7 @@ export const fallbackData = [
   },
   {
     ticker: 'ETNB', name: '89bio', score: 82.3, target_area: 'Metabolic', is_past_deal: false, warning_flag: 'SEC_MISSING',
-    cash_score: 50.0, scarcity_score: 85.0, milestone_score: 90.0, valuation_score: 75.0,
+    clinical_score: 85.0, cash_score: 50.0, scarcity_score: 85.0, milestone_score: 90.0, valuation_score: 75.0,
     cash_amount: '$210M', runway_years: '~2.1 Yrs', market_cap: '$1.1B',
     latest_news_headline: '89bio initiates Phase III ENLIVEN trial for Pegozafermin in MASH',
     predicted_time: '3-6 Months', estimated_premium: '+45% ~ +60%',
@@ -28,7 +28,7 @@ export const fallbackData = [
   },
   {
     ticker: 'MDGL', name: 'Madrigal', score: 75.0, target_area: 'Metabolic', is_past_deal: false, warning_flag: null,
-    cash_score: 40.0, scarcity_score: 70.0, milestone_score: 100.0, valuation_score: 60.0,
+    clinical_score: 85.0, cash_score: 40.0, scarcity_score: 70.0, milestone_score: 100.0, valuation_score: 60.0,
     cash_amount: '$680M', runway_years: '~3.2 Yrs', market_cap: '$4.2B',
     latest_news_headline: 'Rezdiffra commercial launch exceeds initial Street projections',
     predicted_time: 'TBD / Event Driven', estimated_premium: '+30% ~ +45%', shadow_signals: [],
@@ -36,7 +36,7 @@ export const fallbackData = [
   },
   {
     ticker: 'VKTX', name: 'Viking Tx', score: 68.5, target_area: 'Metabolic', is_past_deal: false, warning_flag: null,
-    cash_score: 30.0, scarcity_score: 95.0, milestone_score: 75.0, valuation_score: 30.0,
+    clinical_score: 85.0, cash_score: 30.0, scarcity_score: 95.0, milestone_score: 75.0, valuation_score: 30.0,
     cash_amount: '$950M', runway_years: '~4.5 Yrs', market_cap: '$8.6B',
     latest_news_headline: 'Viking announces oral VK2735 Phase 2 topline results with 8.2% weight loss',
     predicted_time: '3-6 Months', estimated_premium: '+35% ~ +50%', shadow_signals: [],
@@ -44,7 +44,7 @@ export const fallbackData = [
   },
   {
     ticker: 'IMVT', name: 'Immunovant', score: 89.5, target_area: 'Autoimmune', is_past_deal: false, warning_flag: null,
-    cash_score: 65.0, scarcity_score: 80.0, milestone_score: 90.0, valuation_score: 75.0,
+    clinical_score: 85.0, cash_score: 65.0, scarcity_score: 80.0, milestone_score: 90.0, valuation_score: 75.0,
     cash_amount: '$180M', runway_years: '~1.3 Yrs', market_cap: '$3.8B',
     latest_news_headline: 'Immunovant IMVT-1402 achieves primary endpoint in myasthenia gravis trial',
     predicted_time: '1-3 Months', estimated_premium: '+50% ~ +65%', shadow_signals: [],
@@ -52,7 +52,7 @@ export const fallbackData = [
   },
   {
     ticker: 'APLS', name: 'Apellis', score: 86.0, target_area: 'Autoimmune', is_past_deal: false, warning_flag: null,
-    cash_score: 55.0, scarcity_score: 75.0, milestone_score: 100.0, valuation_score: 85.0,
+    clinical_score: 85.0, cash_score: 55.0, scarcity_score: 75.0, milestone_score: 100.0, valuation_score: 85.0,
     cash_amount: '$320M', runway_years: '~1.8 Yrs', market_cap: '$2.9B',
     latest_news_headline: 'Apellis expands Syfovre label to broader geographic atrophy population',
     predicted_time: '1-3 Months', estimated_premium: '+55% ~ +70%', shadow_signals: [],
@@ -60,7 +60,7 @@ export const fallbackData = [
   },
   {
     ticker: 'CABA', name: 'Cabaletta Bio', score: 85.5, target_area: 'Autoimmune', is_past_deal: false, warning_flag: null,
-    cash_score: 70.0, scarcity_score: 90.0, milestone_score: 75.0, valuation_score: 80.0,
+    clinical_score: 85.0, cash_score: 70.0, scarcity_score: 90.0, milestone_score: 75.0, valuation_score: 80.0,
     cash_amount: '$130M', runway_years: '~1.2 Yrs', market_cap: '$1.4B',
     latest_news_headline: 'Cabaletta presents durable CD19-CAR T remission data in lupus at ASH',
     predicted_time: '3-6 Months', estimated_premium: '+60% ~ +75%', shadow_signals: [],
@@ -68,7 +68,7 @@ export const fallbackData = [
   },
   {
     ticker: 'KYTX', name: 'Kymera', score: 81.0, target_area: 'Autoimmune', is_past_deal: false, warning_flag: null,
-    cash_score: 50.0, scarcity_score: 80.0, milestone_score: 75.0, valuation_score: 70.0,
+    clinical_score: 85.0, cash_score: 50.0, scarcity_score: 80.0, milestone_score: 75.0, valuation_score: 70.0,
     cash_amount: '$280M', runway_years: '~2.4 Yrs', market_cap: '$2.2B',
     latest_news_headline: 'Kymera reports positive IRAK4 degrader data from Sanofi-partnered trial',
     predicted_time: '3-6 Months', estimated_premium: '+40% ~ +55%', shadow_signals: [],
@@ -76,7 +76,7 @@ export const fallbackData = [
   },
   {
     ticker: 'VTYX', name: 'Ventyx Bio', score: 72.0, target_area: 'Autoimmune', is_past_deal: false, warning_flag: null,
-    cash_score: 85.0, scarcity_score: 60.0, milestone_score: 50.0, valuation_score: 95.0,
+    clinical_score: 85.0, cash_score: 85.0, scarcity_score: 60.0, milestone_score: 50.0, valuation_score: 95.0,
     cash_amount: '$410M', runway_years: '~3.8 Yrs', market_cap: '$350M',
     latest_news_headline: 'Ventyx Bio trades below cash; Sanofi increases equity stake to 12%',
     predicted_time: 'TBD / Event Driven', estimated_premium: '+45% ~ +60%', shadow_signals: [],
@@ -84,7 +84,7 @@ export const fallbackData = [
   },
   {
     ticker: 'ALPN', name: 'Alpine Immune', score: 96.5, target_area: 'Autoimmune', is_past_deal: true, deal_info: "Acquired by Vertex ($4.9B) | April 2024", warning_flag: null,
-    cash_score: 85.0, scarcity_score: 95.0, milestone_score: 100.0, valuation_score: 80.0,
+    clinical_score: 85.0, cash_score: 85.0, scarcity_score: 95.0, milestone_score: 100.0, valuation_score: 80.0,
     cash_amount: '$95M', runway_years: '~0.8 Yrs', market_cap: '$2.8B',
     latest_news_headline: 'Vertex completes $4.9B acquisition of Alpine Immune Sciences',
     predicted_time: 'REALIZED', estimated_premium: 'REALIZED',
@@ -93,7 +93,7 @@ export const fallbackData = [
   },
   {
     ticker: 'RXDX', name: 'Prometheus', score: 98.0, target_area: 'Autoimmune', is_past_deal: true, deal_info: "Acquired by Merck ($10.8B) | April 2023", warning_flag: null,
-    cash_score: 88.0, scarcity_score: 95.0, milestone_score: 100.0, valuation_score: 75.0,
+    clinical_score: 85.0, cash_score: 88.0, scarcity_score: 95.0, milestone_score: 100.0, valuation_score: 75.0,
     cash_amount: '$60M', runway_years: '~0.5 Yrs', market_cap: '$6.2B',
     latest_news_headline: 'Merck announces $10.8B definitive agreement to acquire Prometheus Biosciences',
     predicted_time: 'REALIZED', estimated_premium: 'REALIZED', shadow_signals: [],
@@ -101,7 +101,7 @@ export const fallbackData = [
   },
   {
     ticker: 'HIBI', name: 'HI-Bio', score: 91.5, target_area: 'Autoimmune', is_past_deal: true, deal_info: "Acquired by Biogen ($1.8B) | May 2024", warning_flag: null,
-    cash_score: 75.0, scarcity_score: 85.0, milestone_score: 90.0, valuation_score: 80.0,
+    clinical_score: 85.0, cash_score: 75.0, scarcity_score: 85.0, milestone_score: 90.0, valuation_score: 80.0,
     cash_amount: '$110M', runway_years: '~1.1 Yrs', market_cap: '$1.0B',
     latest_news_headline: 'Biogen closes $1.8B HI-Bio acquisition to expand immunology portfolio',
     predicted_time: 'REALIZED', estimated_premium: 'REALIZED', shadow_signals: [],
@@ -109,7 +109,7 @@ export const fallbackData = [
   },
   {
     ticker: 'CBAY', name: 'CymaBay', score: 95.0, target_area: 'Metabolic', is_past_deal: true, deal_info: "Acquired by Gilead ($4.3B) | Feb 2024", warning_flag: null,
-    cash_score: 80.0, scarcity_score: 90.0, milestone_score: 100.0, valuation_score: 85.0,
+    clinical_score: 85.0, cash_score: 80.0, scarcity_score: 90.0, milestone_score: 100.0, valuation_score: 85.0,
     cash_amount: '$75M', runway_years: '~0.9 Yrs', market_cap: '$2.5B',
     latest_news_headline: 'Gilead to acquire CymaBay Therapeutics for $4.3B in liver disease push',
     predicted_time: 'REALIZED', estimated_premium: 'REALIZED', shadow_signals: [],
@@ -117,7 +117,7 @@ export const fallbackData = [
   },
   {
     ticker: 'CRMO', name: 'Carmot', score: 88.5, target_area: 'Metabolic', is_past_deal: true, deal_info: "Acquired by Roche ($2.7B) | Dec 2023", warning_flag: null,
-    cash_score: 90.0, scarcity_score: 95.0, milestone_score: 50.0, valuation_score: 75.0,
+    clinical_score: 85.0, cash_score: 90.0, scarcity_score: 95.0, milestone_score: 50.0, valuation_score: 75.0,
     cash_amount: '$35M', runway_years: '~0.4 Yrs', market_cap: '$1.6B',
     latest_news_headline: 'Roche acquires Carmot Therapeutics for $2.7B to enter obesity market',
     predicted_time: 'REALIZED', estimated_premium: 'REALIZED', shadow_signals: [],

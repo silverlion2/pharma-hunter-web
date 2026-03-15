@@ -45,7 +45,7 @@ const Dashboard = ({
                     </div>
                     <div>
                       <div className={`text-sm font-bold text-slate-200 transition-colors line-clamp-1 ${!item.locked && `group-hover:${themeColorText}`}`}>
-                        {item.locked ? 'Premium Hidden' : item.name}
+                        {item.name}
                       </div>
                       <div className={`text-[9px] font-black tracking-widest mt-0.5 ${item.status === 'IMMINENT' || item.status === 'ACQUIRED' ? 'text-blue-400' : 'text-slate-500'}`}>
                         {item.status}
@@ -176,18 +176,23 @@ const Dashboard = ({
             )}
 
             {!showPastDeals && (
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-8">
                 {safeFactors.map((f, i) => (
                   <div key={i} className="bg-white/[0.02] border border-white/[0.05] rounded-xl px-4 py-3 flex flex-col justify-center group/card hover:border-white/[0.1] transition-all">
                     <div className="flex justify-between items-start mb-2">
                       <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{f.label}</span>
-                      <span className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded bg-white/[0.04] ${f.score >= 80 ? 'text-cyan-400' : f.score >= 50 ? 'text-slate-300' : 'text-slate-500'}`}>{f.score}%</span>
+                      <div className="group/tooltip2 relative flex items-center">
+                        <span className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded cursor-help bg-white/[0.04] ${f.score >= 80 ? 'text-cyan-400' : f.score >= 50 ? 'text-slate-300' : 'text-slate-500'}`}>{f.score}%</span>
+                        <div className="absolute bottom-full mb-2 right-0 w-48 p-2 bg-slate-800 border border-slate-700 text-[9px] text-slate-300 rounded opacity-0 invisible group-hover/tooltip2:opacity-100 group-hover/tooltip2:visible transition-all z-50 shadow-xl normal-case">
+                           {f.desc}
+                        </div>
+                      </div>
                     </div>
                     <div className="text-lg font-mono font-black text-white leading-none mb-2 tracking-tight">{f.raw}</div>
                     <div className="h-1 w-full bg-slate-950 rounded-full overflow-hidden mb-2">
                       <div className={`h-full bg-gradient-to-r ${f.color} transition-all duration-700`} style={{ width: `${f.score}%` }} />
                     </div>
-                    <p className="text-[9px] text-slate-600 font-medium uppercase leading-tight truncate">{f.desc}</p>
+                    <p className="text-[9px] text-slate-600 font-medium uppercase leading-tight truncate" title={f.desc}>{f.desc}</p>
                   </div>
                 ))}
               </div>
@@ -254,6 +259,14 @@ const Dashboard = ({
                       displayDesc = displayDesc.replace(/\$\d+(\.\d+)?/g, '$***').replace(/\d{3,}/g, '***');
                     }
 
+                    let sentiment = 'Neutral';
+                    if (s.mood === 'HIGH-INTENT' || s.mood === 'STRATEGIC' || s.mood === 'VALIDATED') sentiment = '🐂 Bullish';
+                    else if (s.mood === 'DELAYED' || s.mood === 'RISK') sentiment = '🐻 Bearish';
+
+                    let explanation = 'System indicator for baseline observation.';
+                    if (s.type === 'OPTIONS') explanation = 'Options Flow Interpretation: Abnormal unhedged block trades often precede public M&A announcements as informed institutional capital positions itself.';
+                    else if (s.type === 'CLINICAL') explanation = 'Clinical Interpretation: Strategic pipeline progress perfectly aligns with known acquirer gaps.';
+
                     return (
                       <div key={idx} className="flex gap-5 relative">
                         <div className={`w-3.5 h-3.5 rounded-full bg-slate-950 border-2 z-10 shrink-0 mt-1 flex items-center justify-center ${showPastDeals || targetArea === 'Autoimmune' ? 'border-indigo-500/50' : 'border-slate-700'}`}>
@@ -263,9 +276,13 @@ const Dashboard = ({
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] text-slate-500 font-mono font-bold">{s.date}</span>
                             <span className={`text-[8px] font-black tracking-widest px-1.5 py-0.5 rounded ${showPastDeals || targetArea === 'Autoimmune' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-slate-800 text-slate-400'}`}>{s.mood}</span>
+                            <span className={`text-[9px] font-bold ${sentiment.includes('Bullish') ? 'text-emerald-400' : sentiment.includes('Bearish') ? 'text-red-400' : 'text-slate-500'}`}>{sentiment}</span>
                           </div>
                           <div className="text-xs font-bold text-slate-200 leading-tight">
                             {displayDesc}
+                          </div>
+                          <div className="text-[9px] text-slate-500 italic mt-1 font-medium leading-relaxed">
+                            {explanation}
                           </div>
                         </div>
                       </div>

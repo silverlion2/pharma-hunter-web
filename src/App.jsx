@@ -228,6 +228,7 @@ const App = () => {
     const scarcityDesc = item.scarcity_score >= 90 ? 'Extreme target scarcity' : (item.scarcity_score >= 70 ? 'High competition density' : 'Standard target density');
     const milestoneDesc = item.milestone_score >= 90 ? 'Imminent clinical catalyst' : (item.milestone_score >= 70 ? 'Near-term readout expected' : 'Long-term development phase');
     const valDesc = item.valuation_score >= 80 ? 'Trading near/below tangible cash' : (item.valuation_score >= 60 ? 'Moderate value gap' : 'Premium valuation priced in');
+    const clinDesc = item.clinical_score >= 80 ? 'Superior efficacy/safety vs SoC' : (item.clinical_score <= 40 ? 'Me-too profile or safety signals' : 'Standard incremental benefit');
 
     return {
       ...item,
@@ -237,6 +238,8 @@ const App = () => {
       locked: isLocked, 
       category: item.target_area,
       factors: [
+        { label: 'Clinical Edge', score: Math.round(item.clinical_score || 50), color: 'from-emerald-500 to-teal-400', desc: clinDesc, raw: item.clinical_score ? `${Number(item.clinical_score).toFixed(1)}/100` : '—' },
+        { label: 'Target Scarcity', score: Math.round(item.scarcity_score || 50), color: 'from-purple-500 to-indigo-400', desc: scarcityDesc, raw: item.scarcity_score ? `${Number(item.scarcity_score).toFixed(1)}/100` : '—' },
         { label: 'Cash Pressure', score: Math.round(item.cash_score || 50), color: 'from-blue-500 to-cyan-400', desc: cashDesc, raw: item.cash_amount || '—' },
         { label: 'Catalyst Timing', score: Math.round(item.milestone_score || 50), color: 'from-indigo-500 to-blue-500', desc: milestoneDesc, raw: item.predicted_time || 'TBD' },
         { label: 'Value Gap', score: Math.round(item.valuation_score || 50), color: 'from-sky-400 to-cyan-300', desc: valDesc, raw: item.runway_years || '—' }
