@@ -1,16 +1,18 @@
 import React from 'react';
-import { TrendingUp, AlertCircle, Cpu, Clock, Database, Activity, Lock, CheckCircle2, DollarSign, Newspaper, BarChart3 } from 'lucide-react';
+import { TrendingUp, AlertCircle, Cpu, Clock, Database, Activity, Lock, CheckCircle2, DollarSign, Newspaper, BarChart3, Star } from 'lucide-react';
 
 const Dashboard = ({
   availableAreas = ['Metabolic', 'Autoimmune'], targetArea, setTargetArea, showPastDeals, themeColorText, themeColorBg,
   activeList, currentGaps, activeAsset, safeTicker, safeName, safeCategory,
   safeScore, safeDealInfo, userRole, safeFactors, safeTime, safeUpside,
-  safeDigest, safeSignals, safeCashAmount, safeNewsHeadline, safeMarketCap, handleSelect
+  safeDigest, safeSignals, safeCashAmount, safeNewsHeadline, safeMarketCap, handleSelect,
+  trackedTickers = [], toggleTrackTicker, showOnlyTracked, setShowOnlyTracked, fetchAnalyticsData
 }) => {
   return (
     <>
-      <div className="mb-8 flex gap-4 border-b border-slate-800/50 pb-4 overflow-x-auto custom-scrollbar">
-        {availableAreas.map(area => (
+      <div className="mb-8 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between border-b border-slate-800/50 pb-4">
+        <div className="flex gap-4 overflow-x-auto custom-scrollbar w-full md:w-auto">
+          {availableAreas.map(area => (
           <button 
             key={area}
             onClick={() => setTargetArea(area)}
@@ -19,6 +21,22 @@ const Dashboard = ({
             {area.toUpperCase()}
           </button>
         ))}
+        </div>
+        <div className="relative group/tooltip">
+          <button
+            onClick={fetchAnalyticsData}
+            className="px-4 py-2.5 rounded-full text-[10px] font-black tracking-widest bg-slate-800 text-cyan-400 hover:bg-slate-700 hover:text-cyan-300 transition-colors flex items-center gap-2 border border-slate-700 whitespace-nowrap shadow-lg shadow-cyan-500/10"
+          >
+            <Activity size={14} className="animate-pulse" />
+            MARKET ANALYTICS
+          </button>
+          
+          {/* Tooltip */}
+          <div className="absolute top-full lg:bottom-full lg:top-auto lg:mb-2 mt-2 right-0 w-64 bg-slate-800/95 backdrop-blur-sm border border-slate-700 p-3 rounded-xl shadow-2xl invisible opacity-0 translate-y-2 lg:translate-y-0 lg:translate-y-[-8px] transition-all z-50 text-left">
+            <h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-1">Live Leaderboards</h4>
+            <p className="text-xs text-slate-300 leading-snug">Instantly discover the fastest moving assets, critical cash pressures, target scarcity rankings, and imminent clinical catalysts across all sectors.</p>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -26,10 +44,21 @@ const Dashboard = ({
         <aside className="lg:col-span-3 space-y-6">
           <div className="bg-slate-900/40 border border-slate-800 rounded-2xl overflow-hidden">
             <div className="p-4 border-b border-slate-800/80 flex justify-between items-center bg-slate-900/60">
-              <h2 className="font-bold text-xs text-slate-400 tracking-widest uppercase flex items-center gap-2">
-                <TrendingUp className={`w-4 h-4 ${showPastDeals ? 'text-indigo-400' : themeColorText}`} />
-                {showPastDeals ? 'Historical Deals' : 'Quant Radar'}
-              </h2>
+              <div className="flex items-center gap-4 w-full justify-between">
+                <h2 className="font-bold text-xs text-slate-400 tracking-widest uppercase flex items-center gap-2">
+                  <TrendingUp className={`w-4 h-4 ${showPastDeals ? 'text-indigo-400' : themeColorText}`} />
+                  {showPastDeals ? 'Historical Deals' : 'Quant Radar'}
+                </h2>
+                {!showPastDeals && (
+                  <button 
+                    onClick={() => setShowOnlyTracked(!showOnlyTracked)}
+                    className={`flex items-center gap-1.5 px-2 py-1 rounded text-[9px] font-black tracking-wider transition-colors border ${showOnlyTracked ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 shadow-[0_0_10px_rgba(251,191,36,0.1)]' : 'bg-slate-800 border-slate-700 hover:bg-slate-700 text-slate-500 hover:text-slate-300'}`}
+                  >
+                    <Star size={10} className={showOnlyTracked ? "fill-amber-400" : ""} />
+                    {showOnlyTracked ? 'STARRED' : 'ALL ASSETS'}
+                  </button>
+                )}
+              </div>
             </div>
             
             <div className="divide-y divide-slate-800/30 overflow-y-auto max-h-[500px] custom-scrollbar">
@@ -114,9 +143,20 @@ const Dashboard = ({
                   {safeTicker}
                 </div>
                 <div>
-                  <h2 className="text-4xl font-black text-white mb-2 tracking-tight">
+                  <h2 className="text-4xl font-black text-white mb-2 tracking-tight flex items-center flex-wrap gap-2">
                     {safeName} 
-                    <span className="text-slate-500 font-mono text-xl ml-3">[{activeAsset.ticker}]</span>
+                    <span className="text-slate-500 font-mono text-xl mr-2">[{activeAsset.ticker}]</span>
+                    {!showPastDeals && (
+                      <button 
+                        onClick={() => toggleTrackTicker && toggleTrackTicker(activeAsset.ticker)}
+                        className="hover:scale-110 active:scale-95 transition-transform"
+                        title={trackedTickers?.includes(activeAsset.ticker) ? "Untrack Ticker" : "Track Ticker"}
+                      >
+                        <Star 
+                          className={`w-6 h-6 transition-all ${trackedTickers?.includes(activeAsset.ticker) ? 'text-amber-400 fill-amber-400 drop-shadow-[0_0_12px_rgba(251,191,36,0.6)]' : 'text-slate-600 hover:text-slate-400'}`} 
+                        />
+                      </button>
+                    )}
                   </h2>
                   <div className="flex gap-2">
                     <span className="px-2.5 py-1 bg-slate-800 border border-slate-700 text-slate-400 text-[10px] rounded-md font-bold uppercase">{safeCategory}</span>

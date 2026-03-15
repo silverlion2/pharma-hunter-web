@@ -368,7 +368,7 @@ def fetch_clinical_trials(company_name):
     except Exception as e:
         return {"desc": "Clinical trials API fetch error.", "phase": "None", "days_to_clin": 999}
 
-def fetch_market_data(ticker_symbol):
+def fetch_market_data(ticker_symbol, clin_data=None, earnings_info=None):
     result = {
         "price": "N/A", 
         "market_cap": 0, 
@@ -435,6 +435,7 @@ def fetch_market_data(ticker_symbol):
             volumes = opt_resp.get('volume', [])
             ois = opt_resp.get('openInterest', [])
             expirations = opt_resp.get('expiration', [])
+            ivs = opt_resp.get('iv', [])
             
             anomalies = []
             min_opt_days = 999
@@ -444,13 +445,30 @@ def fetch_market_data(ticker_symbol):
                 strike = float(strikes[i])
                 vol = float(volumes[i])
                 oi = float(ois[i]) if ois[i] else 0.0
+                iv = float(ivs[i]) if (ivs and i < len(ivs) and ivs[i] is not None) else 0.0
                 
                 if side not in ['call', 'c']: continue 
                 if strike <= float(result["price"]) * 1.10: continue 
                 if vol < 100: continue 
                 
-                if (oi > 0 and vol > oi * 1.5) or (oi == 0 and vol > 500):
-                    desc = f"Strike ${strike} Call Sweep (Vol: {int(vol)}/OI: {int(oi)})"
+                # Strict "No-Catalyst" Check (Whitepaper v4.5)
+                no_clin_catalyst = True
+                if clin_data and clin_data.get("days_to_clin", 999) <= 30:
+                    no_clin_catalyst = False
+                    
+                no_earn_catalyst = True
+                if earnings_info and earnings_info.get("next_earnings_date", "TBD") != "TBD":
+                    try:
+                        earn_dt = datetime.strptime(earnings_info["next_earnings_date"], "%Y-%m-%d")
+                        if (earn_dt - datetime.now()).days <= 30:
+                            no_earn_catalyst = False
+                    except: pass
+                
+                # We require Implied Volatility to be uniquely high (IV > 80%) AND No Scheduled Events
+                is_pure_insider_sweep = no_clin_catalyst and no_earn_catalyst and (iv > 0.80)
+                
+                if ((oi > 0 and vol > oi * 1.5) or (oi == 0 and vol > 500)) and is_pure_insider_sweep:
+                    desc = f"Strike ${strike} Call Sweep (Vol: {int(vol)}/OI: {int(oi)} | IV: {int(iv*100)}%)"
                     anomalies.append(desc)
                     result["raw_signals"].append({"type": "OPTIONS", "date": "T-1 EOD", "desc": desc, "mood": "HIGH-INTENT"})
                     try:
@@ -777,13 +795,12 @@ def process_single_target(target, TARGET_SCARCITY_MAP, db_assets_map):
     historical_data = db_assets_map.get(ticker)
     
     clin_data = fetch_clinical_trials(name)
-    market_data = fetch_market_data(ticker)
+    earnings_info = check_earnings_catalyst(ticker)
+    market_data = fetch_market_data(ticker, clin_data, earnings_info)
     news_headline = fetch_latest_news(ticker)
     
     error_logs = []
     sec_warning_flag = None
-    
-    earnings_info = check_earnings_catalyst(ticker)
     
     if market_data["error"]:
         error_logs.append(f"MarketData Error: {market_data['error']}")
@@ -969,8 +986,16 @@ def main():
                 result = future.result()
                 if result and result["status"] == "success":
                     records_to_upsert.append(result["record"])
-                    if result["history"]:
-                        history_logs_to_insert.append(result["history"])
+                    
+                    # Store daily baseline score for 7D/30D analytics
+                    history_logs_to_insert.append({
+                        "ticker": result["ticker"],
+                        "score": result["record"]["score"]
+                    })
+                    
+                    # The old history field was only used for error logging, so we can ignore it or optionally append it
+                    # if we want to keep the old assets_history_log active.
+                    
                     success_count += 1
                     logging.info(f"  ✅ [{result['ticker']}] 计算完毕 | 分数: {result['record']['score']}")
             except Exception as exc:
@@ -1003,9 +1028,9 @@ def main():
         for i in range(0, len(history_logs_to_insert), 50):
             chunk = history_logs_to_insert[i:i+50]
             try:
-                supabase.table('assets_history_log').insert(chunk).execute()
-            except:
-                pass
+                supabase.table('asset_scores_history').insert(chunk).execute()
+            except Exception as e:
+                logging.warning(f"  ⚠️ Could not insert historical score snapshot. Have you run the SQL script? ({e})")
 
     end_time = time.time()
     elapsed_minutes = (end_time - start_time) / 60
