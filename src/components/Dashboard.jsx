@@ -1,13 +1,15 @@
-import React from 'react';
-import { TrendingUp, AlertCircle, Cpu, Clock, Database, Activity, Lock, CheckCircle2, DollarSign, Newspaper, BarChart3, Star } from 'lucide-react';
+import React, { useState } from 'react';
+import { TrendingUp, AlertCircle, Cpu, Clock, Database, Activity, Lock, CheckCircle2, DollarSign, Newspaper, BarChart3, Star, Search, User } from 'lucide-react';
 
 const Dashboard = ({
   availableAreas = ['Metabolic', 'Autoimmune'], targetArea, setTargetArea, showPastDeals, themeColorText, themeColorBg,
   activeList, currentGaps, activeAsset, safeTicker, safeName, safeCategory,
   safeScore, safeDealInfo, userRole, safeFactors, safeTime, safeUpside,
   safeDigest, safeSignals, safeCashAmount, safeNewsHeadline, safeMarketCap, handleSelect,
-  trackedTickers = [], toggleTrackTicker, showOnlyTracked, setShowOnlyTracked, fetchAnalyticsData
+  trackedTickers = [], toggleTrackTicker, showOnlyTracked, setShowOnlyTracked, fetchAnalyticsData,
+  handleSearch, fetchSmartMoneyData
 }) => {
+  const [searchInput, setSearchInput] = useState('');
   return (
     <>
       <div className="mb-8 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between border-b border-slate-800/50 pb-4">
@@ -22,19 +24,37 @@ const Dashboard = ({
           </button>
         ))}
         </div>
-        <div className="relative group/tooltip">
-          <button
-            onClick={fetchAnalyticsData}
-            className="px-4 py-2.5 rounded-full text-[10px] font-black tracking-widest bg-slate-800 text-cyan-400 hover:bg-slate-700 hover:text-cyan-300 transition-colors flex items-center gap-2 border border-slate-700 whitespace-nowrap shadow-lg shadow-cyan-500/10"
-          >
-            <Activity size={14} className="animate-pulse" />
-            MARKET ANALYTICS
-          </button>
-          
-          {/* Tooltip */}
-          <div className="absolute top-full lg:bottom-full lg:top-auto lg:mb-2 mt-2 right-0 w-64 bg-slate-800/95 backdrop-blur-sm border border-slate-700 p-3 rounded-xl shadow-2xl invisible opacity-0 translate-y-2 lg:translate-y-0 lg:translate-y-[-8px] transition-all z-50 text-left">
-            <h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-1">Live Leaderboards</h4>
-            <p className="text-xs text-slate-300 leading-snug">Instantly discover the fastest moving assets, critical cash pressures, target scarcity rankings, and imminent clinical catalysts across all sectors.</p>
+        <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto">
+          {userRole === 'admin' && (
+            <div className="relative group/tooltip shrink-0">
+              <button
+                onClick={fetchSmartMoneyData}
+                className="px-4 py-2.5 rounded-full text-[10px] font-black tracking-widest bg-slate-800 text-amber-400 hover:bg-slate-700 transition-colors flex items-center gap-2 border border-slate-700 whitespace-nowrap shadow-lg"
+              >
+                <User size={14} className="animate-pulse" />
+                SMART MONEY
+              </button>
+              
+              <div className="absolute top-full lg:bottom-full lg:top-auto lg:mb-2 mt-2 right-0 w-64 bg-slate-800/95 backdrop-blur-sm border border-slate-700 p-3 rounded-xl shadow-2xl invisible opacity-0 translate-y-2 lg:translate-y-0 lg:translate-y-[-8px] transition-all z-50 text-left">
+                <h4 className="text-[10px] font-black text-amber-400 uppercase tracking-widest mb-1">Admin Intelligence</h4>
+                <p className="text-xs text-slate-300 leading-snug">Aggregate view of assets currently starred by high-intent Pro users.</p>
+              </div>
+            </div>
+          )}
+
+          <div className="relative group/tooltip shrink-0">
+            <button
+              onClick={fetchAnalyticsData}
+              className="px-4 py-2.5 rounded-full text-[10px] font-black tracking-widest bg-slate-800 text-cyan-400 hover:bg-slate-700 hover:text-cyan-300 transition-colors flex items-center gap-2 border border-slate-700 whitespace-nowrap shadow-lg shadow-cyan-500/10"
+            >
+              <Activity size={14} className="animate-pulse" />
+              MARKET ANALYTICS
+            </button>
+            
+            <div className="absolute top-full lg:bottom-full lg:top-auto lg:mb-2 mt-2 right-0 w-64 bg-slate-800/95 backdrop-blur-sm border border-slate-700 p-3 rounded-xl shadow-2xl invisible opacity-0 translate-y-2 lg:translate-y-0 lg:translate-y-[-8px] transition-all z-50 text-left">
+              <h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-1">Live Leaderboards</h4>
+              <p className="text-xs text-slate-300 leading-snug">Instantly discover the fastest moving assets, critical cash pressures, target scarcity rankings, and imminent clinical catalysts across all sectors.</p>
+            </div>
           </div>
         </div>
       </div>
@@ -50,13 +70,31 @@ const Dashboard = ({
                   {showPastDeals ? 'Historical Deals' : 'Quant Radar'}
                 </h2>
                 {!showPastDeals && (
-                  <button 
-                    onClick={() => setShowOnlyTracked(!showOnlyTracked)}
-                    className={`flex items-center gap-1.5 px-2 py-1 rounded text-[9px] font-black tracking-wider transition-colors border ${showOnlyTracked ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 shadow-[0_0_10px_rgba(251,191,36,0.1)]' : 'bg-slate-800 border-slate-700 hover:bg-slate-700 text-slate-500 hover:text-slate-300'}`}
-                  >
-                    <Star size={10} className={showOnlyTracked ? "fill-amber-400" : ""} />
-                    {showOnlyTracked ? 'STARRED' : 'ALL ASSETS'}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <form 
+                      onSubmit={(e) => { e.preventDefault(); handleSearch(searchInput); setSearchInput(''); }}
+                      className="relative hidden xl:block"
+                    >
+                      <input 
+                        type="text" 
+                        placeholder="Scan Ticker..."
+                        value={searchInput}
+                        onChange={(e) => setSearchInput(e.target.value)}
+                        className="bg-slate-950 border border-slate-700 rounded-lg px-3 py-1 text-xs text-white placeholder-slate-500 w-28 focus:w-36 focus:outline-none focus:border-cyan-500 transition-all font-mono"
+                      />
+                      <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-cyan-400">
+                        <Search size={12} />
+                      </button>
+                    </form>
+
+                    <button 
+                      onClick={() => setShowOnlyTracked(!showOnlyTracked)}
+                      className={`flex items-center gap-1.5 px-2 py-1 rounded text-[9px] font-black tracking-wider transition-colors border ${showOnlyTracked ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 shadow-[0_0_10px_rgba(251,191,36,0.1)]' : 'bg-slate-800 border-slate-700 hover:bg-slate-700 text-slate-500 hover:text-slate-300'}`}
+                    >
+                      <Star size={10} className={showOnlyTracked ? "fill-amber-400" : ""} />
+                      {showOnlyTracked ? 'STARRED' : 'ALL'}
+                    </button>
+                  </div>
                 )}
               </div>
             </div>

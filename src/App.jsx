@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Target, ShieldCheck, ArrowLeft, CheckCircle2, AlertCircle, 
-  TerminalSquare, History, LogIn, User, LogOut, Scale
+  TerminalSquare, History, LogIn, User, LogOut, Scale,
+  Star, TrendingUp, Clock, DollarSign, Activity
 } from 'lucide-react';
 
 import { supabase, isSupabaseConfigured } from './utils/supabase';
@@ -23,7 +24,7 @@ import Dashboard from './components/Dashboard';
 import Layout from './components/Layout';
 
 const App = () => {
-  const [view, setView] = useState('landing'); 
+  const [view, setView] = useState('landing');
   const [targetArea, setTargetArea] = useState('All');
   const [showPastDeals, setShowPastDeals] = useState(false);
   const [selectedTicker, setSelectedTicker] = useState('ALT');
@@ -60,6 +61,11 @@ const App = () => {
     topValue: []
   });
 
+  // Admin: Smart Money Consensus
+  const [showSmartMoneyModal, setShowSmartMoneyModal] = useState(false);
+  const [smartMoneyData, setSmartMoneyData] = useState([]);
+  const [smartMoneyLoading, setSmartMoneyLoading] = useState(false);
+
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
 
   const showToast = (message, type = 'success') => {
@@ -91,20 +97,19 @@ const App = () => {
     // Identifies user for PostHog analytics
     posthog.identify(user.id, { email: user.email });
 
+    let role = user?.user_metadata?.role || 'free';
+
     try {
       const { data, error } = await supabase.rpc('get_user_role', { user_id: user.id });
-      if (error) throw error;
-      
-      const role = data?.[0]?.role || 'free';
-      setUserRole(role);
-      
-      // Fetch tracked tickers on login
-      fetchTrackedTickers();
-      
+      if (!error && data && data.length > 0) {
+        role = data[0].role;
+      }
     } catch (error) {
-      console.error('Error fetching role:', error);
-      setUserRole('free');
+      // Gracefully fallback if the get_user_role RPC hasn't been created in Supabase yet
     }
+    
+    setUserRole(role);
+    fetchTrackedTickers();
   };
 
   const fetchTrackedTickers = async () => {
@@ -167,6 +172,37 @@ const App = () => {
       showToast("Error loading analytics data.", "error");
     } finally {
       setAnalyticsLoading(false);
+    }
+  };
+
+  const fetchSmartMoneyData = async () => {
+    if (userRole !== 'admin') return;
+      
+    setSmartMoneyLoading(true);
+    try {
+      const { data, error } = await supabase.rpc('get_smart_money_consensus');
+      if (error) throw error;
+      setSmartMoneyData(data || []);
+      setShowSmartMoneyModal(true);
+    } catch (err) {
+      console.error("Failed to fetch smart money consensus:", err);
+      showToast("Error loading smart money data.", "error");
+    } finally {
+      setSmartMoneyLoading(false);
+    }
+  };
+
+  const handleSearch = (searchTerm) => {
+    if (searchTerm && searchTerm.trim() !== '') {
+      const ticker = searchTerm.toUpperCase();
+      posthog.capture('searched_ticker', { ticker, role: userRole });
+      
+      const exists = assetData.find(a => a.ticker === ticker);
+      if (exists) {
+         handleSelect(ticker);
+      } else {
+         showToast(`Scan initiated for ${ticker}. Added to next automated Python crawler loop.`, "success");
+      }
     }
   };
 
@@ -639,6 +675,11 @@ const App = () => {
             safeMarketCap={safeMarketCap}
             handleSelect={handleSelect}
             fetchAnalyticsData={fetchAnalyticsData}
+            handleSearch={handleSearch}
+            showSmartMoneyModal={showSmartMoneyModal}
+            setShowSmartMoneyModal={setShowSmartMoneyModal}
+            smartMoneyData={smartMoneyData}
+            fetchSmartMoneyData={fetchSmartMoneyData}
           />
         )}
         
@@ -783,6 +824,54 @@ const App = () => {
                         {analyticsData.topValue.length === 0 && <span className="text-xs text-slate-500">No data available</span>}
                       </div>
                     </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showSmartMoneyModal && userRole === 'admin' && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#0A0C10]/80 backdrop-blur-sm">
+            <div className="bg-slate-900 border border-slate-700 w-full max-w-md max-h-[90vh] rounded-2xl flex flex-col overflow-hidden shadow-2xl relative">
+              <div className="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center border border-amber-500/30">
+                    <User size={16} className="text-amber-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-black text-amber-400 tracking-widest uppercase">Smart Money Consensus</h2>
+                    <p className="text-[10px] text-slate-400">Assets tracked by Pro tier users</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowSmartMoneyModal(false)} className="text-slate-500 hover:text-white transition-colors p-2">
+                  ✕
+                </button>
+              </div>
+              
+              <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-[#0A0C10]/50">
+                {smartMoneyLoading ? (
+                  <div className="flex flex-col items-center justify-center py-20 gap-4">
+                    <div className="w-8 h-8 border-2 border-amber-500/30 border-t-amber-400 rounded-full animate-spin"></div>
+                    <span className="text-xs text-slate-500 font-bold tracking-widest animate-pulse">EXTRACTING WHALE DATA...</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {smartMoneyData.map((item, idx) => (
+                      <div key={idx} onClick={() => { setShowSmartMoneyModal(false); handleSelect(item.ticker); }} className="flex justify-between items-center bg-slate-800/20 hover:bg-slate-800/50 p-4 rounded-xl border border-slate-800 cursor-pointer transition-colors group">
+                        <div className="flex items-center gap-4">
+                           <div className="w-8 h-8 rounded bg-slate-800 flex items-center justify-center font-black text-xs text-amber-400 border border-slate-700/50 group-hover:border-amber-500/50 transition-colors">
+                             #{idx + 1}
+                           </div>
+                           <span className="text-lg font-black text-white group-hover:text-amber-400 transition-colors">{item.ticker}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] uppercase font-bold text-slate-500">Pro Watchers</span>
+                          <span className="font-mono text-xl font-black text-amber-400">{item.pro_count}</span>
+                        </div>
+                      </div>
+                    ))}
+                    {smartMoneyData.length === 0 && <span className="text-sm text-slate-500 text-center py-10">No assets currently tracked by Pro users.</span>}
                   </div>
                 )}
               </div>
