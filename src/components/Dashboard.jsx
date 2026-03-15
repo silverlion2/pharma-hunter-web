@@ -182,17 +182,17 @@ const Dashboard = ({
                     <div className="flex justify-between items-start mb-2">
                       <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{f.label}</span>
                       <div className="group/tooltip2 relative flex items-center">
-                        <span className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded cursor-help bg-white/[0.04] ${f.score >= 80 ? 'text-cyan-400' : f.score >= 50 ? 'text-slate-300' : 'text-slate-500'}`}>{f.score}%</span>
+                        <span className={`text-xs font-mono font-black px-1.5 py-0.5 rounded cursor-help bg-white/[0.04] ${f.score >= 80 ? 'text-cyan-400' : f.score >= 50 ? 'text-slate-300' : 'text-slate-500'}`}>{f.score}%</span>
                         <div className="absolute bottom-full mb-2 right-0 w-48 p-2 bg-slate-800 border border-slate-700 text-[9px] text-slate-300 rounded opacity-0 invisible group-hover/tooltip2:opacity-100 group-hover/tooltip2:visible transition-all z-50 shadow-xl normal-case">
                            {f.desc}
                         </div>
                       </div>
                     </div>
-                    <div className="text-lg font-mono font-black text-white leading-none mb-2 tracking-tight">{f.raw}</div>
+                    <div className="text-lg font-mono font-black text-white leading-none mb-2 tracking-tight line-clamp-1 p-1 -ml-1" title={f.raw}>{f.raw}</div>
                     <div className="h-1 w-full bg-slate-950 rounded-full overflow-hidden mb-2">
                       <div className={`h-full bg-gradient-to-r ${f.color} transition-all duration-700`} style={{ width: `${f.score}%` }} />
                     </div>
-                    <p className="text-[9px] text-slate-600 font-medium uppercase leading-tight truncate" title={f.desc}>{f.desc}</p>
+                    <p className="text-[10px] text-slate-500 font-medium uppercase leading-snug line-clamp-2 min-h-[1.75rem]" title={f.desc}>{f.desc}</p>
                   </div>
                 ))}
               </div>

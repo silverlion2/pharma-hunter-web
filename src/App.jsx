@@ -233,13 +233,13 @@ const App = () => {
     return {
       ...item,
       time: item.is_past_deal ? 'REALIZED' : (item.predicted_time || "Checking Data..."),
-      status: item.is_past_deal ? 'ACQUIRED' : (item.score >= 85 ? 'IMMINENT' : 'IN-FOCUS'),
+      status: item.is_past_deal ? 'ACQUIRED' : (item.score >= 90 ? 'S-CLASS' : (item.score >= 80 ? 'A-CLASS' : 'B-CLASS')),
       upside: item.is_past_deal ? 'REALIZED' : (item.estimated_premium || "TBD"),
       locked: isLocked, 
       category: item.target_area,
       factors: [
-        { label: 'Clinical Edge', score: Math.round(item.clinical_score || 50), color: 'from-emerald-500 to-teal-400', desc: clinDesc, raw: item.clinical_score ? `${Number(item.clinical_score).toFixed(1)}/100` : '—' },
-        { label: 'Target Scarcity', score: Math.round(item.scarcity_score || 50), color: 'from-purple-500 to-indigo-400', desc: scarcityDesc, raw: item.scarcity_score ? `${Number(item.scarcity_score).toFixed(1)}/100` : '—' },
+        { label: 'Clinical Edge', score: Math.round(item.clinical_score || 50), color: 'from-emerald-500 to-teal-400', desc: clinDesc, raw: !item.clinical_score ? 'Pending AI Data' : (item.clinical_score >= 80 ? 'Superior to SoC' : (item.clinical_score >= 60 ? 'Non-Inferior' : 'High Risk')) },
+        { label: 'Target Scarcity', score: Math.round(item.scarcity_score || 50), color: 'from-purple-500 to-indigo-400', desc: scarcityDesc, raw: item.scarcity_score >= 90 ? 'Tier 1 Target' : (item.scarcity_score >= 75 ? 'Tier 2 Target' : (item.scarcity_score >= 60 ? 'Tier 3 Target' : 'Tier 4 Target')) },
         { label: 'Cash Pressure', score: Math.round(item.cash_score || 50), color: 'from-blue-500 to-cyan-400', desc: cashDesc, raw: item.cash_amount || '—' },
         { label: 'Catalyst Timing', score: Math.round(item.milestone_score || 50), color: 'from-indigo-500 to-blue-500', desc: milestoneDesc, raw: item.predicted_time || 'TBD' },
         { label: 'Value Gap', score: Math.round(item.valuation_score || 50), color: 'from-sky-400 to-cyan-300', desc: valDesc, raw: item.runway_years || '—' }
