@@ -28,6 +28,7 @@ import Guidance from './components/Guidance';
 import ComparisonView from './components/ComparisonView';
 import SmartMoney from './components/SmartMoney';
 import GapMap from './components/GapMap';
+import Blog from './components/Blog';
 
 const App = () => {
   const [view, setView] = useState('landing');
@@ -539,6 +540,7 @@ const App = () => {
       upgrade: 'Upgrade to Pro | BioQuantix',
       compare: 'Asset Comparison | BioQuantix',
       smartmoney: 'Smart Money Consensus | BioQuantix',
+      blog: 'Bio-Pharma Intelligence Blog | BioQuantix',
     };
     document.title = titles[view] || 'BioQuantix – Quantitative Bio-Pharma Intelligence';
   }, [view]);
@@ -798,6 +800,8 @@ const App = () => {
         {view === 'landing' && <Landing setView={setView} setShowPastDeals={setShowPastDeals} />}
         
         {view === 'guidance' && <Guidance setView={setView} />}
+
+        {view === 'blog' && <Blog setView={setView} />}
 
         {view === 'watchlist' && (
           <Watchlist
