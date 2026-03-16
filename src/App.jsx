@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Target, ShieldCheck, ArrowLeft, CheckCircle2, AlertCircle, 
   TerminalSquare, History, LogIn, User, LogOut, Scale,
-  Star, TrendingUp, Clock, DollarSign, Activity
+  Star, TrendingUp, Clock, DollarSign, Activity, Lock
 } from 'lucide-react';
 
 import { supabase, isSupabaseConfigured } from './utils/supabase';
