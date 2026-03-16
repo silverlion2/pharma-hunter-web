@@ -127,13 +127,94 @@ export const fallbackData = [
 
 export const defaultGaps = {
   'Metabolic': [
-    { name: 'PFE', target: 'MASH / Obesity', level: 92, color: 'bg-blue-500' },
-    { name: 'NVS', target: 'Metabolic Combos', level: 85, color: 'bg-cyan-500' },
-    { name: 'GSK', target: 'Liver Disease', level: 70, color: 'bg-teal-500' }
+    { 
+      name: 'Pfizer (PFE)', 
+      target: 'Metabolic', 
+      level: 92, 
+      color: 'bg-blue-500',
+      strategic_focus: 'Aggressive expansion into oral weight loss; recovering from Danuglipron clinical setbacks. Seeking differentiated MoAs in obesity/MASH to compete with NVO/LLY.',
+      budget_estimate: '$15B - $25B',
+      recent_acquisitions: [{name: "Seagen", year: 2023, value: "$43B", area: "Oncology"}, {name: "Arena Pharma", year: 2021, value: "$6.7B", area: "Immunology"}],
+      current_pipeline: [{name: "Danuglipron (Daily)", phase: "Phase 2b", type: "Oral GLP-1"}, {name: "PF-06954522", phase: "Phase 1", type: "FGF21"}],
+      key_assets: [{name: "Eliquis", revenue_2023: "$6.7B"}, {name: "Prevnar", revenue_2023: "$6.4B"}],
+      market_size: '$100B+ Estimated TAM by 2030 (Obesity/MASH)',
+      expiring_patents: [{asset: "Eliquis", year: 2026, revenue_at_risk: "$6.7B"}, {asset: "Ibrance", year: 2027, revenue_at_risk: "$4.7B"}],
+      scientific_data_overview: 'Clinical focus prioritizing lean mass preservation, gastrointestinal tolerability in oral formulations, and combo-therapies (GLP/GIP/Glucagon). Needs clean safety signals.',
+      secondary_targets: ["GLP-1", "FGF21", "Amylin"]
+    },
+    { 
+      name: 'Novartis (NVS)', 
+      target: 'Metabolic', 
+      level: 85, 
+      color: 'bg-cyan-500',
+      strategic_focus: 'Building a radioligand and cardiovascular-metabolic powerhouse post-Sandoz spin-off. Looking for next-gen incretins or muscle-sparing metabolic assets.',
+      budget_estimate: '$10B - $15B',
+      recent_acquisitions: [{name: "MorphoSys", year: 2024, value: "$2.9B", area: "Oncology"}, {name: "DTx Pharma", year: 2023, value: "$1.0B", area: "Neuro"}],
+      current_pipeline: [{name: "Pelacarsen", phase: "Phase 3", type: "Lp(a)"}, {name: "Ianalumab", phase: "Phase 3", type: "Sjogrens"}],
+      key_assets: [{name: "Entresto", revenue_2023: "$6.0B"}, {name: "Cosentyx", revenue_2023: "$5.0B"}],
+      market_size: '$60B+ (Cardio-Metabolic Combos)',
+      expiring_patents: [{asset: "Entresto", year: 2025, revenue_at_risk: "$6.0B"}, {asset: "Promacta", year: 2026, revenue_at_risk: "$2.3B"}],
+      scientific_data_overview: 'Highly focused on long-acting (monthly/quarterly) formulations or genetic medicines (siRNA) targeting cardiovascular risk outcomes inherent to obesity.',
+      secondary_targets: ["siRNA", "PCSK9", "Glucagon"]
+    }
   ],
   'Autoimmune': [
-    { name: 'ABBV', target: 'Immunology Cliff', level: 95, color: 'bg-indigo-500' },
-    { name: 'JNJ', target: 'Targeted Autoimmune', level: 88, color: 'bg-blue-500' },
-    { name: 'SNY', target: 'Oral Immunology', level: 82, color: 'bg-cyan-500' }
+    { 
+      name: 'AbbVie (ABBV)', 
+      target: 'Autoimmune', 
+      level: 95, 
+      color: 'bg-indigo-500',
+      strategic_focus: 'Desperate necessity to replace Humira revenue cliff via Skyrizi/Rinvoq expansion and acquiring novel immunology blockbusters.',
+      budget_estimate: '$20B - $30B',
+      recent_acquisitions: [{name: "Cerevel", year: 2023, value: "$8.7B", area: "Neuro"}, {name: "ImmunoGen", year: 2023, value: "$10.1B", area: "Oncology"}],
+      current_pipeline: [{name: "Lutikizumab", phase: "Phase 2", type: "IL-1a/b"}, {name: "Upadacitinib (expansions)", phase: "Phase 3", type: "JAK1"}],
+      key_assets: [{name: "Humira", revenue_2023: "$14.4B (Falling)"}, {name: "Skyrizi", revenue_2023: "$7.7B"}],
+      market_size: '$150B+ Immunology Sector',
+      expiring_patents: [{asset: "Humira", year: "2023 (Active Cliff)", revenue_at_risk: "$-8.0B YoY"}, {asset: "Imbruvica", year: 2026, revenue_at_risk: "$3.6B"}],
+      scientific_data_overview: 'Seeking differentiated MoAs for IBD, Rheumatology, and Derm that can demonstrate superiority over existing TL1A or JAK inhibitors.',
+      secondary_targets: ["IL-23", "TL1A", "JAK", "FcRn"]
+    },
+    { 
+      name: 'Sanofi (SNY)', 
+      target: 'Autoimmune', 
+      level: 88, 
+      color: 'bg-blue-500',
+      strategic_focus: 'Pivoting hard into "Immunology First" strategy to ride the Dupixent wave and discover its oral successor. Aggressively licensing early-stage auto-immune assets.',
+      budget_estimate: '$8B - $12B',
+      recent_acquisitions: [{name: "Inhibrx", year: 2024, value: "$1.7B", area: "Rare"}, {name: "Provention Bio", year: 2023, value: "$2.9B", area: "Autoimmune"}],
+      current_pipeline: [{name: "Amlitelimab", phase: "Phase 2", type: "OX40L"}, {name: "Frexalimab", phase: "Phase 2", type: "CD40L"}],
+      key_assets: [{name: "Dupixent", revenue_2023: "€10.7B"}, {name: "Aubagio", revenue_2023: "€0.9B (Fallen)"}],
+      market_size: '$80B+ (Dermatology & Respiratory Immunology)',
+      expiring_patents: [{asset: "Aubagio", year: "2023 (Active Cliff)", revenue_at_risk: "€1.0B"}, {asset: "Dupixent", year: "2031", revenue_at_risk: "€15B+"}],
+      scientific_data_overview: 'Urgent need for oral immunology assets (degraders, IRAK4, BTK) to protect the franchise from oral competition to Dupixent.',
+      secondary_targets: ["OX40L", "IRAK4", "Oral Degraders", "BTK"]
+    }
+  ],
+  'Oncology': [
+    { 
+      name: 'Merck (MRK)', 
+      target: 'Oncology', 
+      level: 98, 
+      color: 'bg-red-500',
+      strategic_focus: 'The Keytruda 2028 patent cliff represents the largest single-drug revenue hole in pharma history. Merck is buying everything with ADC or Next-Gen IO potential.',
+      budget_estimate: '$30B+',
+      recent_acquisitions: [{name: "Prometheus", year: 2023, value: "$10.8B", area: "Immunology"}, {name: "Seagen (Attempt)", year: 2023, value: "Missed", area: "ADC"}],
+      current_pipeline: [{name: "V116 (Vaccine)", phase: "Pre-Registration", type: "Vaccine"}, {name: "MK-2870", phase: "Phase 3", type: "TROP2 ADC"}],
+      key_assets: [{name: "Keytruda", revenue_2023: "$25.0B"}, {name: "Gardasil", revenue_2023: "$8.9B"}],
+      market_size: '$250B+ Broad Oncology TAM',
+      expiring_patents: [{asset: "Keytruda", year: "2028 (LOE)", revenue_at_risk: "$25B+"}, {asset: "Januvia", year: 2026, revenue_at_risk: "$2.0B"}],
+      scientific_data_overview: 'Primarily seeking Antibody-Drug Conjugates (ADCs), radiopharma, and novel IO combos to secure market dominance post-Keytruda.',
+      secondary_targets: ["ADC", "TROP2", "Claudin", "Radiopharma"]
+    }
   ]
+};
+
+export const TARGET_DICTIONARY = {
+  'Metabolic': ['GLP-1', 'GIP', 'Glucagon', 'FGF21', 'Amylin', 'PCSK9', 'siRNA'],
+  'Autoimmune': ['TL1A', 'FcRn', 'JAK', 'IL-23', 'IL-17', 'BTK', 'OX40L', 'IRAK4', 'CD19 CAR-T'],
+  'Oncology': ['ADC', 'TROP2', 'Claudin', 'Radiopharma', 'PD-1', 'CTLA-4', 'KRAS', 'EGFR'],
+  'Neurology': ['Amyloid', 'Tau', 'LRRK2', 'GBA', 'AAV Gene Therapy'],
+  'Rare Diseases': ['Gene Therapy', 'RNAi', 'Enzyme Replacement', 'Oligonucleotides'],
+  'Cardiovascular': ['Lp(a)', 'PCSK9', 'Factor XIa'],
+  'Immunology': ['TSLP', 'IL-4R', 'IL-31', 'IgE']
 };

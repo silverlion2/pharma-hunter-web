@@ -27,10 +27,11 @@ import ErrorBoundary from './components/ErrorBoundary';
 import Guidance from './components/Guidance';
 import ComparisonView from './components/ComparisonView';
 import SmartMoney from './components/SmartMoney';
+import GapMap from './components/GapMap';
 
 const App = () => {
   const [view, setView] = useState('landing');
-  const [targetArea, setTargetArea] = useState('All');
+  const [targetArea, setTargetArea] = useState('Oncology');
   const [showPastDeals, setShowPastDeals] = useState(false);
   const [selectedTicker, setSelectedTicker] = useState('ALT');
   
@@ -290,20 +291,28 @@ const App = () => {
   };
 
   const fetchSmartMoneyData = async () => {
-    if (userRole !== 'admin') return;
-      
-    setSmartMoneyLoading(true);
-    try {
-      const { data, error } = await supabase.rpc('get_smart_money_consensus');
-      if (error) throw error;
-      setSmartMoneyData(data || []);
-      setShowSmartMoneyModal(true);
-    } catch (err) {
-      console.error("Failed to fetch smart money consensus:", err);
-      showToast("Error loading smart money data.", "error");
-    } finally {
-      setSmartMoneyLoading(false);
+    if (userRole === 'admin' || userRole === 'pro') {
+      setSmartMoneyLoading(true);
+      try {
+        const { data, error } = await supabase.rpc('get_smart_money_consensus');
+        if (error) throw error;
+        setSmartMoneyData(data || []);
+      } catch (err) {
+        console.error("Failed to fetch smart money consensus:", err);
+        showToast("Error loading smart money data.", "error");
+      } finally {
+        setSmartMoneyLoading(false);
+      }
+    } else {
+      // Mock data for the blurred tease
+      setSmartMoneyData(assetData.slice(0, 5).map((a, i) => ({ 
+        ticker: a.ticker, 
+        pro_count: 50 - (i * 10), 
+        free_count: 200 - (i * 20), 
+        total_count: 250 - (i * 30) 
+      })));
     }
+    setView('smartmoney');
   };
 
   const handleSearch = (searchTerm) => {
@@ -530,18 +539,36 @@ const App = () => {
   });
   const sortedList = [...baseFiltered].sort((a, b) => b.score - a.score);
 
-  const activeList = sortedList.map((item) => {
+  const areaRanks = {};
+  const listWithRanks = sortedList.map(item => {
+    const area = item.target_area || 'Others';
+    if (!areaRanks[area]) {
+      areaRanks[area] = 1;
+    } else {
+      areaRanks[area]++;
+    }
+    return { ...item, rankInIndication: areaRanks[area] };
+  });
+
+  const activeList = listWithRanks.map((item) => {
     let isLocked = false;
     
     if (showPastDeals) {
       isLocked = false;
     } else {
-      if (item.score >= 80) {
-        if (userRole === 'admin' || userRole === 'pro') {
-          isLocked = false; 
-        } else {
-          isLocked = true;  
+      const isTopTier = item.score >= 80;
+      
+      if (userRole === 'visitor') {
+        const hash = (item.ticker.charCodeAt(0) + (item.ticker.length > 1 ? item.ticker.charCodeAt(1) : 0)) % 3 === 0;
+        if (isTopTier || item.rankInIndication <= 3 || hash) {
+          isLocked = true;
         }
+      } else if (userRole === 'free') {
+        if (isTopTier || item.rankInIndication <= 1) {
+          isLocked = true;
+        }
+      } else if (userRole === 'admin' || userRole === 'pro') {
+        isLocked = false; 
       }
     }
 
@@ -555,8 +582,13 @@ const App = () => {
     const valDesc = item.valuation_score >= 80 ? 'Trading near/below tangible cash' : (item.valuation_score >= 60 ? 'Moderate value gap' : 'Premium valuation priced in');
     const clinDesc = item.clinical_score >= 80 ? 'Superior efficacy/safety vs SoC' : (item.clinical_score <= 40 ? 'Me-too profile or safety signals' : 'Standard incremental benefit');
 
+    const lockedTickerStr = item.score >= 90 ? '$S***' : (item.score >= 80 ? '$A***' : '$B***');
+    const lockedNameStr = item.score >= 90 ? '[Proprietary S-Class Target]' : (item.score >= 80 ? '[Proprietary A-Class Target]' : '[Proprietary Asset]');
+
     return {
       ...item,
+      display_ticker: isLocked ? lockedTickerStr : item.ticker,
+      display_name: isLocked ? lockedNameStr : item.name,
       time: item.is_past_deal ? 'REALIZED' : (item.predicted_time || "Checking Data..."),
       status: item.is_past_deal ? 'ACQUIRED' : (item.score >= 90 ? 'S-CLASS' : (item.score >= 80 ? 'A-CLASS' : 'B-CLASS')),
       upside: item.is_past_deal ? 'REALIZED' : (item.estimated_premium || "TBD"),
@@ -682,8 +714,8 @@ const App = () => {
   // 提取为安全变量，做兜底处理，彻底避免由真实数据库中的 NULL 数据引发的渲染白屏
   const isCurrentlyLocked = activeAsset.locked;
   
-  const safeTicker = activeAsset.ticker ? activeAsset.ticker[0] : 'N';
-  const safeName = activeAsset.name || 'Unknown Asset';
+  const safeTicker = isCurrentlyLocked ? '🔒' : (activeAsset.ticker ? activeAsset.ticker[0] : 'N');
+  const safeName = activeAsset.display_name || activeAsset.name || 'Unknown Asset';
   const safeCategory = activeAsset.category || 'TBD';
   const safeScore = activeAsset.score || 0;
   const safeDealInfo = activeAsset.deal_info || '';
@@ -761,6 +793,13 @@ const App = () => {
             setView={setView}
             setSelectedTicker={setSelectedTicker}
             handleSelect={handleSelect}
+          />
+        )}
+
+        {view === 'gap-map' && (
+          <GapMap
+            pipelineGapsData={pipelineGapsData}
+            setView={setView}
           />
         )}
 
@@ -877,6 +916,7 @@ const App = () => {
           <ComparisonView
             tickers={compareSelection}
             assetData={assetData}
+            userRole={userRole}
             setView={(v) => {
               setIsCompareMode(false);
               setCompareSelection([]);
@@ -923,7 +963,7 @@ const App = () => {
                 </button>
               </div>
               
-              <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-[#0A0C10]/50">
+              <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-[#0A0C10]/50 relative">
                 {analyticsLoading ? (
                   <div className="flex flex-col items-center justify-center py-20 gap-4">
                     <div className="w-8 h-8 border-2 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin"></div>
@@ -931,6 +971,23 @@ const App = () => {
                   </div>
                 ) : (
                   <>
+                  {userRole === 'visitor' && (
+                    <div className="absolute inset-x-0 bottom-0 top-[20%] z-20 flex flex-col items-center justify-center p-6 bg-gradient-to-t from-[#0A0C10] via-[#0A0C10]/95 to-[#0A0C10]/10 backdrop-blur-[2px]">
+                      <div className="max-w-sm w-full bg-slate-900 border border-slate-700/50 p-6 rounded-2xl shadow-2xl flex flex-col items-center text-center mt-20">
+                         <Lock size={32} className="text-blue-500 mb-3" />
+                         <h3 className="text-white font-black text-lg mb-2">Real-time Movers Restricted</h3>
+                         <p className="text-slate-400 text-xs leading-relaxed mb-5">
+                           Live market analytics and shadow signal feeds are proprietary. Create a free account to unlock real-time intelligence.
+                         </p>
+                         <button
+                           onClick={() => { setShowAnalyticsModal(false); setView && setView('auth'); }}
+                           className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-400 hover:to-indigo-400 text-white font-black text-xs px-4 py-3 rounded-xl uppercase tracking-widest transition-all"
+                         >
+                           JOIN FREE TO UNLOCK
+                         </button>
+                      </div>
+                    </div>
+                  )}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* Top Scarcity */}
                     <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-4 flex flex-col">

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TrendingUp, AlertCircle, Cpu, Clock, Database, Activity, Lock, CheckCircle2, DollarSign, Newspaper, BarChart3, Star, Search, User, Swords } from 'lucide-react';
+import { TrendingUp, AlertCircle, Cpu, Clock, Database, Activity, Lock, CheckCircle2, DollarSign, Newspaper, BarChart3, Star, Search, User, Swords, ArrowRight } from 'lucide-react';
 
 const Dashboard = ({
   availableAreas = ['Metabolic', 'Autoimmune'], targetArea, setTargetArea, showPastDeals, themeColorText, themeColorBg,
@@ -9,7 +9,7 @@ const Dashboard = ({
   trackedTickers = [], toggleTrackTicker, showOnlyTracked, setShowOnlyTracked, fetchAnalyticsData,
   handleSearch, fetchSmartMoneyData,
   isCompareMode, setIsCompareMode, compareSelection, toggleCompareSelection, handleStartCombat,
-  isSearching, searchStep, searchedTicker
+  isSearching, searchStep, searchedTicker, setView
 }) => {
   const [searchInput, setSearchInput] = useState('');
   
@@ -56,22 +56,20 @@ const Dashboard = ({
             </div>
           </div>
 
-          {userRole === 'admin' && (
-            <div className="relative group/tooltip shrink-0">
-              <button
-                onClick={fetchSmartMoneyData}
-                className="px-4 py-2.5 rounded-full text-[10px] font-black tracking-widest bg-slate-800 text-amber-400 hover:bg-slate-700 transition-colors flex items-center gap-2 border border-slate-700 whitespace-nowrap shadow-lg"
-              >
-                <User size={14} className="animate-pulse" />
-                SMART MONEY
-              </button>
-              
-              <div className="absolute top-full lg:bottom-full lg:top-auto lg:mb-2 mt-2 right-0 w-64 bg-slate-800/95 backdrop-blur-sm border border-slate-700 p-3 rounded-xl shadow-2xl invisible opacity-0 translate-y-2 lg:translate-y-0 lg:translate-y-[-8px] transition-all z-50 text-left">
-                <h4 className="text-[10px] font-black text-amber-400 uppercase tracking-widest mb-1">Admin Intelligence</h4>
-                <p className="text-xs text-slate-300 leading-snug">Aggregate view of assets currently starred by high-intent Pro users.</p>
-              </div>
+          <div className="relative group/tooltip shrink-0">
+            <button
+              onClick={fetchSmartMoneyData}
+              className="px-4 py-2.5 rounded-full text-[10px] font-black tracking-widest bg-slate-800 text-amber-400 hover:bg-slate-700 transition-colors flex items-center gap-2 border border-slate-700 whitespace-nowrap shadow-lg"
+            >
+              <User size={14} className="animate-pulse" />
+              SMART MONEY
+            </button>
+            
+            <div className="absolute top-full lg:bottom-full lg:top-auto lg:mb-2 mt-2 right-0 w-64 bg-slate-800/95 backdrop-blur-sm border border-slate-700 p-3 rounded-xl shadow-2xl invisible opacity-0 translate-y-2 lg:translate-y-0 lg:translate-y-[-8px] transition-all z-50 text-left cursor-default pointer-events-none">
+              <h4 className="text-[10px] font-black text-amber-400 uppercase tracking-widest mb-1">{userRole === 'pro' || userRole === 'admin' ? 'Pro Intelligence' : 'Pro Tease'}</h4>
+              <p className="text-xs text-slate-300 leading-snug">Aggregate view of assets currently tracked by high-intent Pro users.</p>
             </div>
-          )}
+          </div>
 
           <div className="relative group/tooltip shrink-0">
             <button
@@ -161,8 +159,8 @@ const Dashboard = ({
                   <div 
                     key={item.ticker}
                     onClick={() => {
-                      if (item.locked) return;
                       if (isCompareMode) {
+                        if (item.locked) return;
                         if (!isCompareDisabled) toggleCompareSelection(item.ticker);
                       } else {
                         handleSelect(item.ticker);
@@ -176,16 +174,16 @@ const Dashboard = ({
                           {isSelectedForCompare && <CheckCircle2 size={12} strokeWidth={4} />}
                         </div>
                       ) : (
-                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-black text-xs border ${item.locked ? 'bg-black text-slate-800 border-slate-800' : `bg-slate-800/50 ${themeColorText} border-slate-700/50`}`}>
-                          {item.locked ? <Lock size={14} /> : item.ticker}
+                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-black ${item.locked ? 'text-[9px]' : 'text-xs'} border ${item.locked ? 'bg-slate-900 text-slate-500 border-slate-700 w-11' : `bg-slate-800/50 ${themeColorText} border-slate-700/50`}`}>
+                          {item.display_ticker || item.ticker}
                         </div>
                       )}
                       
                       <div>
                         <div className={`text-sm font-bold text-slate-200 transition-colors line-clamp-1 ${!item.locked && !isCompareDisabled && !isCompareMode && `group-hover:${themeColorText}`} ${isCompareMode && isSelectedForCompare && 'text-indigo-400'}`}>
-                          {!isCompareMode && isSelectedForCompare ? '' : item.name}
-                          {isCompareMode && <span className="mr-2 font-mono text-[10px] text-slate-500">[{item.ticker}]</span>}
-                          {isCompareMode && item.name}
+                          {!isCompareMode && isSelectedForCompare ? '' : (item.display_name || item.name)}
+                          {isCompareMode && <span className="mr-2 font-mono text-[10px] text-slate-500">[{item.display_ticker || item.ticker}]</span>}
+                          {isCompareMode && (item.display_name || item.name)}
                         </div>
                         <div className={`text-[9px] font-black tracking-widest mt-0.5 ${item.status === 'IMMINENT' || item.status === 'ACQUIRED' ? 'text-blue-400' : 'text-slate-500'}`}>
                           {item.status}
@@ -218,9 +216,17 @@ const Dashboard = ({
           </div>
 
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 relative overflow-hidden">
-            <h3 className={`text-slate-400 text-xs font-black tracking-widest mb-2 uppercase flex items-center gap-2`}>
-              <Cpu className={`w-4 h-4 ${themeColorText}`} /> Pipeline Gap Map
-            </h3>
+            <div className="flex justify-between items-start mb-2">
+              <h3 className={`text-slate-400 text-xs font-black tracking-widest uppercase flex items-center gap-2`}>
+                <Cpu className={`w-4 h-4 ${themeColorText}`} /> Pipeline Gap Map
+              </h3>
+              <button 
+                onClick={() => setView && setView('gap-map')}
+                className="text-[9px] font-black uppercase tracking-widest text-slate-500 hover:text-cyan-400 transition-colors flex items-center gap-1 bg-slate-800/50 hover:bg-slate-800 px-2 py-1 rounded-md border border-slate-700/50"
+              >
+                View Full Horizon <ArrowRight size={10} />
+              </button>
+            </div>
             <p className="text-[9px] text-slate-500 italic mb-5 leading-tight">
               Urgency reflects MNC's impending patent cliffs (revenue at risk) and strategic desperation for assets in this sector.
             </p>
@@ -257,7 +263,7 @@ const Dashboard = ({
                 <div>
                   <h2 className="text-4xl font-black text-white mb-2 tracking-tight flex items-center flex-wrap gap-2">
                     {safeName} 
-                    <span className="text-slate-500 font-mono text-xl mr-2">[{activeAsset.ticker}]</span>
+                    <span className="text-slate-500 font-mono text-xl mr-2">[{activeAsset.display_ticker || activeAsset.ticker}]</span>
                     {!showPastDeals && (
                       <button 
                         onClick={() => toggleTrackTicker && toggleTrackTicker(activeAsset.ticker)}
@@ -382,16 +388,30 @@ const Dashboard = ({
                 <div className="absolute inset-0 z-20 flex flex-col items-center justify-center p-6 bg-slate-950/20 backdrop-blur-[1px] rounded-[2rem]">
                   <div className="max-w-md w-full bg-slate-900/90 border border-slate-700/50 p-8 rounded-2xl shadow-2xl flex flex-col items-center text-center transform -translate-y-12">
                      <Lock className="w-10 h-10 text-cyan-500 mb-4" />
-                     <h3 className="text-white font-black text-xl mb-2 tracking-tight">Proprietary Intelligence Gated</h3>
+                     <h3 className="text-white font-black text-xl mb-2 tracking-tight">
+                       {safeScore < 80 ? 'Quantitative Target Locked' : 'Proprietary Intelligence Gated'}
+                     </h3>
                      <p className="text-slate-400 text-xs leading-relaxed mb-6">
-                       This is an S-Class or A-Class asset. The AI Strategic Digest, Model Verdicts, and Institutional Options Flow are reserved for active PRO tier subscribers.
+                       {safeScore < 80 
+                         ? 'This institutional target is locked for unregistered visitors. Create a free account to track and analyze standard pipeline assets.'
+                         : 'This is an S-Class or A-Class asset. The AI Strategic Digest, Model Verdicts, and Institutional Options Flow are reserved for active PRO tier subscribers.'}
                      </p>
-                     <button
-                       onClick={() => handleSelect(safeTicker)} // This triggers the App.js upgrade modal logic
-                       className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white font-black text-xs px-6 py-3.5 rounded-xl uppercase tracking-widest shadow-lg shadow-cyan-500/20 transition-all flex items-center justify-center gap-2"
-                     >
-                        Unlock Pro Intelligence
-                     </button>
+                     
+                     {safeScore < 80 && userRole === 'visitor' ? (
+                       <button
+                         onClick={() => setView && setView('auth')} 
+                         className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-400 hover:to-indigo-400 text-white font-black text-xs px-6 py-3.5 rounded-xl uppercase tracking-widest shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2"
+                       >
+                         CREATE FREE ACCOUNT TO UNLOCK
+                       </button>
+                     ) : (
+                       <button
+                         onClick={() => setView && setView('upgrade')}
+                         className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white font-black text-xs px-6 py-3.5 rounded-xl uppercase tracking-widest shadow-lg shadow-cyan-500/20 transition-all flex items-center justify-center gap-2"
+                       >
+                         UNLOCK PRO INTELLIGENCE
+                       </button>
+                     )}
                   </div>
                 </div>
               )}

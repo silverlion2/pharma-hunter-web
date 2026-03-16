@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { TerminalSquare, Target, History, LogIn, User, LogOut, ShieldCheck, AlertCircle, MessageSquare, Star, BookOpen, Bell, Check } from 'lucide-react';
+import { TerminalSquare, Target, History, LogIn, User, LogOut, ShieldCheck, AlertCircle, MessageSquare, Star, BookOpen, Bell, Check, Cpu } from 'lucide-react';
 import Button from './ui/Button';
 
 const Layout = ({ 
@@ -110,6 +110,18 @@ const Layout = ({
             >
               UPGRADE PRO
             </Button>
+          )}
+
+          {userRole !== 'visitor' && (
+            <div className="flex items-center gap-2">
+              <Button 
+                variant={view === 'gap-map' ? 'primary' : 'outline'}
+                onClick={() => { setView('gap-map'); setShowPastDeals(false); }} 
+                icon={Cpu}
+              >
+                GAP MAP
+              </Button>
+            </div>
           )}
 
           <Button 

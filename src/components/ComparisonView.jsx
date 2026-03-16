@@ -4,7 +4,7 @@ import {
   Activity, TrendingUp, AlertCircle, Cpu, Target, Clock 
 } from 'lucide-react';
 
-const ComparisonView = ({ tickers = [], assetData = [], setView, setSelectedTicker, handleSelect }) => {
+const ComparisonView = ({ tickers = [], assetData = [], userRole = 'visitor', setView, setSelectedTicker, handleSelect }) => {
   if (tickers.length !== 2) {
     return (
       <div className="flex flex-col items-center justify-center h-96 text-center">
@@ -130,8 +130,26 @@ const ComparisonView = ({ tickers = [], assetData = [], setView, setSelectedTick
       </div>
 
       {/* Metrics Combat Table */}
-      <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 lg:px-12">
-        <h3 className="text-center text-[10px] font-black tracking-widest text-slate-600 uppercase mb-6">Algorithm Sub-Scores</h3>
+      <div className="relative mt-8">
+        {(userRole !== 'pro' && userRole !== 'admin') && (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center p-6 bg-slate-950/20 backdrop-blur-[2px] rounded-3xl">
+            <div className="max-w-md w-full bg-slate-900 border border-slate-700 p-8 rounded-2xl shadow-2xl flex flex-col items-center text-center">
+              <Swords className="w-10 h-10 text-indigo-500 mb-4" />
+              <h3 className="text-white font-black text-xl mb-2 tracking-tight">Quantitative Combat Locked</h3>
+              <p className="text-slate-400 text-xs leading-relaxed mb-6">
+                Head-to-head algorithm sub-scores and raw data matchups are a Pro feature. Upgrade to see AI Model verdicts and fundamental comparison.
+              </p>
+              <button
+                onClick={() => setView('upgrade')}
+                className="w-full bg-gradient-to-r from-indigo-500 to-cyan-500 hover:from-indigo-400 hover:to-cyan-400 text-white font-black text-xs px-6 py-3.5 rounded-xl uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/20"
+              >
+                UNLOCK PRO INTELLIGENCE
+              </button>
+            </div>
+          </div>
+        )}
+        <div className={`bg-slate-900/60 border border-slate-800 rounded-3xl p-6 lg:px-12 ${userRole !== 'pro' && userRole !== 'admin' ? 'blur-[4px] opacity-40 select-none pointer-events-none' : ''}`}>
+          <h3 className="text-center text-[10px] font-black tracking-widest text-slate-600 uppercase mb-6">Algorithm Sub-Scores</h3>
         <FactorRow label="Asset Scarcity" icon={Target} valA={Math.round(assetA.scarcity_score || 0)} valB={Math.round(assetB.scarcity_score || 0)} />
         <FactorRow label="Cash Strain" icon={AlertCircle} valA={Math.round(assetA.cash_score || 0)} valB={Math.round(assetB.cash_score || 0)} />
         <FactorRow label="Clinical Alpha" icon={Activity} valA={Math.round(assetA.clinical_score || 0)} valB={Math.round(assetB.clinical_score || 0)} />
@@ -174,8 +192,8 @@ const ComparisonView = ({ tickers = [], assetData = [], setView, setSelectedTick
             "{assetB.latest_news_headline || 'No recent news'}"
           </div>
         </div>
+        </div>
       </div>
-
     </div>
   );
 };
