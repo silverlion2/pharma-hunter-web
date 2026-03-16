@@ -236,17 +236,27 @@ const App = () => {
     }
 
     if (userRole === 'visitor') {
-      // Mock data for the blurred tease so visitors don't hit the DB and crash
+      // Build properly-shaped mock data so the modal renders without NaN crashes
+      const mockRows = assetData.filter(a => !a.is_past_deal).slice(0, 5).map((a, i) => ({
+        ticker: a.ticker || `MOCK${i}`,
+        name: a.name || 'Redacted',
+        target_area: a.target_area || 'Unknown',
+        score: a.score || (90 - i * 5),
+        scarcity_score: 90 - i * 8,
+        cash_score: 85 - i * 7,
+        clinical_score: 80 - i * 6,
+        milestone_score: 75 - i * 5,
+        valuation_score: 70 - i * 4,
+        predicted_time: a.predicted_time || 'TBD',
+      }));
       setAnalyticsData({
-        topScarcity: assetData.slice(0, 5),
-        topCashPressure: assetData.slice(0, 5),
-        fastestMovers: assetData.slice(0, 5).map(a => ({...a, current_score: 85, velocity: 5.5})),
-        topClinical: assetData.slice(0, 5),
-        topCatalysts: assetData.slice(0, 5),
-        topValue: assetData.slice(0, 5),
-        signalFeed: [
-          {ticker: 'MOCK', type: 'Unusual Options Flow', mood: 'HIGH-INTENT', time_detected: new Date().toISOString()}
-        ],
+        topScarcity: mockRows,
+        topCashPressure: mockRows,
+        fastestMovers: mockRows.map(a => ({...a, current_score: a.score, velocity: 5.5 - mockRows.indexOf(a)})),
+        topClinical: mockRows,
+        topCatalysts: mockRows,
+        topValue: mockRows,
+        signalFeed: [],
       });
       setShowAnalyticsModal(true);
       return;

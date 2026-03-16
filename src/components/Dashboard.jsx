@@ -151,6 +151,22 @@ const Dashboard = ({
                    </div>
                 </div>
               )}
+              {userRole === 'visitor' && activeList.some(i => i.locked) && (
+                <div className="sticky top-0 z-20 mx-1 mb-1">
+                  <div className="p-3 rounded-xl border border-dashed border-cyan-500/40 bg-slate-950/95 backdrop-blur-sm flex flex-col items-center text-center gap-1.5 shadow-lg">
+                    <Lock size={14} className="text-cyan-500" />
+                    <p className="text-[9px] text-slate-400 font-medium leading-tight">
+                      Viewing limited sector sample. Dozens of highly-correlated assets are hidden.
+                    </p>
+                    <button 
+                      onClick={() => setView && setView('auth')} 
+                      className="text-[8px] font-black uppercase tracking-widest text-slate-900 bg-cyan-500 hover:bg-cyan-400 px-3 py-1.5 rounded-md transition-all w-full"
+                    >
+                      Join Free to Unlock More
+                    </button>
+                  </div>
+                </div>
+              )}
               {activeList.map((item) => {
                 const isSelectedForCompare = compareSelection?.includes(item.ticker);
                 const isCompareDisabled = isCompareMode && !isSelectedForCompare && compareSelection?.length >= 2;
