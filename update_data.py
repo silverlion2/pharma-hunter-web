@@ -1000,7 +1000,7 @@ def main():
                     logging.info(f"  ✅ [{result['ticker']}] 计算完毕 | 分数: {result['record']['score']}")
             except Exception as exc:
                 target_name = futures[future].get("ticker", "Unknown")
-                logging.info(f"  ❌ [{target_name}] 线程抛出内部异常，跳过该标的: {exc}")
+                logging.error(f"  ❌ [{target_name}] 线程抛出内部异常，跳过该标的: {exc}")
                 fail_count += 1
 
     # [修复3：化整为零的数据库降级写入机制] 
@@ -1034,6 +1034,13 @@ def main():
 
     end_time = time.time()
     elapsed_minutes = (end_time - start_time) / 60
+
+    # Timeout watchdog: alert if script ran longer than 15 minutes (potential API hang)
+    if elapsed_minutes > 15:
+        timeout_msg = f"⚠️ Pipeline exceeded 15min threshold ({elapsed_minutes:.1f}min). Possible API hang or rate-limit saturation."
+        logging.warning(timeout_msg)
+        send_alert("BioQuantix 超时警告", timeout_msg)
+
     summary_msg = f"并发跑通: {success_count}条，失败抛弃: {fail_count}条。总耗时: {elapsed_minutes:.1f}分钟。"
     send_alert("BioQuantix 日常更新完成", summary_msg)
     logging.info(f"🎉 所有医药标的 Phase 6 量化闭环执行结束！\n📊 {summary_msg}")

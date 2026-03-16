@@ -22,6 +22,7 @@ import Landing from './components/Landing';
 import AuthModal from './components/AuthModal';
 import Dashboard from './components/Dashboard';
 import Layout from './components/Layout';
+import ErrorBoundary from './components/ErrorBoundary';
 
 const App = () => {
   const [view, setView] = useState('landing');
@@ -102,7 +103,10 @@ const App = () => {
     try {
       const { data, error } = await supabase.rpc('get_user_role', { user_id: user.id });
       if (!error && data && data.length > 0) {
-        role = data[0].role;
+        const dbRole = data[0].role;
+        // Only accept known role strings to prevent injection
+        const VALID_ROLES = ['free', 'pro', 'admin'];
+        role = VALID_ROLES.includes(dbRole) ? dbRole : 'free';
       }
     } catch (error) {
       // Gracefully fallback if the get_user_role RPC hasn't been created in Supabase yet
@@ -115,7 +119,9 @@ const App = () => {
   const fetchTrackedTickers = async () => {
     if (!isSupabaseConfigured) return;
     try {
-      const { data, error } = await supabase.from('user_tracked_tickers').select('ticker');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+      const { data, error } = await supabase.from('user_tracked_tickers').select('ticker').eq('user_id', session.user.id);
       if (error) throw error;
       if (data) {
         setTrackedTickers(data.map(t => t.ticker));
@@ -214,17 +220,24 @@ const App = () => {
     }
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        showToast("Session expired. Please log in again.", "error");
+        return;
+      }
+      const userId = session.user.id;
+
       if (trackedTickers.includes(ticker)) {
         // Untrack
         posthog.capture('untracked_ticker', { ticker });
-        const { error } = await supabase.from('user_tracked_tickers').delete().eq('ticker', ticker);
+        const { error } = await supabase.from('user_tracked_tickers').delete().eq('ticker', ticker).eq('user_id', userId);
         if (error) throw error;
         setTrackedTickers(prev => prev.filter(t => t !== ticker));
         showToast(`Untracked ${ticker}`);
       } else {
         // Track
         posthog.capture('tracked_ticker', { ticker });
-        const { error } = await supabase.from('user_tracked_tickers').insert([{ ticker }]);
+        const { error } = await supabase.from('user_tracked_tickers').insert([{ ticker, user_id: userId }]);
         if (error) throw error;
         setTrackedTickers(prev => [...prev, ticker]);
         showToast(`Now tracking ${ticker}`);
@@ -320,11 +333,11 @@ const App = () => {
     }
     fetchDataRef.current = fetchAllData;
     fetchAllData();
-    // Auto-refresh every 30 seconds when Supabase is configured, to pick up live data as soon as it becomes available
-    const refreshInterval = isSupabaseConfigured ? setInterval(fetchAllData, 30_000) : null;
+    // Auto-refresh every 60 seconds when Supabase is configured
+    const refreshInterval = isSupabaseConfigured ? setInterval(fetchAllData, 60_000) : null;
     return () => { if (refreshInterval) clearInterval(refreshInterval); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assetData]);
+  }, []);
 
   const pipelineMaxUrgencies = React.useMemo(() => {
     const urgencies = {};
@@ -649,43 +662,45 @@ const App = () => {
         )}
         
         {view === 'dashboard' && (
-          <Dashboard
-            availableAreas={availableAreas}
-            targetArea={targetArea}
-            setTargetArea={setTargetArea}
-            showPastDeals={showPastDeals}
-            themeColorText={themeColorText}
-            themeColorBg={themeColorBg}
-            activeList={activeList}
-            currentGaps={currentGaps}
-            activeAsset={activeAsset}
-            safeTicker={safeTicker}
-            safeName={safeName}
-            safeCategory={safeCategory}
-            safeScore={safeScore}
-            safeDealInfo={safeDealInfo}
-            userRole={userRole}
-            safeFactors={safeFactors}
-            safeTime={safeTime}
-            safeUpside={safeUpside}
-            safeDigest={safeDigest}
-            safeSignals={safeSignals}
-            safeCashAmount={safeCashAmount}
-            safeNewsHeadline={safeNewsHeadline}
-            safeMarketCap={safeMarketCap}
-            handleSelect={handleSelect}
-            fetchAnalyticsData={fetchAnalyticsData}
-            handleSearch={handleSearch}
-            showSmartMoneyModal={showSmartMoneyModal}
-            setShowSmartMoneyModal={setShowSmartMoneyModal}
-            smartMoneyData={smartMoneyData}
-            smartMoneyLoading={smartMoneyLoading}
-            fetchSmartMoneyData={fetchSmartMoneyData}
-            trackedTickers={trackedTickers}
-            toggleTrackTicker={toggleTrackTicker}
-            showOnlyTracked={showOnlyTracked}
-            setShowOnlyTracked={setShowOnlyTracked}
-          />
+          <ErrorBoundary>
+            <Dashboard
+              availableAreas={availableAreas}
+              targetArea={targetArea}
+              setTargetArea={setTargetArea}
+              showPastDeals={showPastDeals}
+              themeColorText={themeColorText}
+              themeColorBg={themeColorBg}
+              activeList={activeList}
+              currentGaps={currentGaps}
+              activeAsset={activeAsset}
+              safeTicker={safeTicker}
+              safeName={safeName}
+              safeCategory={safeCategory}
+              safeScore={safeScore}
+              safeDealInfo={safeDealInfo}
+              userRole={userRole}
+              safeFactors={safeFactors}
+              safeTime={safeTime}
+              safeUpside={safeUpside}
+              safeDigest={safeDigest}
+              safeSignals={safeSignals}
+              safeCashAmount={safeCashAmount}
+              safeNewsHeadline={safeNewsHeadline}
+              safeMarketCap={safeMarketCap}
+              handleSelect={handleSelect}
+              fetchAnalyticsData={fetchAnalyticsData}
+              handleSearch={handleSearch}
+              showSmartMoneyModal={showSmartMoneyModal}
+              setShowSmartMoneyModal={setShowSmartMoneyModal}
+              smartMoneyData={smartMoneyData}
+              smartMoneyLoading={smartMoneyLoading}
+              fetchSmartMoneyData={fetchSmartMoneyData}
+              trackedTickers={trackedTickers}
+              toggleTrackTicker={toggleTrackTicker}
+              showOnlyTracked={showOnlyTracked}
+              setShowOnlyTracked={setShowOnlyTracked}
+            />
+          </ErrorBoundary>
         )}
         
       </Layout>
