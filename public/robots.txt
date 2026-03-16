@@ -6,4 +6,4 @@ Allow: /
 Disallow: /api/
 
 # Sitemap
-Sitemap: https://bioquantix.com/sitemap.xml
+Sitemap: https://www.bioquantixsolutions.com/sitemap.xml
