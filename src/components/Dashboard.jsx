@@ -212,6 +212,25 @@ const Dashboard = ({
               {activeList.length === 0 && (
                 <div className="px-4 py-6 text-center text-xs text-slate-500">No signals detected yet.</div>
               )}
+              {userRole === 'visitor' && (
+                <div className="mx-2 mt-4 p-4 rounded-xl border border-dashed border-cyan-500/50 bg-cyan-500/5 flex flex-col items-center justify-center gap-2 shadow-inner">
+                  <Lock size={16} className="text-cyan-500 mb-1" />
+                  <p className="text-[10px] text-slate-400 font-medium leading-tight text-center">
+                    Viewing limited sector sample. Dozens of highly-correlated assets are hidden.
+                  </p>
+                  <ul className="text-[9px] text-slate-500 w-full mb-1 space-y-1">
+                    <li className="flex items-center gap-1.5"><CheckCircle2 size={10} className="text-cyan-500"/> Personal Watchlist & Tracking</li>
+                    <li className="flex items-center gap-1.5"><CheckCircle2 size={10} className="text-cyan-500"/> Access to More Tickers</li>
+                    <li className="flex items-center gap-1.5"><CheckCircle2 size={10} className="text-cyan-500"/> Limited Ticker Search (3/day)</li>
+                  </ul>
+                  <button 
+                    onClick={() => setView && setView('auth')} 
+                    className="mt-1 text-[9px] font-black uppercase tracking-widest text-slate-900 bg-cyan-500 hover:bg-cyan-400 px-4 py-2 rounded-lg transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-cyan-500/20 w-full"
+                  >
+                    Join Free to Unlock More Features
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 

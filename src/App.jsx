@@ -32,7 +32,7 @@ import Blog from './components/Blog';
 
 const App = () => {
   const [view, setView] = useState('landing');
-  const [targetArea, setTargetArea] = useState('Oncology');
+  const [targetArea, setTargetArea] = useState('Metabolic');
   const [showPastDeals, setShowPastDeals] = useState(false);
   const [selectedTicker, setSelectedTicker] = useState('ALT');
   
@@ -232,6 +232,23 @@ const App = () => {
   const fetchAnalyticsData = async () => {
     if (!isSupabaseConfigured) {
       showToast("Cannot load analytics: Database not connected.", "error");
+      return;
+    }
+
+    if (userRole === 'visitor') {
+      // Mock data for the blurred tease so visitors don't hit the DB and crash
+      setAnalyticsData({
+        topScarcity: assetData.slice(0, 5),
+        topCashPressure: assetData.slice(0, 5),
+        fastestMovers: assetData.slice(0, 5).map(a => ({...a, current_score: 85, velocity: 5.5})),
+        topClinical: assetData.slice(0, 5),
+        topCatalysts: assetData.slice(0, 5),
+        topValue: assetData.slice(0, 5),
+        signalFeed: [
+          {ticker: 'MOCK', type: 'Unusual Options Flow', mood: 'HIGH-INTENT', time_detected: new Date().toISOString()}
+        ],
+      });
+      setShowAnalyticsModal(true);
       return;
     }
     
@@ -835,23 +852,26 @@ const App = () => {
             </div>
             <div className="grid md:grid-cols-3 gap-6">
               <div className="bg-slate-900/40 border border-slate-800 p-8 rounded-3xl flex flex-col hover:border-slate-700 transition-all">
-                <h3 className="text-lg font-bold mb-1">Single Scan</h3>
-                <div className="text-3xl font-black mb-6 text-white">$9.90 <span className="text-xs font-normal text-slate-500">/ scan</span></div>
+                <h3 className="text-lg font-bold mb-1">Basic Access</h3>
+                <div className="text-3xl font-black mb-6 text-white">Free</div>
                 <ul className="space-y-4 mb-8 flex-1">
-                  <li className="flex gap-3 text-slate-400 text-xs"><CheckCircle2 size={16} className="text-cyan-500 shrink-0" /> One-time Full Asset Audit</li>
-                  <li className="flex gap-3 text-slate-400 text-xs"><CheckCircle2 size={16} className="text-cyan-500 shrink-0" /> Predictive Upside Modeling</li>
-                  <li className="flex gap-3 text-slate-400 text-xs"><CheckCircle2 size={16} className="text-cyan-500 shrink-0" /> Downloadable PDF Digest</li>
+                  <li className="flex gap-3 text-slate-400 text-xs"><CheckCircle2 size={16} className="text-cyan-500 shrink-0" /> Personal Watchlist & Tracking</li>
+                  <li className="flex gap-3 text-slate-400 text-xs"><CheckCircle2 size={16} className="text-cyan-500 shrink-0" /> Access to More Tickers</li>
+                  <li className="flex gap-3 text-slate-400 text-xs"><CheckCircle2 size={16} className="text-cyan-500 shrink-0" /> Limited Ticker Search (3/day)</li>
                 </ul>
-                <button className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-black text-xs">BUY SINGLE REPORT</button>
+                <button onClick={() => { if(userRole==='visitor') setShowAuthModal(true); }} className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-black text-xs">CREATE ACCOUNT</button>
               </div>
 
               <div className="bg-gradient-to-b from-cyan-500/10 to-[#0A0C10] border-2 border-cyan-500/50 p-8 rounded-3xl flex flex-col shadow-2xl relative">
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-cyan-500 text-slate-900 text-[9px] font-black px-3 py-1 rounded-full shadow-lg">MOST POPULAR</div>
                 <h3 className="text-lg font-bold mb-1 text-white">Pro Monthly</h3>
                 <div className="text-3xl font-black mb-6 text-white">$49.00 <span className="text-xs font-normal text-slate-400">/ mo</span></div>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-3">Everything in Basic, plus:</p>
                 <ul className="space-y-4 mb-8 flex-1 text-xs">
                   <li className="flex gap-3 text-slate-200"><CheckCircle2 size={16} className="text-cyan-400 shrink-0" /> Full Alpha Radar Access</li>
                   <li className="flex gap-3 text-slate-200"><CheckCircle2 size={16} className="text-cyan-400 shrink-0" /> Full AI Strategic Digest</li>
+                  <li className="flex gap-3 text-slate-200"><CheckCircle2 size={16} className="text-cyan-400 shrink-0" /> 7D Market Analytics</li>
+                  <li className="flex gap-3 text-slate-200"><CheckCircle2 size={16} className="text-cyan-400 shrink-0" /> Pipeline Gap Map</li>
                   <li className="flex gap-3 text-slate-200"><CheckCircle2 size={16} className="text-cyan-400 shrink-0" /> Uncensored Options Flow</li>
                   <li className="flex gap-3 text-slate-200"><CheckCircle2 size={16} className="text-cyan-400 shrink-0" /> Priority Anomaly Alerts</li>
                 </ul>
