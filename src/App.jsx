@@ -679,7 +679,12 @@ const App = () => {
             showSmartMoneyModal={showSmartMoneyModal}
             setShowSmartMoneyModal={setShowSmartMoneyModal}
             smartMoneyData={smartMoneyData}
+            smartMoneyLoading={smartMoneyLoading}
             fetchSmartMoneyData={fetchSmartMoneyData}
+            trackedTickers={trackedTickers}
+            toggleTrackTicker={toggleTrackTicker}
+            showOnlyTracked={showOnlyTracked}
+            setShowOnlyTracked={setShowOnlyTracked}
           />
         )}
         
