@@ -230,11 +230,6 @@ const App = () => {
   }, [view, trackedTickers]);
 
   const fetchAnalyticsData = async () => {
-    if (!isSupabaseConfigured) {
-      showToast("Cannot load analytics: Database not connected.", "error");
-      return;
-    }
-
     if (userRole === 'visitor') {
       // Build properly-shaped mock data so the modal renders without NaN crashes
       const mockRows = assetData.filter(a => !a.is_past_deal).slice(0, 5).map((a, i) => ({
@@ -259,6 +254,11 @@ const App = () => {
         signalFeed: [],
       });
       setShowAnalyticsModal(true);
+      return;
+    }
+
+    if (!isSupabaseConfigured) {
+      showToast("Cannot load analytics: Database not connected.", "error");
       return;
     }
     

@@ -77,7 +77,7 @@ const Dashboard = ({
               className="px-4 py-2.5 rounded-full text-[10px] font-black tracking-widest bg-slate-800 text-cyan-400 hover:bg-slate-700 hover:text-cyan-300 transition-colors flex items-center gap-2 border border-slate-700 whitespace-nowrap shadow-lg shadow-cyan-500/10"
             >
               <Activity size={14} className="animate-pulse" />
-              MARKET ANALYTICS
+              MARKET ANALYTICS <span className="text-[7px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1 py-0.5 rounded-sm font-black">BETA</span>
             </button>
             
             <div className="absolute top-full lg:bottom-full lg:top-auto lg:mb-2 mt-2 right-0 w-64 bg-slate-800/95 backdrop-blur-sm border border-slate-700 p-3 rounded-xl shadow-2xl invisible opacity-0 translate-y-2 lg:translate-y-0 lg:translate-y-[-8px] transition-all z-50 text-left">
@@ -151,22 +151,7 @@ const Dashboard = ({
                    </div>
                 </div>
               )}
-              {userRole === 'visitor' && activeList.some(i => i.locked) && (
-                <div className="sticky top-0 z-20 mx-1 mb-1">
-                  <div className="p-3 rounded-xl border border-dashed border-cyan-500/40 bg-slate-950/95 backdrop-blur-sm flex flex-col items-center text-center gap-1.5 shadow-lg">
-                    <Lock size={14} className="text-cyan-500" />
-                    <p className="text-[9px] text-slate-400 font-medium leading-tight">
-                      Viewing limited sector sample. Dozens of highly-correlated assets are hidden.
-                    </p>
-                    <button 
-                      onClick={() => setView && setView('auth')} 
-                      className="text-[8px] font-black uppercase tracking-widest text-slate-900 bg-cyan-500 hover:bg-cyan-400 px-3 py-1.5 rounded-md transition-all w-full"
-                    >
-                      Join Free to Unlock More
-                    </button>
-                  </div>
-                </div>
-              )}
+
               {activeList.map((item) => {
                 const isSelectedForCompare = compareSelection?.includes(item.ticker);
                 const isCompareDisabled = isCompareMode && !isSelectedForCompare && compareSelection?.length >= 2;
@@ -229,22 +214,24 @@ const Dashboard = ({
                 <div className="px-4 py-6 text-center text-xs text-slate-500">No signals detected yet.</div>
               )}
               {userRole === 'visitor' && (
-                <div className="mx-2 mt-4 p-4 rounded-xl border border-dashed border-cyan-500/50 bg-cyan-500/5 flex flex-col items-center justify-center gap-2 shadow-inner">
-                  <Lock size={16} className="text-cyan-500 mb-1" />
-                  <p className="text-[10px] text-slate-400 font-medium leading-tight text-center">
-                    Viewing limited sector sample. Dozens of highly-correlated assets are hidden.
-                  </p>
-                  <ul className="text-[9px] text-slate-500 w-full mb-1 space-y-1">
-                    <li className="flex items-center gap-1.5"><CheckCircle2 size={10} className="text-cyan-500"/> Personal Watchlist & Tracking</li>
-                    <li className="flex items-center gap-1.5"><CheckCircle2 size={10} className="text-cyan-500"/> Access to More Tickers</li>
-                    <li className="flex items-center gap-1.5"><CheckCircle2 size={10} className="text-cyan-500"/> Limited Ticker Search (3/day)</li>
-                  </ul>
-                  <button 
-                    onClick={() => setView && setView('auth')} 
-                    className="mt-1 text-[9px] font-black uppercase tracking-widest text-slate-900 bg-cyan-500 hover:bg-cyan-400 px-4 py-2 rounded-lg transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-cyan-500/20 w-full"
-                  >
-                    Join Free to Unlock More Features
-                  </button>
+                <div className="sticky bottom-0 z-20 mx-1 mt-2">
+                  <div className="p-4 rounded-xl border border-dashed border-cyan-500/50 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center gap-2 shadow-2xl shadow-cyan-500/5">
+                    <Lock size={16} className="text-cyan-500 mb-1" />
+                    <p className="text-[10px] text-slate-400 font-medium leading-tight text-center">
+                      Viewing limited sector sample. Dozens of highly-correlated assets are hidden.
+                    </p>
+                    <ul className="text-[9px] text-slate-500 w-full mb-1 space-y-1">
+                      <li className="flex items-center gap-1.5"><CheckCircle2 size={10} className="text-cyan-500"/> Personal Watchlist & Tracking</li>
+                      <li className="flex items-center gap-1.5"><CheckCircle2 size={10} className="text-cyan-500"/> Access to More Tickers</li>
+                      <li className="flex items-center gap-1.5"><CheckCircle2 size={10} className="text-cyan-500"/> Limited Ticker Search (3/day)</li>
+                    </ul>
+                    <button 
+                      onClick={() => setView && setView('auth')} 
+                      className="mt-1 text-[9px] font-black uppercase tracking-widest text-slate-900 bg-cyan-500 hover:bg-cyan-400 px-4 py-2 rounded-lg transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-cyan-500/20 w-full"
+                    >
+                      Join Free to Unlock More Features
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -259,7 +246,7 @@ const Dashboard = ({
                 onClick={() => setView && setView('gap-map')}
                 className="text-[9px] font-black uppercase tracking-widest text-slate-500 hover:text-cyan-400 transition-colors flex items-center gap-1 bg-slate-800/50 hover:bg-slate-800 px-2 py-1 rounded-md border border-slate-700/50"
               >
-                View Full Horizon <ArrowRight size={10} />
+                View Full Horizon <span className="text-[7px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1 py-0.5 rounded-sm font-black">BETA</span> <ArrowRight size={10} />
               </button>
             </div>
             <p className="text-[9px] text-slate-500 italic mb-5 leading-tight">
