@@ -61,7 +61,8 @@ const App = () => {
     topCashPressure: [],
     topClinical: [],
     topCatalysts: [],
-    topValue: []
+    topValue: [],
+    signalFeed: [],
   });
 
   // Admin: Smart Money Consensus
@@ -192,6 +193,7 @@ const App = () => {
     setAnalyticsLoading(true);
     try {
       // Execute all 6 queries concurrently for speed using Promise.all
+      // Each query now also selects 'score' for composite tiebreaking
       const [
         { data: scarcityData, error: scarcityErr },
         { data: cashData, error: cashErr },
@@ -200,12 +202,12 @@ const App = () => {
         { data: catalystData, error: catalystErr },
         { data: valueData, error: valueErr }
       ] = await Promise.all([
-        supabase.from('assets').select('ticker, name, scarcity_score, target_area, is_past_deal').eq('is_past_deal', false).order('scarcity_score', { ascending: false }).limit(5),
-        supabase.from('assets').select('ticker, name, cash_score, target_area, is_past_deal').eq('is_past_deal', false).order('cash_score', { ascending: false }).limit(5),
+        supabase.from('assets').select('ticker, name, scarcity_score, score, target_area, is_past_deal').eq('is_past_deal', false).order('scarcity_score', { ascending: false }).limit(10),
+        supabase.from('assets').select('ticker, name, cash_score, score, target_area, is_past_deal').eq('is_past_deal', false).order('cash_score', { ascending: false }).limit(10),
         supabase.rpc('get_7d_fastest_movers'),
-        supabase.from('assets').select('ticker, name, clinical_score, target_area, is_past_deal').eq('is_past_deal', false).order('clinical_score', { ascending: false }).limit(5),
-        supabase.from('assets').select('ticker, name, milestone_score, target_area, is_past_deal, predicted_time').eq('is_past_deal', false).order('milestone_score', { ascending: false }).limit(5),
-        supabase.from('assets').select('ticker, name, valuation_score, target_area, is_past_deal').eq('is_past_deal', false).order('valuation_score', { ascending: false }).limit(5)
+        supabase.from('assets').select('ticker, name, clinical_score, score, target_area, is_past_deal').eq('is_past_deal', false).order('clinical_score', { ascending: false }).limit(10),
+        supabase.from('assets').select('ticker, name, milestone_score, score, target_area, is_past_deal, predicted_time').eq('is_past_deal', false).order('milestone_score', { ascending: false }).limit(10),
+        supabase.from('assets').select('ticker, name, valuation_score, score, target_area, is_past_deal').eq('is_past_deal', false).order('valuation_score', { ascending: false }).limit(10)
       ]);
         
       if (scarcityErr) throw scarcityErr;
@@ -215,13 +217,24 @@ const App = () => {
       if (catalystErr) throw catalystErr;
       if (valueErr) throw valueErr;
 
+      // Composite tiebreaker: sort by primary sub-score DESC, then overall score DESC
+      const sortWithTiebreak = (arr, key) => 
+        [...(arr || [])].sort((a, b) => (b[key] - a[key]) || (b.score - a.score)).slice(0, 5);
+
+      // Build shadow signal feed from in-memory assetData
+      const signalFeed = assetData
+        .filter(a => !a.is_past_deal && a.shadow_signals && Array.isArray(a.shadow_signals) && a.shadow_signals.length > 0)
+        .flatMap(a => a.shadow_signals.map(s => ({ ticker: a.ticker, name: a.name, ...s })))
+        .slice(0, 10);
+
       setAnalyticsData({
-        topScarcity: scarcityData || [],
-        topCashPressure: cashData || [],
+        topScarcity: sortWithTiebreak(scarcityData, 'scarcity_score'),
+        topCashPressure: sortWithTiebreak(cashData, 'cash_score'),
         fastestMovers: velocityData ? velocityData.slice(0, 5) : [],
-        topClinical: clinicalData || [],
-        topCatalysts: catalystData || [],
-        topValue: valueData || []
+        topClinical: sortWithTiebreak(clinicalData, 'clinical_score'),
+        topCatalysts: sortWithTiebreak(catalystData, 'milestone_score'),
+        topValue: sortWithTiebreak(valueData, 'valuation_score'),
+        signalFeed: signalFeed,
       });
       
       setShowAnalyticsModal(true);
@@ -794,6 +807,7 @@ const App = () => {
                     <span className="text-xs text-slate-500 font-bold tracking-widest animate-pulse">COMPILING INTELLIGENCE...</span>
                   </div>
                 ) : (
+                  <>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* Top Scarcity */}
                     <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-4 flex flex-col">
@@ -803,9 +817,12 @@ const App = () => {
                       <div className="flex flex-col gap-2">
                         {analyticsData.topScarcity.map((item, idx) => (
                           <div key={idx} onClick={() => { setShowAnalyticsModal(false); handleSelect(item.ticker); }} className="flex justify-between items-center bg-slate-800/20 hover:bg-slate-800/50 p-2.5 rounded-lg border border-slate-800 cursor-pointer transition-colors group">
-                            <div className="flex flex-col max-w-[70%]">
-                              <span className="text-xs font-bold text-white group-hover:text-purple-400 transition-colors truncate">{item.ticker} - {item.name}</span>
-                              <span className="text-[9px] text-slate-500 truncate">{item.target_area}</span>
+                            <div className="flex items-center gap-2 max-w-[65%]">
+                              <span className="text-[9px] font-black text-slate-600 w-4 shrink-0">#{idx + 1}</span>
+                              <div className="flex flex-col min-w-0">
+                                <span className="text-xs font-bold text-white group-hover:text-purple-400 transition-colors truncate">{item.ticker} - {item.name}</span>
+                                <span className="text-[9px] text-slate-500 truncate">{item.target_area} • OVR {Math.round(item.score || 0)}</span>
+                              </div>
                             </div>
                             <span className="font-mono text-sm font-black text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">{Math.round(item.scarcity_score)}</span>
                           </div>
@@ -822,9 +839,12 @@ const App = () => {
                       <div className="flex flex-col gap-2">
                         {analyticsData.topCashPressure.map((item, idx) => (
                           <div key={idx} onClick={() => { setShowAnalyticsModal(false); handleSelect(item.ticker); }} className="flex justify-between items-center bg-slate-800/20 hover:bg-slate-800/50 p-2.5 rounded-lg border border-slate-800 cursor-pointer transition-colors group">
-                            <div className="flex flex-col max-w-[70%]">
-                              <span className="text-xs font-bold text-white group-hover:text-rose-400 transition-colors truncate">{item.ticker} - {item.name}</span>
-                              <span className="text-[9px] text-slate-500 truncate">{item.target_area}</span>
+                            <div className="flex items-center gap-2 max-w-[65%]">
+                              <span className="text-[9px] font-black text-slate-600 w-4 shrink-0">#{idx + 1}</span>
+                              <div className="flex flex-col min-w-0">
+                                <span className="text-xs font-bold text-white group-hover:text-rose-400 transition-colors truncate">{item.ticker} - {item.name}</span>
+                                <span className="text-[9px] text-slate-500 truncate">{item.target_area} • OVR {Math.round(item.score || 0)}</span>
+                              </div>
                             </div>
                             <span className="font-mono text-sm font-black text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">{Math.round(item.cash_score)}</span>
                           </div>
@@ -841,9 +861,12 @@ const App = () => {
                       <div className="flex flex-col gap-2">
                         {analyticsData.fastestMovers.map((item, idx) => (
                           <div key={idx} onClick={() => { setShowAnalyticsModal(false); handleSelect(item.ticker); }} className="flex justify-between items-center bg-slate-800/20 hover:bg-slate-800/50 p-2.5 rounded-lg border border-slate-800 cursor-pointer transition-colors group">
-                            <div className="flex flex-col max-w-[60%]">
-                              <span className="text-xs font-bold text-white group-hover:text-emerald-400 transition-colors truncate">{item.ticker}</span>
-                              <span className="text-[9px] text-slate-500">Curr: {Math.round(item.current_score)}</span>
+                            <div className="flex items-center gap-2 max-w-[60%]">
+                              <span className="text-[9px] font-black text-slate-600 w-4 shrink-0">#{idx + 1}</span>
+                              <div className="flex flex-col min-w-0">
+                                <span className="text-xs font-bold text-white group-hover:text-emerald-400 transition-colors truncate">{item.ticker}</span>
+                                <span className="text-[9px] text-slate-500">Curr: {Math.round(item.current_score)}</span>
+                              </div>
                             </div>
                             <span className="font-mono text-sm font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">+{Math.round(item.velocity)}</span>
                           </div>
@@ -860,9 +883,12 @@ const App = () => {
                       <div className="flex flex-col gap-2">
                         {analyticsData.topClinical.map((item, idx) => (
                           <div key={idx} onClick={() => { setShowAnalyticsModal(false); handleSelect(item.ticker); }} className="flex justify-between items-center bg-slate-800/20 hover:bg-slate-800/50 p-2.5 rounded-lg border border-slate-800 cursor-pointer transition-colors group">
-                            <div className="flex flex-col max-w-[70%]">
-                              <span className="text-xs font-bold text-white group-hover:text-teal-400 transition-colors truncate">{item.ticker} - {item.name}</span>
-                              <span className="text-[9px] text-slate-500 truncate">{item.target_area}</span>
+                            <div className="flex items-center gap-2 max-w-[65%]">
+                              <span className="text-[9px] font-black text-slate-600 w-4 shrink-0">#{idx + 1}</span>
+                              <div className="flex flex-col min-w-0">
+                                <span className="text-xs font-bold text-white group-hover:text-teal-400 transition-colors truncate">{item.ticker} - {item.name}</span>
+                                <span className="text-[9px] text-slate-500 truncate">{item.target_area} • OVR {Math.round(item.score || 0)}</span>
+                              </div>
                             </div>
                             <span className="font-mono text-sm font-black text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">{Math.round(item.clinical_score)}</span>
                           </div>
@@ -879,9 +905,12 @@ const App = () => {
                       <div className="flex flex-col gap-2">
                         {analyticsData.topCatalysts.map((item, idx) => (
                           <div key={idx} onClick={() => { setShowAnalyticsModal(false); handleSelect(item.ticker); }} className="flex justify-between items-center bg-slate-800/20 hover:bg-slate-800/50 p-2.5 rounded-lg border border-slate-800 cursor-pointer transition-colors group">
-                            <div className="flex flex-col max-w-[70%]">
-                              <span className="text-xs font-bold text-white group-hover:text-blue-400 transition-colors truncate">{item.ticker} - {item.name}</span>
-                              <span className="text-[9px] text-slate-500 truncate">{item.predicted_time || 'TBD'}</span>
+                            <div className="flex items-center gap-2 max-w-[65%]">
+                              <span className="text-[9px] font-black text-slate-600 w-4 shrink-0">#{idx + 1}</span>
+                              <div className="flex flex-col min-w-0">
+                                <span className="text-xs font-bold text-white group-hover:text-blue-400 transition-colors truncate">{item.ticker} - {item.name}</span>
+                                <span className="text-[9px] text-slate-500 truncate">{item.predicted_time || 'TBD'} • OVR {Math.round(item.score || 0)}</span>
+                              </div>
                             </div>
                             <span className="font-mono text-sm font-black text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">{Math.round(item.milestone_score)}</span>
                           </div>
@@ -898,9 +927,12 @@ const App = () => {
                       <div className="flex flex-col gap-2">
                         {analyticsData.topValue.map((item, idx) => (
                           <div key={idx} onClick={() => { setShowAnalyticsModal(false); handleSelect(item.ticker); }} className="flex justify-between items-center bg-slate-800/20 hover:bg-slate-800/50 p-2.5 rounded-lg border border-slate-800 cursor-pointer transition-colors group">
-                            <div className="flex flex-col max-w-[70%]">
-                              <span className="text-xs font-bold text-white group-hover:text-sky-400 transition-colors truncate">{item.ticker} - {item.name}</span>
-                              <span className="text-[9px] text-slate-500 truncate">{item.target_area}</span>
+                            <div className="flex items-center gap-2 max-w-[65%]">
+                              <span className="text-[9px] font-black text-slate-600 w-4 shrink-0">#{idx + 1}</span>
+                              <div className="flex flex-col min-w-0">
+                                <span className="text-xs font-bold text-white group-hover:text-sky-400 transition-colors truncate">{item.ticker} - {item.name}</span>
+                                <span className="text-[9px] text-slate-500 truncate">{item.target_area} • OVR {Math.round(item.score || 0)}</span>
+                              </div>
                             </div>
                             <span className="font-mono text-sm font-black text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded border border-sky-500/20">{Math.round(item.valuation_score)}</span>
                           </div>
@@ -909,6 +941,44 @@ const App = () => {
                       </div>
                     </div>
                   </div>
+
+                  {/* Shadow Signal Feed — Full Width */}
+                  <div className="mt-6 bg-slate-900/40 border border-slate-800 rounded-xl p-4">
+                    <h3 className="text-[10px] font-black tracking-widest text-amber-400 uppercase mb-4 flex items-center gap-2">
+                      <AlertCircle size={12} className="animate-pulse" /> Shadow Signal Feed
+                    </h3>
+                    {(analyticsData.signalFeed || []).length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {analyticsData.signalFeed.map((sig, idx) => {
+                          const moodColors = {
+                            'HIGH-INTENT': { text: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
+                            'STRATEGIC': { text: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
+                            'VALIDATED': { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+                            'NORMAL': { text: 'text-slate-400', bg: 'bg-slate-800/50', border: 'border-slate-700' },
+                          };
+                          const mc = moodColors[sig.mood] || moodColors['NORMAL'];
+                          return (
+                            <div key={idx} onClick={() => { setShowAnalyticsModal(false); handleSelect(sig.ticker); }} className={`p-3 rounded-lg border ${mc.border} ${mc.bg} cursor-pointer hover:opacity-80 transition-opacity`}>
+                              <div className="flex items-center justify-between mb-1.5">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-black text-white">{sig.ticker}</span>
+                                  <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${mc.text} ${mc.bg} border ${mc.border}`}>{sig.type}</span>
+                                </div>
+                                <span className={`text-[8px] font-black ${mc.text}`}>{sig.mood}</span>
+                              </div>
+                              <p className="text-[10px] text-slate-300 leading-snug">{sig.desc}</p>
+                              <span className="text-[8px] text-slate-600 mt-1 block">{sig.date}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6">
+                        <span className="text-xs text-slate-500">No shadow signals detected in the current radar sweep.</span>
+                      </div>
+                    )}
+                  </div>
+                  </>
                 )}
               </div>
             </div>
