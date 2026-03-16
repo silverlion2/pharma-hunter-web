@@ -257,16 +257,16 @@ const Dashboard = ({
               <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-8">
                 {safeFactors.map((f, i) => (
                   <div key={i} className="bg-white/[0.02] border border-white/[0.05] rounded-xl px-4 py-3 flex flex-col justify-center group/card hover:border-white/[0.1] transition-all">
-                    <div className="flex justify-between items-start mb-2">
+                    <div className="flex justify-between items-start mb-2 gap-2">
                       <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{f.label}</span>
-                      <div className="group/tooltip2 relative flex items-center">
-                        <span className={`text-xs font-mono font-black px-1.5 py-0.5 rounded cursor-help bg-white/[0.04] ${f.score >= 80 ? 'text-cyan-400' : f.score >= 50 ? 'text-slate-300' : 'text-slate-500'}`}>{f.score}%</span>
-                        <div className="absolute bottom-full mb-2 right-0 w-48 p-2 bg-slate-800 border border-slate-700 text-[9px] text-slate-300 rounded opacity-0 invisible group-hover/tooltip2:opacity-100 group-hover/tooltip2:visible transition-all z-50 shadow-xl normal-case">
+                      <div className="group/tooltip2 relative flex items-center shrink-0">
+                        <span className={`text-sm font-mono font-black px-2 py-1 rounded cursor-help bg-white/[0.08] ${f.score >= 80 ? 'text-cyan-400' : f.score >= 50 ? 'text-slate-300' : 'text-slate-500'}`}>{f.score}%</span>
+                        <div className="absolute bottom-full mb-2 right-0 w-48 p-2 bg-slate-800 border border-slate-700 text-[9px] text-slate-300 rounded opacity-0 invisible group-hover/tooltip2:opacity-100 group-hover/tooltip2:visible transition-all z-50 shadow-xl normal-case flex-wrap">
                            {f.desc}
                         </div>
                       </div>
                     </div>
-                    <div className="text-lg font-mono font-black text-white leading-none mb-2 tracking-tight line-clamp-1 p-1 -ml-1" title={f.raw}>{f.raw}</div>
+                    <div className="text-sm font-mono font-bold text-white mb-2 tracking-tight truncate leading-snug" title={f.raw}>{f.raw}</div>
                     <div className="h-1 w-full bg-slate-950 rounded-full overflow-hidden mb-2">
                       <div className={`h-full bg-gradient-to-r ${f.color} transition-all duration-700`} style={{ width: `${f.score}%` }} />
                     </div>

@@ -24,6 +24,7 @@ import Dashboard from './components/Dashboard';
 import Watchlist from './components/Watchlist';
 import Layout from './components/Layout';
 import ErrorBoundary from './components/ErrorBoundary';
+import Guidance from './components/Guidance';
 
 const App = () => {
   const [view, setView] = useState('landing');
@@ -664,6 +665,8 @@ const App = () => {
         )}
 
         {view === 'landing' && <Landing setView={setView} setShowPastDeals={setShowPastDeals} />}
+        
+        {view === 'guidance' && <Guidance setView={setView} />}
 
         {view === 'watchlist' && (
           <Watchlist

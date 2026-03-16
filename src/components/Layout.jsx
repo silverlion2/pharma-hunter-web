@@ -1,5 +1,5 @@
 import React from 'react';
-import { TerminalSquare, Target, History, LogIn, User, LogOut, ShieldCheck, AlertCircle, MessageSquare, Star } from 'lucide-react';
+import { TerminalSquare, Target, History, LogIn, User, LogOut, ShieldCheck, AlertCircle, MessageSquare, Star, BookOpen } from 'lucide-react';
 import Button from './ui/Button';
 
 const Layout = ({ 
@@ -95,6 +95,14 @@ const Layout = ({
             </Button>
           )}
 
+          <Button 
+            variant={view === 'guidance' ? 'primary' : 'outline'}
+            onClick={() => { setView('guidance'); setShowPastDeals(false); }} 
+            icon={BookOpen}
+          >
+            GUIDE & FAQ
+          </Button>
+
           {/* Discord Native Button */}
           <a 
             href="https://discord.gg/your-invite-link-here" 
@@ -138,6 +146,7 @@ const Layout = ({
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] text-slate-500 font-black uppercase tracking-widest">
           <span>© 2026 BioQuantix Digital Terminal • Data Intelligence</span>
           <div className="flex gap-6">
+             <button onClick={() => { setView('guidance'); setShowPastDeals(false); }} className="hover:text-cyan-400 transition-colors uppercase font-black cursor-pointer">Help Center</button>
              <a href="/terms.html" className="hover:text-cyan-400 transition-colors">Terms of Service</a>
              <a href="/privacy.html" className="hover:text-cyan-400 transition-colors">Privacy Policy</a>
              <a href="/refund.html" className="hover:text-cyan-400 transition-colors">Refund Policy</a>
