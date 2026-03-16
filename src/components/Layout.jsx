@@ -1,5 +1,5 @@
 import React from 'react';
-import { TerminalSquare, Target, History, LogIn, User, LogOut, ShieldCheck, AlertCircle, MessageSquare } from 'lucide-react';
+import { TerminalSquare, Target, History, LogIn, User, LogOut, ShieldCheck, AlertCircle, MessageSquare, Star } from 'lucide-react';
 import Button from './ui/Button';
 
 const Layout = ({ 
@@ -73,6 +73,16 @@ const Layout = ({
                 icon={LogOut}
               />
             </div>
+          )}
+
+          {userRole !== 'visitor' && (
+            <Button 
+              variant={view === 'watchlist' ? 'primary' : 'secondary'}
+              onClick={() => setView('watchlist')} 
+              icon={Star}
+            >
+              MY WATCHLIST
+            </Button>
           )}
 
           {(userRole === 'visitor' || userRole === 'free') && (

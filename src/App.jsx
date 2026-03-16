@@ -21,6 +21,7 @@ if (typeof window !== 'undefined') {
 import Landing from './components/Landing';
 import AuthModal from './components/AuthModal';
 import Dashboard from './components/Dashboard';
+import Watchlist from './components/Watchlist';
 import Layout from './components/Layout';
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -49,6 +50,7 @@ const App = () => {
   // New Phase: Tracked Tickers
   const [trackedTickers, setTrackedTickers] = useState([]);
   const [showOnlyTracked, setShowOnlyTracked] = useState(false);
+  const [watchlistHistory, setWatchlistHistory] = useState({});
 
   // New Phase: Market Analytics Modal
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
@@ -130,6 +132,56 @@ const App = () => {
       console.error("Failed to fetch tracked tickers", err);
     }
   };
+
+  const fetchWatchlistHistory = async () => {
+    if (!isSupabaseConfigured || trackedTickers.length === 0) return;
+    try {
+      const now = new Date();
+      const d1 = new Date(now - 1 * 24 * 60 * 60 * 1000).toISOString();
+      const d7 = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const d30 = new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+      // Query the closest score snapshot near each lookback window 
+      const [res1, res7, res30] = await Promise.all([
+        supabase.from('asset_scores_history').select('ticker, score, created_at').in('ticker', trackedTickers).gte('created_at', d1).order('created_at', { ascending: true }),
+        supabase.from('asset_scores_history').select('ticker, score, created_at').in('ticker', trackedTickers).gte('created_at', d7).lte('created_at', d1).order('created_at', { ascending: true }),
+        supabase.from('asset_scores_history').select('ticker, score, created_at').in('ticker', trackedTickers).gte('created_at', d30).lte('created_at', d7).order('created_at', { ascending: true }),
+      ]);
+
+      const historyMap = {};
+
+      // Helper: for each ticker, grab the earliest (oldest) score in that window as the baseline
+      const processResults = (data, key) => {
+        if (!data) return;
+        const seen = {};
+        for (const row of data) {
+          if (!seen[row.ticker]) {
+            seen[row.ticker] = row.score;
+          }
+        }
+        for (const [ticker, score] of Object.entries(seen)) {
+          if (!historyMap[ticker]) historyMap[ticker] = {};
+          historyMap[ticker][key] = score;
+        }
+      };
+
+      processResults(res1.data, 'd1');
+      processResults(res7.data, 'd7');
+      processResults(res30.data, 'd30');
+
+      setWatchlistHistory(historyMap);
+    } catch (err) {
+      console.error("Failed to fetch watchlist history:", err);
+    }
+  };
+
+  // Auto-fetch history when entering watchlist view
+  useEffect(() => {
+    if (view === 'watchlist') {
+      fetchWatchlistHistory();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, trackedTickers]);
 
   const fetchAnalyticsData = async () => {
     if (!isSupabaseConfigured) {
@@ -600,6 +652,18 @@ const App = () => {
 
         {view === 'landing' && <Landing setView={setView} setShowPastDeals={setShowPastDeals} />}
 
+        {view === 'watchlist' && (
+          <Watchlist
+            trackedTickers={trackedTickers}
+            assetData={assetData}
+            watchlistHistory={watchlistHistory}
+            toggleTrackTicker={toggleTrackTicker}
+            setView={setView}
+            setSelectedTicker={setSelectedTicker}
+            handleSelect={handleSelect}
+          />
+        )}
+
         {view === 'upgrade' && (
           <div id="upgrade" className="max-w-5xl mx-auto py-12 px-6">
             <button onClick={() => setView('dashboard')} className="flex items-center gap-2 text-slate-500 hover:text-white mb-8 transition-all font-bold text-xs">
@@ -861,7 +925,7 @@ const App = () => {
                   </div>
                   <div>
                     <h2 className="text-sm font-black text-amber-400 tracking-widest uppercase">Smart Money Consensus</h2>
-                    <p className="text-[10px] text-slate-400">Assets tracked by Pro tier users</p>
+                    <p className="text-[10px] text-slate-400">Assets tracked by all registered users</p>
                   </div>
                 </div>
                 <button onClick={() => setShowSmartMoneyModal(false)} className="text-slate-500 hover:text-white transition-colors p-2">
@@ -877,6 +941,16 @@ const App = () => {
                   </div>
                 ) : (
                   <div className="flex flex-col gap-3">
+                    {/* Column Headers */}
+                    <div className="flex justify-between items-center px-4 pb-2 border-b border-slate-800">
+                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Asset</span>
+                      <div className="flex items-center gap-6">
+                        <span className="text-[9px] font-black text-amber-500/60 uppercase tracking-widest w-12 text-center">Pro</span>
+                        <span className="text-[9px] font-black text-cyan-500/60 uppercase tracking-widest w-12 text-center">Free</span>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest w-12 text-center">Total</span>
+                      </div>
+                    </div>
+
                     {smartMoneyData.map((item, idx) => (
                       <div key={idx} onClick={() => { setShowSmartMoneyModal(false); handleSelect(item.ticker); }} className="flex justify-between items-center bg-slate-800/20 hover:bg-slate-800/50 p-4 rounded-xl border border-slate-800 cursor-pointer transition-colors group">
                         <div className="flex items-center gap-4">
@@ -885,13 +959,20 @@ const App = () => {
                            </div>
                            <span className="text-lg font-black text-white group-hover:text-amber-400 transition-colors">{item.ticker}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] uppercase font-bold text-slate-500">Pro Watchers</span>
-                          <span className="font-mono text-xl font-black text-amber-400">{item.pro_count}</span>
+                        <div className="flex items-center gap-6">
+                          <div className="flex flex-col items-center w-12">
+                            <span className="font-mono text-lg font-black text-amber-400">{item.pro_count || 0}</span>
+                          </div>
+                          <div className="flex flex-col items-center w-12">
+                            <span className="font-mono text-lg font-black text-cyan-400">{item.free_count || 0}</span>
+                          </div>
+                          <div className="flex flex-col items-center w-12">
+                            <span className="font-mono text-lg font-black text-white">{item.total_count || 0}</span>
+                          </div>
                         </div>
                       </div>
                     ))}
-                    {smartMoneyData.length === 0 && <span className="text-sm text-slate-500 text-center py-10">No assets currently tracked by Pro users.</span>}
+                    {smartMoneyData.length === 0 && <span className="text-sm text-slate-500 text-center py-10">No assets currently tracked by any users.</span>}
                   </div>
                 )}
               </div>
