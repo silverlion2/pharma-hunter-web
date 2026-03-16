@@ -1,0 +1,9 @@
+# BioQuantix Robots.txt
+# https://www.robotstxt.org/
+
+User-agent: *
+Allow: /
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://bioquantix.com/sitemap.xml

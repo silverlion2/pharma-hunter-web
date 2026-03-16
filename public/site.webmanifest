@@ -1,0 +1,16 @@
+{
+  "name": "BioQuantix - Quantitative Bio-Pharma Intelligence",
+  "short_name": "BioQuantix",
+  "description": "AI-powered bio-pharma M&A intelligence terminal. Track clinical assets, pipeline gaps, and acquisition signals with quantitative precision.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A0C10",
+  "theme_color": "#22d3ee",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

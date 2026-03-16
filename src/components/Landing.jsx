@@ -3,6 +3,7 @@ import { Zap, Database, TerminalSquare, ShieldCheck } from 'lucide-react';
 
 const Landing = ({ setView, setShowPastDeals }) => {
   return (
+    <section aria-label="BioQuantix - AI-powered bio-pharma M&A intelligence platform">
     <div className="min-h-[70vh] flex flex-col justify-center max-w-6xl mx-auto py-12 px-6">
       <div className="text-center mb-16 relative">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-cyan-500/10 blur-[120px] rounded-full pointer-events-none" />
@@ -53,6 +54,7 @@ const Landing = ({ setView, setShowPastDeals }) => {
 
       </div>
     </div>
+    </section>
   );
 };
 

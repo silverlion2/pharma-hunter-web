@@ -528,6 +528,21 @@ const App = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [availableAreas, targetArea]);
 
+  // SEO: Dynamic page title per view
+  useEffect(() => {
+    const titles = {
+      landing: 'BioQuantix – AI-Powered Bio-Pharma M&A Intelligence Terminal',
+      dashboard: 'Live Radar Terminal | BioQuantix',
+      watchlist: 'My Watchlist | BioQuantix',
+      'gap-map': 'Pipeline Gap Map | BioQuantix',
+      guidance: 'Guide & FAQ | BioQuantix',
+      upgrade: 'Upgrade to Pro | BioQuantix',
+      compare: 'Asset Comparison | BioQuantix',
+      smartmoney: 'Smart Money Consensus | BioQuantix',
+    };
+    document.title = titles[view] || 'BioQuantix – Quantitative Bio-Pharma Intelligence';
+  }, [view]);
+
   const baseFiltered = assetData.filter(a => {
       let areaForAsset = 'Others';
       if (a.target_area && a.target_area.trim() !== '' && a.target_area.toLowerCase() !== 'none') {
