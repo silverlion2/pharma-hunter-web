@@ -77,6 +77,10 @@ const App = () => {
   const [isCompareMode, setIsCompareMode] = useState(false);
   const [compareSelection, setCompareSelection] = useState([]);
 
+  // New Phase: Custom Alerts & Notifications
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
 
   const showToast = (message, type = 'success') => {
@@ -124,6 +128,38 @@ const App = () => {
     
     setUserRole(role);
     fetchTrackedTickers();
+    fetchNotifications(user.id);
+  };
+
+  const fetchNotifications = async (userId) => {
+    if (!isSupabaseConfigured || !userId) return;
+    try {
+      const { data, error } = await supabase
+        .from('alert_notifications')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+        
+      if (error) throw error;
+      if (data) {
+        setNotifications(data);
+        setUnreadCount(data.filter(n => !n.is_read).length);
+      }
+    } catch (err) {
+      console.error("Failed to fetch notifications:", err);
+    }
+  };
+
+  const markNotificationRead = async (id) => {
+    if (!isSupabaseConfigured) return;
+    try {
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+      await supabase.from('alert_notifications').update({ is_read: true }).eq('id', id);
+    } catch (err) {
+      console.error("Failed to mark notification read", err);
+    }
   };
 
   const fetchTrackedTickers = async () => {
@@ -279,7 +315,24 @@ const App = () => {
       if (exists) {
          handleSelect(ticker);
       } else {
-         showToast(`Scan initiated for ${ticker}. Added to next automated Python crawler loop.`, "success");
+         // Trigger FOMO Terminal Loading Effects
+         setIsSearching(true);
+         setSearchStep(0);
+         setSearchedTicker(ticker);
+         
+         let currentStep = 0;
+         const interval = setInterval(() => {
+           currentStep++;
+           setSearchStep(currentStep);
+           
+           if (currentStep >= 4) {
+             clearInterval(interval);
+             setTimeout(() => {
+               setIsSearching(false);
+               showToast(`Scan initiated for ${ticker}. Added to next automated Python crawler loop.`, "success");
+             }, 800);
+           }
+         }, 1000);
       }
     }
   };
@@ -521,6 +574,8 @@ const App = () => {
   });
 
   // 恢复单边锁定阻断：若当前选中的是锁定资产，强制切换到第一个未锁定资产，确保右侧面板始终可见且合法
+  // REMOVED: We now want users to be able to select locked assets to see the blurred tease.
+  /*
   useEffect(() => {
     if (activeList.length > 0) {
       const firstAvailable = activeList.find(a => !a.locked) || activeList[0];
@@ -531,23 +586,15 @@ const App = () => {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [targetArea, showPastDeals, assetData, userRole, view]);
+  */
 
   const activeAsset = activeList.find(a => a.ticker === selectedTicker) || activeList[0] || fallbackData[0];
 
   const handleSelect = (ticker) => {
-    // 原版拦截逻辑：只要点到带锁资产，立刻打断交互并弹窗/跳转，无需使用大锁头遮罩
-    const targetAsset = activeList.find(a => a.ticker === ticker);
-    if (targetAsset && targetAsset.locked && !showPastDeals) {
-      if (userRole === 'visitor') {
-        setShowAuthModal(true);
-      } else {
-        setView('upgrade');
-      }
-    } else {
-      posthog.capture('selected_asset', { ticker });
-      setSelectedTicker(ticker);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    // Allow users to select locked assets to show the Blurred Tease UI
+    posthog.capture('selected_asset', { ticker });
+    setSelectedTicker(ticker);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleAuth = async (e) => {
@@ -633,17 +680,29 @@ const App = () => {
   const themeColorBg = targetArea === 'Autoimmune' ? 'bg-indigo-500' : 'bg-cyan-500';
 
   // 提取为安全变量，做兜底处理，彻底避免由真实数据库中的 NULL 数据引发的渲染白屏
+  const isCurrentlyLocked = activeAsset.locked;
+  
   const safeTicker = activeAsset.ticker ? activeAsset.ticker[0] : 'N';
   const safeName = activeAsset.name || 'Unknown Asset';
   const safeCategory = activeAsset.category || 'TBD';
   const safeScore = activeAsset.score || 0;
   const safeDealInfo = activeAsset.deal_info || '';
-  const safeTime = activeAsset.time || 'TBD';
-  const safeUpside = activeAsset.upside || 'TBD';
   const safeFactors = activeAsset.factors || [];
-  const safeSignals = activeAsset.display_signals || [];
-  const safeDigest = activeAsset.digest || "AI strategic digest is compiling recent regulatory footprints...";
   const safeCashAmount = activeAsset.cash_amount || '—';
+  
+  // Secure Obfuscation: Replace real data with dummy text if locked so it cannot be inspected in DOM
+  const safeTime = isCurrentlyLocked ? 'Q4 2026' : (activeAsset.time || 'TBD');
+  const safeUpside = isCurrentlyLocked ? '+115%' : (activeAsset.upside || 'TBD');
+  const safeDigest = isCurrentlyLocked 
+    ? "MODEL VERDICT: This asset meets the quantitative thresholds for a high-priority acquisition target.\nInstitutional positioning suggests heavy accumulation in recent weeks.\nRegulatory path remains exceptionally clear compared to direct peers." 
+    : (activeAsset.digest || "AI strategic digest is compiling recent regulatory footprints...");
+    
+  const safeSignals = isCurrentlyLocked 
+    ? [
+        { date: '12m ago', mood: 'HIGH-INTENT', desc: 'Unusual options sweep detected indicative of institutional accumulation.', type: 'OPTIONS' },
+        { date: '2d ago', mood: 'STRATEGIC', desc: 'Clinical overlap confirmed against major Tier 1 Pharma gap.', type: 'CLINICAL' }
+      ]
+    : (activeAsset.display_signals || []);
   const safeNewsHeadline = activeAsset.latest_news_headline || 'No recent news';
   const safeMarketCap = activeAsset.market_cap || '—';
 
@@ -668,6 +727,9 @@ const App = () => {
         setShowAuthModal={setShowAuthModal}
         setAuthMode={setAuthMode}
         handleLogout={handleLogout}
+        notifications={notifications}
+        unreadCount={unreadCount}
+        markNotificationRead={markNotificationRead}
       >
 
         {usingMockData && (view === 'dashboard' || view === 'landing' || view === 'upgrade') && (
@@ -789,6 +851,7 @@ const App = () => {
               safeCashAmount={safeCashAmount}
               safeNewsHeadline={safeNewsHeadline}
               safeMarketCap={safeMarketCap}
+              isCurrentlyLocked={isCurrentlyLocked}
               handleSelect={handleSelect}
               fetchAnalyticsData={fetchAnalyticsData}
               handleSearch={handleSearch}

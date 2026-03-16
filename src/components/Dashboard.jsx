@@ -5,12 +5,20 @@ const Dashboard = ({
   availableAreas = ['Metabolic', 'Autoimmune'], targetArea, setTargetArea, showPastDeals, themeColorText, themeColorBg,
   activeList, currentGaps, activeAsset, safeTicker, safeName, safeCategory,
   safeScore, safeDealInfo, userRole, safeFactors, safeTime, safeUpside,
-  safeDigest, safeSignals, safeCashAmount, safeNewsHeadline, safeMarketCap, handleSelect,
+  safeDigest, safeSignals, safeCashAmount, safeNewsHeadline, safeMarketCap, isCurrentlyLocked, handleSelect,
   trackedTickers = [], toggleTrackTicker, showOnlyTracked, setShowOnlyTracked, fetchAnalyticsData,
   handleSearch, fetchSmartMoneyData,
-  isCompareMode, setIsCompareMode, compareSelection, toggleCompareSelection, handleStartCombat
+  isCompareMode, setIsCompareMode, compareSelection, toggleCompareSelection, handleStartCombat,
+  isSearching, searchStep, searchedTicker
 }) => {
   const [searchInput, setSearchInput] = useState('');
+  
+  const loadingMessages = [
+    `[1/4] Parsing SEC filings for ${searchedTicker}...`,
+    `[2/4] Analyzing ClinicalTrials.gov outcomes...`,
+    `[3/4] Quantifying unhedged options flow...`,
+    `[4/4] Finalizing predictive AI model...`
+  ];
   
   return (
     <>
@@ -129,8 +137,22 @@ const Dashboard = ({
                 )}
               </div>
             </div>
-            
-            <div className="divide-y divide-slate-800/30 overflow-y-auto max-h-[500px] custom-scrollbar">
+            <div className="divide-y divide-slate-800/30 overflow-y-auto max-h-[500px] custom-scrollbar relative">
+              {isSearching && (
+                <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-sm z-30 flex flex-col justify-center items-center p-6 text-center">
+                   <div className="w-12 h-12 rounded-full border-t-2 border-b-2 border-cyan-500 animate-spin mb-4" />
+                   <div className="font-mono text-xs text-cyan-400 font-bold mb-2">
+                     SCANNING {searchedTicker}...
+                   </div>
+                   <div className="text-[10px] text-slate-400 font-mono w-full max-w-[200px] text-left">
+                      {loadingMessages.map((msg, idx) => (
+                        <div key={idx} className={`mb-1 transition-opacity duration-300 ${idx <= searchStep ? 'opacity-100' : 'opacity-0'}`}>
+                          {msg}
+                        </div>
+                      ))}
+                   </div>
+                </div>
+              )}
               {activeList.map((item) => {
                 const isSelectedForCompare = compareSelection?.includes(item.ticker);
                 const isCompareDisabled = isCompareMode && !isSelectedForCompare && compareSelection?.length >= 2;
@@ -329,98 +351,118 @@ const Dashboard = ({
             )}
 
             {!showPastDeals && (
-              <div className="flex flex-col md:flex-row items-center gap-6 p-5 bg-slate-950 rounded-2xl border border-slate-800/60 mb-8">
-                <div className="flex-1">
-                  <h4 className="text-slate-400 text-xs font-black uppercase tracking-widest mb-1">Transaction Prediction</h4>
-                  <p className="text-slate-500 text-xs leading-relaxed max-w-md italic">Calculated based on institutional BD benchmarks and current MarketData API volume intensity.</p>
-                </div>
-                <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0 w-full md:w-auto">
-                  <div className={`flex items-center gap-4 px-5 py-3 bg-opacity-5 border rounded-xl w-full sm:w-auto ${targetArea === 'Autoimmune' ? 'bg-indigo-500 border-indigo-500/20' : 'bg-cyan-500 border-cyan-500/20'}`}>
-                    <Clock className={`shrink-0 ${themeColorText}`} size={18} />
-                    <div>
-                      <div className="text-[9px] text-slate-500 font-bold uppercase mb-0.5">Predicted Execution</div>
-                      <div className={`text-lg font-mono font-black leading-none ${themeColorText}`}>{safeTime}</div>
-                    </div>
+              <div className="flex flex-col md:flex-row items-center gap-6 p-5 bg-slate-950 rounded-2xl border border-slate-800/60 mb-8 relative">
+                <div className={`flex flex-col md:flex-row items-center gap-6 w-full ${isCurrentlyLocked ? 'blur-[3px] opacity-40 select-none pointer-events-none' : ''}`}>
+                  <div className="flex-1">
+                    <h4 className="text-slate-400 text-xs font-black uppercase tracking-widest mb-1">Transaction Prediction</h4>
+                    <p className="text-slate-500 text-xs leading-relaxed max-w-md italic">Calculated based on institutional BD benchmarks and current MarketData API volume intensity.</p>
                   </div>
-                  <div className="flex items-center gap-4 px-5 py-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl w-full sm:w-auto">
-                    <TrendingUp className="text-emerald-400 shrink-0" size={18} />
-                    <div>
-                      <div className="text-[9px] text-slate-500 font-bold uppercase mb-0.5">Estimated Premium</div>
-                      <div className="text-lg font-mono font-black text-emerald-400 leading-none">{safeUpside}</div>
+                  <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0 w-full md:w-auto">
+                    <div className={`flex items-center gap-4 px-5 py-3 bg-opacity-5 border rounded-xl w-full sm:w-auto ${targetArea === 'Autoimmune' ? 'bg-indigo-500 border-indigo-500/20' : 'bg-cyan-500 border-cyan-500/20'}`}>
+                      <Clock className={`shrink-0 ${themeColorText}`} size={18} />
+                      <div>
+                        <div className="text-[9px] text-slate-500 font-bold uppercase mb-0.5">Predicted Execution</div>
+                        <div className={`text-lg font-mono font-black leading-none ${themeColorText}`}>{safeTime}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 px-5 py-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl w-full sm:w-auto">
+                      <TrendingUp className="text-emerald-400 shrink-0" size={18} />
+                      <div>
+                        <div className="text-[9px] text-slate-500 font-bold uppercase mb-0.5">Estimated Premium</div>
+                        <div className="text-lg font-mono font-black text-emerald-400 leading-none">{safeUpside}</div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              
-              <section className={`lg:col-span-7 bg-slate-950 border rounded-[2rem] p-6 relative ${showPastDeals || targetArea === 'Autoimmune' ? 'border-indigo-500/20' : 'border-slate-800/60'}`}>
-                <h3 className={`text-sm font-black uppercase flex items-center gap-2 mb-4 ${showPastDeals || targetArea === 'Autoimmune' ? 'text-indigo-400' : 'text-cyan-400'}`}>
-                  <Database className="w-4 h-4" /> 
-                  {showPastDeals ? 'Historical T-7 Digest & Outcome' : 'AI Model Digest'}
-                </h3>
-                <article className="space-y-4 text-slate-400 text-sm leading-relaxed overflow-y-auto max-h-[300px] pr-2 custom-scrollbar">
-                  {safeDigest.split('\n').filter(line => line.trim() !== '').map((paragraph, index) => (
-                    <p key={index} className={paragraph.includes('VERDICT') || paragraph.includes('OUTCOME') ? `p-4 bg-slate-900 border rounded-xl text-xs text-slate-300 ${showPastDeals || targetArea === 'Autoimmune' ? 'border-indigo-500/30' : 'border-cyan-500/30'}` : ""}>
-                      {paragraph.includes('VERDICT') && !showPastDeals ? <span className={`font-black block mb-1 ${themeColorText}`}>MODEL VERDICT:</span> : null}
-                      {paragraph.includes('OUTCOME') && showPastDeals ? <span className="text-indigo-400 font-black block mb-1">ACTUAL OUTCOME:</span> : null}
-                      {paragraph.replace('VERDICT:', '').replace('OUTCOME:', '')}
-                    </p>
-                  ))}
-                </article>
-              </section>
-
-              <section className={`lg:col-span-5 bg-slate-950 border rounded-[2rem] p-6 ${showPastDeals || targetArea === 'Autoimmune' ? 'border-indigo-500/20' : 'border-slate-800/60'}`}>
-                <h3 className={`text-sm font-black uppercase mb-2 flex items-center gap-2 ${showPastDeals || targetArea === 'Autoimmune' ? 'text-indigo-400' : 'text-blue-400'}`}>
-                  <Activity className="w-4 h-4" /> 
-                  {showPastDeals ? 'Historical Signals (T-7)' : 'Shadow Intelligence Feed'}
-                </h3>
-                <p className="text-[10px] text-slate-500 italic mb-6 leading-relaxed">
-                  Monitors real-time institutional footprint and API data to detect front-running activity prior to public M&A.
-                </p>
-                
-                <div className="space-y-6 relative">
-                  <div className="absolute left-[7px] top-2 bottom-2 w-[1px] bg-slate-800" />
-                  
-                  {safeSignals.map((s, idx) => {
-                    let displayDesc = s.desc;
-                    if (s.type === 'OPTIONS' && (userRole === 'visitor' || userRole === 'free') && !showPastDeals) {
-                      displayDesc = displayDesc.replace(/\$\d+(\.\d+)?/g, '$***').replace(/\d{3,}/g, '***');
-                    }
-
-                    let sentiment = 'Neutral';
-                    if (s.mood === 'HIGH-INTENT' || s.mood === 'STRATEGIC' || s.mood === 'VALIDATED') sentiment = '🐂 Bullish';
-                    else if (s.mood === 'DELAYED' || s.mood === 'RISK') sentiment = '🐻 Bearish';
-
-                    let explanation = 'System indicator for baseline observation.';
-                    if (s.type === 'OPTIONS') explanation = 'Options Flow Interpretation: Abnormal unhedged block trades often precede public M&A announcements as informed institutional capital positions itself.';
-                    else if (s.type === 'CLINICAL') explanation = 'Clinical Interpretation: Strategic pipeline progress perfectly aligns with known acquirer gaps.';
-
-                    return (
-                      <div key={idx} className="flex gap-5 relative">
-                        <div className={`w-3.5 h-3.5 rounded-full bg-slate-950 border-2 z-10 shrink-0 mt-1 flex items-center justify-center ${showPastDeals || targetArea === 'Autoimmune' ? 'border-indigo-500/50' : 'border-slate-700'}`}>
-                          <div className={`w-1.5 h-1.5 rounded-full ${idx === 0 ? (showPastDeals || targetArea === 'Autoimmune' ? 'bg-indigo-400' : 'bg-cyan-400') : 'bg-slate-800'}`} />
-                        </div>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] text-slate-500 font-mono font-bold">{s.date}</span>
-                            <span className={`text-[8px] font-black tracking-widest px-1.5 py-0.5 rounded ${showPastDeals || targetArea === 'Autoimmune' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-slate-800 text-slate-400'}`}>{s.mood}</span>
-                            <span className={`text-[9px] font-bold ${sentiment.includes('Bullish') ? 'text-emerald-400' : sentiment.includes('Bearish') ? 'text-red-400' : 'text-slate-500'}`}>{sentiment}</span>
-                          </div>
-                          <div className="text-xs font-bold text-slate-200 leading-tight">
-                            {displayDesc}
-                          </div>
-                          <div className="text-[9px] text-slate-500 italic mt-1 font-medium leading-relaxed">
-                            {explanation}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+            <div className="relative">
+              {isCurrentlyLocked && (
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center p-6 bg-slate-950/20 backdrop-blur-[1px] rounded-[2rem]">
+                  <div className="max-w-md w-full bg-slate-900/90 border border-slate-700/50 p-8 rounded-2xl shadow-2xl flex flex-col items-center text-center transform -translate-y-12">
+                     <Lock className="w-10 h-10 text-cyan-500 mb-4" />
+                     <h3 className="text-white font-black text-xl mb-2 tracking-tight">Proprietary Intelligence Gated</h3>
+                     <p className="text-slate-400 text-xs leading-relaxed mb-6">
+                       This is an S-Class or A-Class asset. The AI Strategic Digest, Model Verdicts, and Institutional Options Flow are reserved for active PRO tier subscribers.
+                     </p>
+                     <button
+                       onClick={() => handleSelect(safeTicker)} // This triggers the App.js upgrade modal logic
+                       className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white font-black text-xs px-6 py-3.5 rounded-xl uppercase tracking-widest shadow-lg shadow-cyan-500/20 transition-all flex items-center justify-center gap-2"
+                     >
+                        Unlock Pro Intelligence
+                     </button>
+                  </div>
                 </div>
-              </section>
+              )}
+              <div className={`grid grid-cols-1 lg:grid-cols-12 gap-6 ${isCurrentlyLocked ? 'blur-sm opacity-30 select-none pointer-events-none' : ''}`}>
+                
+                <section className={`lg:col-span-7 bg-slate-950 border rounded-[2rem] p-6 relative ${showPastDeals || targetArea === 'Autoimmune' ? 'border-indigo-500/20' : 'border-slate-800/60'}`}>
+                  <h3 className={`text-sm font-black uppercase flex items-center gap-2 mb-4 ${showPastDeals || targetArea === 'Autoimmune' ? 'text-indigo-400' : 'text-cyan-400'}`}>
+                    <Database className="w-4 h-4" /> 
+                    {showPastDeals ? 'Historical T-7 Digest & Outcome' : 'AI Model Digest'}
+                  </h3>
+                  <article className="space-y-4 text-slate-400 text-sm leading-relaxed overflow-y-auto max-h-[300px] pr-2 custom-scrollbar">
+                    {safeDigest.split('\n').filter(line => line.trim() !== '').map((paragraph, index) => (
+                      <p key={index} className={paragraph.includes('VERDICT') || paragraph.includes('OUTCOME') ? `p-4 bg-slate-900 border rounded-xl text-xs text-slate-300 ${showPastDeals || targetArea === 'Autoimmune' ? 'border-indigo-500/30' : 'border-cyan-500/30'}` : ""}>
+                        {paragraph.includes('VERDICT') && !showPastDeals ? <span className={`font-black block mb-1 ${themeColorText}`}>MODEL VERDICT:</span> : null}
+                        {paragraph.includes('OUTCOME') && showPastDeals ? <span className="text-indigo-400 font-black block mb-1">ACTUAL OUTCOME:</span> : null}
+                        {paragraph.replace('VERDICT:', '').replace('OUTCOME:', '')}
+                      </p>
+                    ))}
+                  </article>
+                </section>
 
+                <section className={`lg:col-span-5 bg-slate-950 border rounded-[2rem] p-6 ${showPastDeals || targetArea === 'Autoimmune' ? 'border-indigo-500/20' : 'border-slate-800/60'}`}>
+                  <h3 className={`text-sm font-black uppercase mb-2 flex items-center gap-2 ${showPastDeals || targetArea === 'Autoimmune' ? 'text-indigo-400' : 'text-blue-400'}`}>
+                    <Activity className="w-4 h-4" /> 
+                    {showPastDeals ? 'Historical Signals (T-7)' : 'Shadow Intelligence Feed'}
+                  </h3>
+                  <p className="text-[10px] text-slate-500 italic mb-6 leading-relaxed">
+                    Monitors real-time institutional footprint and API data to detect front-running activity prior to public M&A.
+                  </p>
+                  
+                  <div className="space-y-6 relative">
+                    <div className="absolute left-[7px] top-2 bottom-2 w-[1px] bg-slate-800" />
+                    
+                    {safeSignals.map((s, idx) => {
+                      let displayDesc = s.desc;
+                      if (s.type === 'OPTIONS' && (userRole === 'visitor' || userRole === 'free') && !showPastDeals) {
+                        displayDesc = displayDesc.replace(/\$\d+(\.\d+)?/g, '$***').replace(/\d{3,}/g, '***');
+                      }
+
+                      let sentiment = 'Neutral';
+                      if (s.mood === 'HIGH-INTENT' || s.mood === 'STRATEGIC' || s.mood === 'VALIDATED') sentiment = '🐂 Bullish';
+                      else if (s.mood === 'DELAYED' || s.mood === 'RISK') sentiment = '🐻 Bearish';
+
+                      let explanation = 'System indicator for baseline observation.';
+                      if (s.type === 'OPTIONS') explanation = 'Options Flow Interpretation: Abnormal unhedged block trades often precede public M&A announcements as informed institutional capital positions itself.';
+                      else if (s.type === 'CLINICAL') explanation = 'Clinical Interpretation: Strategic pipeline progress perfectly aligns with known acquirer gaps.';
+
+                      return (
+                        <div key={idx} className="flex gap-5 relative">
+                          <div className={`w-3.5 h-3.5 rounded-full bg-slate-950 border-2 z-10 shrink-0 mt-1 flex items-center justify-center ${showPastDeals || targetArea === 'Autoimmune' ? 'border-indigo-500/50' : 'border-slate-700'}`}>
+                            <div className={`w-1.5 h-1.5 rounded-full ${idx === 0 ? (showPastDeals || targetArea === 'Autoimmune' ? 'bg-indigo-400' : 'bg-cyan-400') : 'bg-slate-800'}`} />
+                          </div>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] text-slate-500 font-mono font-bold">{s.date}</span>
+                              <span className={`text-[8px] font-black tracking-widest px-1.5 py-0.5 rounded ${showPastDeals || targetArea === 'Autoimmune' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-slate-800 text-slate-400'}`}>{s.mood}</span>
+                              <span className={`text-[9px] font-bold ${sentiment.includes('Bullish') ? 'text-emerald-400' : sentiment.includes('Bearish') ? 'text-red-400' : 'text-slate-500'}`}>{sentiment}</span>
+                            </div>
+                            <div className="text-xs font-bold text-slate-200 leading-tight">
+                              {displayDesc}
+                            </div>
+                            <div className="text-[9px] text-slate-500 italic mt-1 font-medium leading-relaxed">
+                              {explanation}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              </div>
             </div>
           </section>
           )}

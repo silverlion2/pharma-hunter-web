@@ -1,5 +1,5 @@
-import React from 'react';
-import { TerminalSquare, Target, History, LogIn, User, LogOut, ShieldCheck, AlertCircle, MessageSquare, Star, BookOpen } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { TerminalSquare, Target, History, LogIn, User, LogOut, ShieldCheck, AlertCircle, MessageSquare, Star, BookOpen, Bell, Check } from 'lucide-react';
 import Button from './ui/Button';
 
 const Layout = ({ 
@@ -11,8 +11,23 @@ const Layout = ({
   userRole, 
   setShowAuthModal, 
   setAuthMode, 
-  handleLogout 
+  handleLogout,
+  notifications = [],
+  unreadCount = 0,
+  markNotificationRead
 }) => {
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notificationRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
   return (
     <div className="max-w-[1440px] mx-auto p-4 md:p-8 flex-grow w-full relative">
       
@@ -78,13 +93,6 @@ const Layout = ({
           {userRole !== 'visitor' && (
             <div className="flex items-center gap-2">
               <Button 
-                variant={view === 'smartmoney' ? 'primary' : 'secondary'}
-                onClick={() => setView('smartmoney')} 
-                icon={User}
-              >
-                SMART MONEY
-              </Button>
-              <Button 
                 variant={view === 'watchlist' ? 'primary' : 'secondary'}
                 onClick={() => setView('watchlist')} 
                 icon={Star}
@@ -123,6 +131,85 @@ const Layout = ({
             <MessageSquare className="w-4 h-4" />
             DISCORD
           </a>
+
+          {/* Notifications Dropdown (Logged in only) */}
+          {userRole !== 'visitor' && (
+            <div className="relative" ref={notificationRef}>
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className={`relative p-2.5 rounded-xl transition-all ${showNotifications ? 'bg-slate-800 text-white' : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800'} border border-slate-800`}
+                title="Notifications"
+              >
+                <Bell size={18} />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 font-mono text-[9px] font-bold text-white shadow-lg border-2 border-slate-900">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {showNotifications && (
+                <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-slate-900 border border-slate-700/60 rounded-2xl shadow-2xl z-50 overflow-hidden backdrop-blur-xl">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800/60 bg-slate-800/20">
+                    <h3 className="font-black text-xs tracking-widest text-slate-300">ALERTS</h3>
+                    <span className="text-[10px] font-bold text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-md">{unreadCount} UNREAD</span>
+                  </div>
+                  
+                  <div className="max-h-[400px] overflow-y-auto divide-y divide-slate-800/50">
+                    {notifications.length === 0 ? (
+                      <div className="px-4 py-8 text-center text-slate-500">
+                        <Bell className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                        <p className="text-xs font-bold tracking-widest">NO ALERTS YET</p>
+                        <p className="text-[10px] mt-1">Configure alerts in your Watchlist</p>
+                      </div>
+                    ) : (
+                      notifications.map((notif) => (
+                        <div 
+                          key={notif.id} 
+                          className={`p-4 transition-colors hover:bg-slate-800/40 relative group ${!notif.is_read ? 'bg-slate-800/20' : ''}`}
+                        >
+                          {!notif.is_read && (
+                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-cyan-500" />
+                          )}
+                          <div className="flex gap-3">
+                            <div className="flex-1">
+                              <h4 className={`text-xs font-bold mb-1 ${!notif.is_read ? 'text-white' : 'text-slate-400'}`}>
+                                {notif.title}
+                              </h4>
+                              <p className="text-[11px] text-slate-500 leading-relaxed mb-2">
+                                {notif.message}
+                              </p>
+                              <p className="text-[9px] font-mono text-slate-600 block">
+                                {new Date(notif.created_at).toLocaleString()}
+                              </p>
+                            </div>
+                            {!notif.is_read && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); markNotificationRead(notif.id); }}
+                                className="opacity-0 group-hover:opacity-100 p-1.5 h-fit rounded-lg bg-slate-800 text-slate-400 hover:text-cyan-400 hover:bg-slate-700 transition-all border border-slate-700"
+                                title="Mark as read"
+                              >
+                                <Check size={14} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <div className="p-2 border-t border-slate-800/60 bg-slate-900/50">
+                    <button 
+                      onClick={() => { setShowNotifications(false); setView('watchlist'); }}
+                      className="w-full py-2 text-[10px] font-bold tracking-widest text-slate-400 hover:text-white transition-colors"
+                    >
+                      MANAGE ALERT SETTINGS
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
       </header>
 
@@ -139,8 +226,12 @@ const Layout = ({
               <ShieldCheck size={14} className="text-slate-600" />
               Institutional-Grade Quantitative Intelligence
             </div>
-            <p className="text-[11px] text-slate-700 font-bold uppercase tracking-widest">
+            <p className="text-[11px] text-slate-700 font-bold uppercase tracking-widest mb-4">
               Model v2.8.0-LTS • Datacenter: US-East
+            </p>
+            <p className="text-[9px] text-slate-500 uppercase tracking-widest font-medium max-w-sm">
+              Intelligence sourced via SEC Edgar, Options Clearing Corporation (OCC), FDA endpoints, and proprietary API networks.<br/>
+              <span className="text-cyan-500 font-bold mt-1 inline-block">Transparent inputs equal trusted outputs.</span>
             </p>
           </div>
           <div className="p-4 bg-slate-800/30 border border-slate-700/50 rounded-xl">

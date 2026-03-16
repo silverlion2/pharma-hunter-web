@@ -1032,6 +1032,9 @@ def main():
             except Exception as e:
                 logging.warning(f"  ⚠️ Could not insert historical score snapshot. Have you run the SQL script? ({e})")
 
+    # Evaluate Custom Alerts
+    evaluate_alerts(records_to_upsert)
+
     end_time = time.time()
     elapsed_minutes = (end_time - start_time) / 60
 
@@ -1044,6 +1047,86 @@ def main():
     summary_msg = f"并发跑通: {success_count}条，失败抛弃: {fail_count}条。总耗时: {elapsed_minutes:.1f}分钟。"
     send_alert("BioQuantix 日常更新完成", summary_msg)
     logging.info(f"🎉 所有医药标的 Phase 6 量化闭环执行结束！\n📊 {summary_msg}")
+
+def evaluate_alerts(records):
+    """
+    Evaluates new asset records against user-configured alerts and generates notifications.
+    """
+    if not records:
+        return
+
+    logging.info("🔔 开始评估自定义预警 (Custom Alerts)...")
+    try:
+        resp = supabase.table('user_alerts').select('*').eq('is_active', True).execute()
+        alerts = resp.data
+        if not alerts:
+            return
+
+        record_map = {r.get('ticker'): r for r in records if r.get('ticker')}
+        notifications = []
+
+        for alert in alerts:
+            ticker = alert.get('ticker')
+            if ticker not in record_map:
+                continue
+
+            record = record_map[ticker]
+            alert_type = alert.get('alert_type')
+            threshold_value = alert.get('threshold_value')
+            threshold_text = alert.get('threshold_text')
+            user_id = alert.get('user_id')
+
+            triggered = False
+            title = ""
+            message = ""
+
+            if alert_type == 'QUANT_RISE' and threshold_value is not None:
+                if record.get('score', 0) >= threshold_value:
+                    triggered = True
+                    title = f"🚀 {ticker} Quant Score Alert"
+                    message = f"Score has risen to {record.get('score')} (Target: >= {threshold_value})"
+
+            elif alert_type == 'QUANT_DROP' and threshold_value is not None:
+                if record.get('score', 0) <= threshold_value:
+                    triggered = True
+                    title = f"📉 {ticker} Quant Score Alert"
+                    message = f"Score has dropped to {record.get('score')} (Target: <= {threshold_value})"
+
+            elif alert_type == 'SCARCITY_RISE' and threshold_value is not None:
+                if record.get('scarcity_score', 0) >= threshold_value:
+                    triggered = True
+                    title = f"💎 {ticker} Scarcity Alert"
+                    message = f"Scarcity Score reached {record.get('scarcity_score')}."
+
+            elif alert_type == 'CASH_STRAIN' and threshold_value is not None:
+                if record.get('cash_score', 0) >= threshold_value:
+                    triggered = True
+                    title = f"⚠️ {ticker} Cash Strain Alert"
+                    message = f"Cash Strain Score reached {record.get('cash_score')}."
+
+            elif alert_type == 'STATUS_CHANGE' and threshold_text:
+                if str(record.get('status')).lower() == str(threshold_text).lower():
+                    triggered = True
+                    title = f"🔄 {ticker} Status Update"
+                    message = f"Status changed to {threshold_text.upper()}"
+
+            if triggered:
+                notifications.append({
+                    "user_id": user_id,
+                    "ticker": ticker,
+                    "title": title,
+                    "message": message,
+                    "is_read": False
+                })
+
+        if notifications:
+            # We don't deduplicate in script because we want real-time notification generated each time condition met.
+            # However, users can toggle alerts off if they don't want repeated hits.
+            supabase.table('alert_notifications').insert(notifications).execute()
+            logging.info(f"  ✅ 成功生成 {len(notifications)} 条站内预警通知")
+
+    except Exception as e:
+        logging.error(f"❌ 评估自定义预警失败: {e}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="BioQuantix 数据管理引擎")

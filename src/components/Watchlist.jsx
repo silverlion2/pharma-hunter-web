@@ -1,5 +1,6 @@
-import React from 'react';
-import { Star, TrendingUp, TrendingDown, Minus, ArrowRight, ChevronLeft, Newspaper } from 'lucide-react';
+import React, { useState } from 'react';
+import { Star, TrendingUp, TrendingDown, Minus, ArrowRight, ChevronLeft, Newspaper, Bell } from 'lucide-react';
+import AlertConfigModal from './AlertConfigModal';
 
 const DeltaPill = ({ label, current, historical }) => {
   if (historical === null || historical === undefined) {
@@ -54,6 +55,10 @@ const Watchlist = ({
   handleSelect,
 }) => {
   const trackedAssets = assetData.filter(a => trackedTickers.includes(a.ticker));
+  
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const [configTicker, setConfigTicker] = useState(null);
+  const [configName, setConfigName] = useState(null);
 
   const getStatusBadge = (score) => {
     if (score >= 90) return { text: 'S-CLASS', bg: 'bg-red-500/20 text-red-400 border-red-500/30' };
@@ -163,6 +168,13 @@ const Watchlist = ({
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <button
+                      onClick={() => { setConfigTicker(asset.ticker); setConfigName(asset.name); setShowConfigModal(true); }}
+                      className="p-1.5 px-3 text-slate-500 hover:text-cyan-400 border border-slate-800 hover:border-cyan-500/30 rounded-lg transition-all"
+                      title="Alert Settings"
+                    >
+                      <Bell size={12} />
+                    </button>
+                    <button
                       onClick={() => toggleTrackTicker(asset.ticker)}
                       className="px-3 py-1.5 text-[9px] font-black text-slate-500 hover:text-red-400 border border-slate-800 hover:border-red-500/30 rounded-lg transition-all"
                     >
@@ -181,6 +193,14 @@ const Watchlist = ({
           })}
         </div>
       )}
+      
+      {/* Alert Config Modal */}
+      <AlertConfigModal 
+        isOpen={showConfigModal} 
+        onClose={() => { setShowConfigModal(false); setConfigTicker(null); }} 
+        ticker={configTicker} 
+        assetName={configName} 
+      />
     </div>
   );
 };
