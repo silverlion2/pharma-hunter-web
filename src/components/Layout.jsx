@@ -76,13 +76,22 @@ const Layout = ({
           )}
 
           {userRole !== 'visitor' && (
-            <Button 
-              variant={view === 'watchlist' ? 'primary' : 'secondary'}
-              onClick={() => setView('watchlist')} 
-              icon={Star}
-            >
-              MY WATCHLIST
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant={view === 'smartmoney' ? 'primary' : 'secondary'}
+                onClick={() => setView('smartmoney')} 
+                icon={User}
+              >
+                SMART MONEY
+              </Button>
+              <Button 
+                variant={view === 'watchlist' ? 'primary' : 'secondary'}
+                onClick={() => setView('watchlist')} 
+                icon={Star}
+              >
+                MY WATCHLIST
+              </Button>
+            </div>
           )}
 
           {(userRole === 'visitor' || userRole === 'free') && (

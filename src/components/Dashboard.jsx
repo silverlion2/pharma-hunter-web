@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TrendingUp, AlertCircle, Cpu, Clock, Database, Activity, Lock, CheckCircle2, DollarSign, Newspaper, BarChart3, Star, Search, User } from 'lucide-react';
+import { TrendingUp, AlertCircle, Cpu, Clock, Database, Activity, Lock, CheckCircle2, DollarSign, Newspaper, BarChart3, Star, Search, User, Swords } from 'lucide-react';
 
 const Dashboard = ({
   availableAreas = ['Metabolic', 'Autoimmune'], targetArea, setTargetArea, showPastDeals, themeColorText, themeColorBg,
@@ -7,9 +7,11 @@ const Dashboard = ({
   safeScore, safeDealInfo, userRole, safeFactors, safeTime, safeUpside,
   safeDigest, safeSignals, safeCashAmount, safeNewsHeadline, safeMarketCap, handleSelect,
   trackedTickers = [], toggleTrackTicker, showOnlyTracked, setShowOnlyTracked, fetchAnalyticsData,
-  handleSearch, fetchSmartMoneyData
+  handleSearch, fetchSmartMoneyData,
+  isCompareMode, setIsCompareMode, compareSelection, toggleCompareSelection, handleStartCombat
 }) => {
   const [searchInput, setSearchInput] = useState('');
+  
   return (
     <>
       <div className="mb-8 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between border-b border-slate-800/50 pb-4">
@@ -25,6 +27,27 @@ const Dashboard = ({
         ))}
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto">
+          {/* Compare Mode Toggle */}
+          <div className="relative group/tooltip shrink-0">
+            <button
+              onClick={() => {
+                setIsCompareMode(!isCompareMode);
+                if (isCompareMode && compareSelection?.length > 0) {
+                  // If turning off compare mode, we could clear selection or just hide it
+                  // We'll let App.js handle the clearing if needed, but usually we just toggle UI
+                }
+              }}
+              className={`px-4 py-2.5 rounded-full text-[10px] font-black tracking-widest transition-colors flex items-center gap-2 border whitespace-nowrap shadow-lg ${isCompareMode ? 'bg-indigo-500 text-white border-indigo-400 shadow-indigo-500/20' : 'bg-slate-800 text-indigo-400 hover:bg-slate-700 hover:text-indigo-300 border-slate-700'}`}
+            >
+              <Swords size={14} className={isCompareMode ? "animate-pulse" : ""} />
+              {isCompareMode ? 'CANCEL COMBAT' : 'ASSET COMBAT'}
+            </button>
+            <div className="absolute top-full lg:bottom-full lg:top-auto lg:mb-2 mt-2 right-0 w-64 bg-slate-800/95 backdrop-blur-sm border border-slate-700 p-3 rounded-xl shadow-2xl invisible opacity-0 translate-y-2 lg:translate-y-0 lg:translate-y-[-8px] transition-all z-50 text-left">
+              <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Combat Mode</h4>
+              <p className="text-xs text-slate-300 leading-snug">Select two assets side-by-side to compare their quantitative profiles to uncover relative alpha.</p>
+            </div>
+          </div>
+
           {userRole === 'admin' && (
             <div className="relative group/tooltip shrink-0">
               <button
@@ -62,14 +85,14 @@ const Dashboard = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         <aside className="lg:col-span-3 space-y-6">
-          <div className="bg-slate-900/40 border border-slate-800 rounded-2xl overflow-hidden">
-            <div className="p-4 border-b border-slate-800/80 flex justify-between items-center bg-slate-900/60">
+          <div className={`bg-slate-900/40 border rounded-2xl overflow-hidden transition-all ${isCompareMode ? 'border-indigo-500/50 shadow-lg shadow-indigo-500/10' : 'border-slate-800'}`}>
+            <div className={`p-4 border-b flex justify-between items-center transition-colors ${isCompareMode ? 'bg-indigo-500/10 border-indigo-500/30' : 'bg-slate-900/60 border-slate-800/80'}`}>
               <div className="flex items-center gap-4 w-full justify-between">
-                <h2 className="font-bold text-xs text-slate-400 tracking-widest uppercase flex items-center gap-2">
-                  <TrendingUp className={`w-4 h-4 ${showPastDeals ? 'text-indigo-400' : themeColorText}`} />
-                  {showPastDeals ? 'Historical Deals' : 'Quant Radar'}
+                <h2 className={`font-bold text-xs tracking-widest uppercase flex items-center gap-2 ${isCompareMode ? 'text-indigo-400' : 'text-slate-400'}`}>
+                  {isCompareMode ? <Swords className="w-4 h-4" /> : <TrendingUp className={`w-4 h-4 ${showPastDeals ? 'text-indigo-400' : themeColorText}`} />}
+                  {isCompareMode ? `SELECT ASSETS (${compareSelection?.length || 0}/2)` : (showPastDeals ? 'Historical Deals' : 'Quant Radar')}
                 </h2>
-                {!showPastDeals && (
+                {!showPastDeals && !isCompareMode && (
                   <div className="flex items-center gap-2">
                     <form 
                       onSubmit={(e) => { e.preventDefault(); handleSearch(searchInput); setSearchInput(''); }}
@@ -96,47 +119,76 @@ const Dashboard = ({
                     </button>
                   </div>
                 )}
+                {isCompareMode && compareSelection?.length === 2 && (
+                  <button 
+                    onClick={handleStartCombat}
+                    className="px-3 py-1 bg-indigo-500 hover:bg-indigo-400 text-white font-black text-[9px] rounded-lg tracking-widest animate-pulse"
+                  >
+                    START
+                  </button>
+                )}
               </div>
             </div>
             
             <div className="divide-y divide-slate-800/30 overflow-y-auto max-h-[500px] custom-scrollbar">
-              {activeList.map((item) => (
-                <div 
-                  key={item.ticker}
-                  onClick={() => handleSelect(item.ticker)}
-                  className={`group px-4 py-3.5 flex items-center justify-between cursor-pointer transition-all ${item.locked ? `hover:${themeColorBg}/[0.02]` : 'hover:bg-white/[0.02]'} ${safeTicker === item.ticker && !item.locked ? 'bg-white/[0.04]' : ''}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-black text-xs border ${item.locked ? 'bg-black text-slate-800 border-slate-800' : `bg-slate-800/50 ${themeColorText} border-slate-700/50`}`}>
-                      {item.locked ? <Lock size={14} /> : item.ticker}
-                    </div>
-                    <div>
-                      <div className={`text-sm font-bold text-slate-200 transition-colors line-clamp-1 ${!item.locked && `group-hover:${themeColorText}`}`}>
-                        {item.name}
-                      </div>
-                      <div className={`text-[9px] font-black tracking-widest mt-0.5 ${item.status === 'IMMINENT' || item.status === 'ACQUIRED' ? 'text-blue-400' : 'text-slate-500'}`}>
-                        {item.status}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {(item.warning_flag === 'AI_TIMEOUT' || item.warning_flag === 'SEC_MISSING') && !item.locked && (
-                      <div className="group/tooltip relative flex items-center">
-                        <AlertCircle className="w-4 h-4 text-amber-500 cursor-help" />
-                        <div className="absolute right-0 top-6 w-52 p-2 bg-slate-800 border border-slate-700 text-[9px] text-slate-300 rounded opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-50 shadow-xl">
-                          {item.warning_flag === 'AI_TIMEOUT' 
-                            ? 'Data source feedback delayed. Displaying T-1 cached evaluation.' 
-                            : 'Data source feedback delayed. Using historical or neutral baseline.'}
+              {activeList.map((item) => {
+                const isSelectedForCompare = compareSelection?.includes(item.ticker);
+                const isCompareDisabled = isCompareMode && !isSelectedForCompare && compareSelection?.length >= 2;
+                
+                return (
+                  <div 
+                    key={item.ticker}
+                    onClick={() => {
+                      if (item.locked) return;
+                      if (isCompareMode) {
+                        if (!isCompareDisabled) toggleCompareSelection(item.ticker);
+                      } else {
+                        handleSelect(item.ticker);
+                      }
+                    }}
+                    className={`group px-4 py-3.5 flex items-center justify-between transition-all ${item.locked || isCompareDisabled ? `opacity-50 cursor-not-allowed` : 'cursor-pointer hover:bg-white/[0.02]'} ${(!isCompareMode && safeTicker === item.ticker && !item.locked) ? 'bg-white/[0.04]' : ''} ${isCompareMode && isSelectedForCompare ? 'bg-indigo-500/10' : ''}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {isCompareMode ? (
+                        <div className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 transition-colors ${isSelectedForCompare ? 'bg-indigo-500 border-indigo-500 text-white' : 'border-slate-600 bg-slate-900 group-hover:border-indigo-500/50'}`}>
+                          {isSelectedForCompare && <CheckCircle2 size={12} strokeWidth={4} />}
+                        </div>
+                      ) : (
+                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-black text-xs border ${item.locked ? 'bg-black text-slate-800 border-slate-800' : `bg-slate-800/50 ${themeColorText} border-slate-700/50`}`}>
+                          {item.locked ? <Lock size={14} /> : item.ticker}
+                        </div>
+                      )}
+                      
+                      <div>
+                        <div className={`text-sm font-bold text-slate-200 transition-colors line-clamp-1 ${!item.locked && !isCompareDisabled && !isCompareMode && `group-hover:${themeColorText}`} ${isCompareMode && isSelectedForCompare && 'text-indigo-400'}`}>
+                          {!isCompareMode && isSelectedForCompare ? '' : item.name}
+                          {isCompareMode && <span className="mr-2 font-mono text-[10px] text-slate-500">[{item.ticker}]</span>}
+                          {isCompareMode && item.name}
+                        </div>
+                        <div className={`text-[9px] font-black tracking-widest mt-0.5 ${item.status === 'IMMINENT' || item.status === 'ACQUIRED' ? 'text-blue-400' : 'text-slate-500'}`}>
+                          {item.status}
                         </div>
                       </div>
-                    )}
-                    <div className={`text-sm font-mono font-black ${item.locked ? 'text-slate-800' : 'text-slate-300'}`}>
-                      {item.locked ? '?.?' : item.score}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {(item.warning_flag === 'AI_TIMEOUT' || item.warning_flag === 'SEC_MISSING') && !item.locked && (
+                        <div className="group/tooltip relative flex items-center">
+                          <AlertCircle className="w-4 h-4 text-amber-500 cursor-help" />
+                          <div className="absolute right-0 top-6 w-52 p-2 bg-slate-800 border border-slate-700 text-[9px] text-slate-300 rounded opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-50 shadow-xl">
+                            {item.warning_flag === 'AI_TIMEOUT' 
+                              ? 'Data source feedback delayed. Displaying T-1 cached evaluation.' 
+                              : 'Data source feedback delayed. Using historical or neutral baseline.'}
+                          </div>
+                        </div>
+                      )}
+                      <div className={`text-sm font-mono font-black ${item.locked ? 'text-slate-800' : (isCompareMode && isSelectedForCompare ? 'text-indigo-400' : 'text-slate-300')}`}>
+                        {item.locked ? '?.?' : item.score}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               {activeList.length === 0 && (
                 <div className="px-4 py-6 text-center text-xs text-slate-500">No signals detected yet.</div>
               )}

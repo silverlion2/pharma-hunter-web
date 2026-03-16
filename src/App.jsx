@@ -25,6 +25,8 @@ import Watchlist from './components/Watchlist';
 import Layout from './components/Layout';
 import ErrorBoundary from './components/ErrorBoundary';
 import Guidance from './components/Guidance';
+import ComparisonView from './components/ComparisonView';
+import SmartMoney from './components/SmartMoney';
 
 const App = () => {
   const [view, setView] = useState('landing');
@@ -70,6 +72,10 @@ const App = () => {
   const [showSmartMoneyModal, setShowSmartMoneyModal] = useState(false);
   const [smartMoneyData, setSmartMoneyData] = useState([]);
   const [smartMoneyLoading, setSmartMoneyLoading] = useState(false);
+
+  // New Phase: Asset Combat Compare Mode
+  const [isCompareMode, setIsCompareMode] = useState(false);
+  const [compareSelection, setCompareSelection] = useState([]);
 
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
 
@@ -311,6 +317,22 @@ const App = () => {
     } catch (err) {
       console.error("Error toggling track state", err);
       showToast("Failed to update tracking.", "error");
+    }
+  };
+
+  const toggleCompareSelection = (ticker) => {
+    setCompareSelection(prev => {
+      if (prev.includes(ticker)) return prev.filter(t => t !== ticker);
+      if (prev.length < 2) return [...prev, ticker];
+      return prev;
+    });
+  };
+
+  const handleStartCombat = () => {
+    if (compareSelection.length === 2) {
+      setView('compare');
+    } else {
+      showToast("Select exactly two assets to enter combat.", "error");
     }
   };
 
@@ -779,8 +801,43 @@ const App = () => {
               toggleTrackTicker={toggleTrackTicker}
               showOnlyTracked={showOnlyTracked}
               setShowOnlyTracked={setShowOnlyTracked}
+              isCompareMode={isCompareMode}
+              setIsCompareMode={setIsCompareMode}
+              compareSelection={compareSelection}
+              toggleCompareSelection={toggleCompareSelection}
+              handleStartCombat={handleStartCombat}
             />
           </ErrorBoundary>
+        )}
+        
+        {view === 'compare' && (
+          <ComparisonView
+            tickers={compareSelection}
+            assetData={assetData}
+            setView={(v) => {
+              setIsCompareMode(false);
+              setCompareSelection([]);
+              setView(v);
+            }}
+            setSelectedTicker={setSelectedTicker}
+            handleSelect={(ticker) => {
+              setIsCompareMode(false);
+              setCompareSelection([]);
+              handleSelect(ticker);
+            }}
+          />
+        )}
+
+        {view === 'smartmoney' && (
+          <SmartMoney
+            smartMoneyData={smartMoneyData}
+            smartMoneyLoading={smartMoneyLoading}
+            fetchSmartMoneyData={fetchSmartMoneyData}
+            userRole={userRole}
+            setView={setView}
+            handleSelect={handleSelect}
+            assetData={assetData}
+          />
         )}
         
       </Layout>
