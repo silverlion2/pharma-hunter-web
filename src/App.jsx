@@ -29,6 +29,7 @@ import ComparisonView from './components/ComparisonView';
 import SmartMoney from './components/SmartMoney';
 import GapMap from './components/GapMap';
 import Blog from './components/Blog';
+import Checkout from './components/Checkout';
 
 const App = () => {
   const [view, setView] = useState('landing');
@@ -565,6 +566,7 @@ const App = () => {
       'gap-map': 'Pipeline Gap Map | BioQuantix',
       guidance: 'Guide & FAQ | BioQuantix',
       upgrade: 'Upgrade to Pro | BioQuantix',
+      checkout: 'Checkout | BioQuantix',
       compare: 'Asset Comparison | BioQuantix',
       smartmoney: 'Smart Money Consensus | BioQuantix',
       blog: 'Bio-Pharma Intelligence Blog | BioQuantix',
@@ -875,7 +877,12 @@ const App = () => {
               <div className="bg-gradient-to-b from-cyan-500/10 to-[#0A0C10] border-2 border-cyan-500/50 p-8 rounded-3xl flex flex-col shadow-2xl relative">
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-cyan-500 text-slate-900 text-[9px] font-black px-3 py-1 rounded-full shadow-lg">MOST POPULAR</div>
                 <h3 className="text-lg font-bold mb-1 text-white">Pro Monthly</h3>
-                <div className="text-3xl font-black mb-6 text-white">$49.00 <span className="text-xs font-normal text-slate-400">/ mo</span></div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg text-slate-500 line-through font-bold">$49.90</span>
+                  <span className="text-3xl font-black text-white">$19.90</span>
+                  <span className="text-xs font-normal text-slate-400">/ mo</span>
+                </div>
+                <div className="inline-flex items-center gap-1 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[9px] font-black px-2 py-0.5 rounded-full mb-5 uppercase tracking-widest">⚡ Launch Sale — 60% Off</div>
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-3">Everything in Basic, plus:</p>
                 <ul className="space-y-4 mb-8 flex-1 text-xs">
                   <li className="flex gap-3 text-slate-200"><CheckCircle2 size={16} className="text-cyan-400 shrink-0" /> Full Alpha Radar Access</li>
@@ -885,7 +892,7 @@ const App = () => {
                   <li className="flex gap-3 text-slate-200"><CheckCircle2 size={16} className="text-cyan-400 shrink-0" /> Uncensored Options Flow</li>
                   <li className="flex gap-3 text-slate-200"><CheckCircle2 size={16} className="text-cyan-400 shrink-0" /> Priority Anomaly Alerts</li>
                 </ul>
-                <button onClick={() => { if(userRole==='visitor') setShowAuthModal(true); }} className="w-full py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-black text-xs transition-transform active:scale-95">
+                <button onClick={() => { if(userRole==='visitor') { setShowAuthModal(true); } else { setView('checkout'); } }} className="w-full py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-black text-xs transition-transform active:scale-95">
                   UPGRADE PRO
                 </button>
               </div>
@@ -907,10 +914,23 @@ const App = () => {
                 <Scale size={14} /> Information Disclaimer
               </div>
               <p className="text-slate-500 text-xs leading-relaxed max-w-2xl mx-auto">
-                BioQuantix is a data analytics tool, not a registered investment advisor. The intelligence and metrics provided are for informational and research purposes only and do not constitute financial advice. Use of this platform is subject to our Terms of Service.
+                BioQuantix is a data analytics tool, not a registered investment advisor. The intelligence and metrics provided are for informational and research purposes only and do not constitute financial advice. Use of this platform is subject to our <a href="/terms.html" className="text-cyan-400 hover:underline">Terms of Service</a>.
               </p>
             </div>
           </div>
+        )}
+
+        {view === 'checkout' && (
+          <Checkout
+            setView={setView}
+            userRole={userRole}
+            showToast={showToast}
+            onUpgradeSuccess={() => {
+              supabase.auth.getSession().then(({ data: { session } }) => {
+                determineUserRole(session?.user);
+              });
+            }}
+          />
         )}
         
         {view === 'dashboard' && (

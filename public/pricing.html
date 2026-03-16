@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing - BioQuantix</title>
+    <meta name="description" content="BioQuantix pricing plans. Choose between Free, Pro Monthly, and Elite Annual subscriptions for AI-powered bio-pharma M&A intelligence." />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://www.bioquantixsolutions.com/pricing.html" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            background-color: #0A0C10;
+            color: #cbd5e1;
+            min-height: 100vh;
+        }
+        .container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+        .nav-back { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 40px; font-size: 12px; font-weight: 800; color: #64748b; text-decoration: none; text-transform: uppercase; letter-spacing: 0.1em; transition: color 0.2s; }
+        .nav-back:hover { color: #22d3ee; }
+
+        .page-header { text-align: center; margin-bottom: 48px; }
+        .page-header h1 { font-size: 36px; font-weight: 900; color: #fff; margin-bottom: 12px; letter-spacing: -0.02em; }
+        .page-header p { font-size: 16px; color: #94a3b8; max-width: 560px; margin: 0 auto; }
+
+        .pricing-grid { display: grid; grid-template-columns: 1fr; gap: 24px; margin-bottom: 48px; }
+        @media (min-width: 768px) { .pricing-grid { grid-template-columns: repeat(3, 1fr); } }
+
+        .plan-card {
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid #1e293b;
+            padding: 32px;
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            transition: border-color 0.3s;
+        }
+        .plan-card:hover { border-color: #334155; }
+
+        .plan-card.featured {
+            background: linear-gradient(to bottom, rgba(6, 182, 212, 0.1), #0A0C10);
+            border: 2px solid rgba(6, 182, 212, 0.5);
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        .badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #06b6d4;
+            color: #0f172a;
+            font-size: 9px;
+            font-weight: 900;
+            padding: 4px 12px;
+            border-radius: 999px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            box-shadow: 0 4px 6px -1px rgba(6,182,212,0.3);
+        }
+
+        .plan-name { font-size: 18px; font-weight: 700; margin-bottom: 4px; color: #f8fafc; }
+        .plan-price { font-size: 32px; font-weight: 900; color: #fff; margin-bottom: 20px; }
+        .plan-price .period { font-size: 12px; font-weight: 400; color: #94a3b8; }
+        .plan-price .original { font-size: 16px; color: #64748b; text-decoration: line-through; font-weight: 700; margin-right: 8px; }
+
+        .sale-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: #f59e0b;
+            font-size: 9px;
+            font-weight: 900;
+            padding: 2px 10px;
+            border-radius: 999px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .plan-subtitle { font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 12px; }
+
+        .feature-list { list-style: none; flex: 1; margin-bottom: 24px; }
+        .feature-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 12px;
+            padding: 6px 0;
+        }
+        .feature-list li .check {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 10px;
+            margin-top: 1px;
+        }
+        .check-cyan { background: rgba(6,182,212,0.15); color: #22d3ee; }
+        .check-muted { background: rgba(51,65,85,0.4); color: #475569; }
+
+        .plan-btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 900;
+            text-align: center;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        .btn-secondary { background: #1e293b; color: #fff; }
+        .btn-secondary:hover { background: #334155; }
+        .btn-primary { background: #06b6d4; color: #0f172a; }
+        .btn-primary:hover { background: #22d3ee; }
+        .btn-outline { background: transparent; border: 1px solid #334155; color: #cbd5e1; }
+        .btn-outline:hover { background: #1e293b; }
+
+        .disclaimer-box {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid #1e293b;
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .disclaimer-box .label { font-size: 10px; font-weight: 900; color: #64748b; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .disclaimer-box p { font-size: 12px; color: #64748b; max-width: 640px; margin: 0 auto; line-height: 1.8; }
+
+        .footer-links {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 24px;
+            padding-top: 24px;
+            border-top: 1px solid #0f172a;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+        }
+        .footer-links a { color: #64748b; text-decoration: none; transition: color 0.2s; }
+        .footer-links a:hover { color: #22d3ee; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="nav-back">&larr; Back to BioQuantix Terminal</a>
+
+        <div class="page-header">
+            <h1>Unlock Pro Intelligence</h1>
+            <p>Unlock complete institutional data, advanced predictive signals, and premium features. Upgrade to Pro.</p>
+        </div>
+
+        <div class="pricing-grid">
+            <!-- Free Tier -->
+            <div class="plan-card">
+                <div class="plan-name">Basic Access</div>
+                <div class="plan-price">Free</div>
+                <ul class="feature-list">
+                    <li><span class="check check-cyan">✓</span> <span style="color: #94a3b8;">Personal Watchlist &amp; Tracking</span></li>
+                    <li><span class="check check-cyan">✓</span> <span style="color: #94a3b8;">Access to More Tickers</span></li>
+                    <li><span class="check check-cyan">✓</span> <span style="color: #94a3b8;">Limited Ticker Search (3/day)</span></li>
+                </ul>
+                <a href="/" class="plan-btn btn-secondary">CREATE ACCOUNT</a>
+            </div>
+
+            <!-- Pro Monthly -->
+            <div class="plan-card featured">
+                <div class="badge">MOST POPULAR</div>
+                <div class="plan-name">Pro Monthly</div>
+                <div class="plan-price">
+                    <span class="original">$49.90</span>$19.90 <span class="period">/ mo</span>
+                </div>
+                <div class="sale-badge">⚡ Launch Sale — 60% Off</div>
+                <div class="plan-subtitle">Everything in Basic, plus:</div>
+                <ul class="feature-list">
+                    <li><span class="check check-cyan">✓</span> <span style="color: #e2e8f0;">Full Alpha Radar Access</span></li>
+                    <li><span class="check check-cyan">✓</span> <span style="color: #e2e8f0;">Full AI Strategic Digest</span></li>
+                    <li><span class="check check-cyan">✓</span> <span style="color: #e2e8f0;">7D Market Analytics</span></li>
+                    <li><span class="check check-cyan">✓</span> <span style="color: #e2e8f0;">Pipeline Gap Map</span></li>
+                    <li><span class="check check-cyan">✓</span> <span style="color: #e2e8f0;">Uncensored Options Flow</span></li>
+                    <li><span class="check check-cyan">✓</span> <span style="color: #e2e8f0;">Priority Anomaly Alerts</span></li>
+                </ul>
+                <a href="/" class="plan-btn btn-primary">UPGRADE PRO</a>
+            </div>
+
+            <!-- Elite Annual -->
+            <div class="plan-card">
+                <div class="plan-name">Elite Annual</div>
+                <div class="plan-price">$499.00 <span class="period">/ yr</span></div>
+                <ul class="feature-list">
+                    <li><span class="check check-muted">✓</span> <span style="color: #94a3b8;">15% Savings vs Monthly</span></li>
+                    <li><span class="check check-muted">✓</span> <span style="color: #94a3b8;">API Access for Data Export</span></li>
+                    <li><span class="check check-muted">✓</span> <span style="color: #94a3b8;">Priority Strategy Support</span></li>
+                </ul>
+                <a href="/" class="plan-btn btn-outline">GET ELITE PASS</a>
+            </div>
+        </div>
+
+        <div class="disclaimer-box">
+            <div class="label">⚖ Information Disclaimer</div>
+            <p>
+                BioQuantix is a data analytics tool, not a registered investment advisor. The intelligence and metrics provided are for informational and research purposes only and do not constitute financial advice.
+                Use of this platform is subject to our <a href="/terms.html" style="color: #22d3ee; text-decoration: none;">Terms of Service</a>.
+            </p>
+        </div>
+
+        <div class="footer-links">
+            <a href="/">Home</a>
+            <a href="/terms.html">Terms of Service</a>
+            <a href="/privacy.html">Privacy Policy</a>
+            <a href="/refund.html">Refund Policy</a>
+        </div>
+    </div>
+</body>
+</html>
