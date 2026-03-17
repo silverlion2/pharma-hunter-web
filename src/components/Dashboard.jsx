@@ -56,6 +56,7 @@ const Dashboard = ({
             </div>
           </div>
 
+          {userRole === 'admin' && (
           <div className="relative group/tooltip shrink-0">
             <button
               onClick={fetchSmartMoneyData}
@@ -66,10 +67,11 @@ const Dashboard = ({
             </button>
             
             <div className="absolute top-full lg:bottom-full lg:top-auto lg:mb-2 mt-2 right-0 w-64 bg-slate-800/95 backdrop-blur-sm border border-slate-700 p-3 rounded-xl shadow-2xl invisible opacity-0 translate-y-2 lg:translate-y-0 lg:translate-y-[-8px] transition-all z-50 text-left cursor-default pointer-events-none">
-              <h4 className="text-[10px] font-black text-amber-400 uppercase tracking-widest mb-1">{userRole === 'pro' || userRole === 'admin' ? 'Pro Intelligence' : 'Pro Tease'}</h4>
+              <h4 className="text-[10px] font-black text-amber-400 uppercase tracking-widest mb-1">Admin Intelligence</h4>
               <p className="text-xs text-slate-300 leading-snug">Aggregate view of assets currently tracked by high-intent Pro users.</p>
             </div>
           </div>
+          )}
 
           <div className="relative group/tooltip shrink-0">
             <button

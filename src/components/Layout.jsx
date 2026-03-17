@@ -112,17 +112,7 @@ const Layout = ({
             </Button>
           )}
 
-          {userRole !== 'visitor' && (
-            <div className="flex items-center gap-2">
-              <Button 
-                variant={view === 'gap-map' ? 'primary' : 'outline'}
-                onClick={() => { setView('gap-map'); setShowPastDeals(false); }} 
-                icon={Cpu}
-              >
-                GAP MAP
-              </Button>
-            </div>
-          )}
+
 
           <Button 
             variant={view === 'blog' ? 'primary' : 'outline'}
