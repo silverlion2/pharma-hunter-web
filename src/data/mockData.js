@@ -444,3 +444,21 @@ export const TARGET_DICTIONARY = {
   'Cardiovascular': ['Lp(a)', 'PCSK9', 'Factor XIa'],
   'Immunology': ['TSLP', 'IL-4R', 'IL-31', 'IgE']
 };
+
+export const biosecureData = {
+  timeline: [
+    { date: 'Dec 18, 2025', event: 'Biosecure Act Signed', status: 'past' },
+    { date: 'Dec 2026', event: 'OMB Final BCC List Published', status: 'imminent' },
+    { date: 'Jan 1, 2032', event: 'Legacy Grandfathering Ends', status: 'future' }
+  ],
+  exposureMap: [
+    { entity: 'WuXi AppTec', risk: 'High', westernPartners: ['Eli Lilly', 'Pfizer', 'Amgen'], shiftTrend: 'Moving to India/EU CDMOs' },
+    { entity: 'BGI', risk: 'High', westernPartners: ['Natera', 'Illumina'], shiftTrend: 'Shift to in-house US testing' },
+    { entity: 'WuXi Biologics', risk: 'High', westernPartners: ['GSK', 'AstraZeneca'], shiftTrend: 'Samsung Biologics & Lonza capturing share' }
+  ],
+  dealFlow: [
+    { date: 'Mar 15, 2026', licensor: 'Hengrui Pharma', licensee: 'Merck', value: '$1.4B', structure: 'Global ex-China rights (ADC)', paradox_score: 85 },
+    { date: 'Feb 28, 2026', licensor: 'Biotheus', licensee: 'BioNTech', value: '$800M', structure: 'Global rights (Bispecific)', paradox_score: 92 },
+    { date: 'Jan 10, 2026', licensor: 'MediLink', licensee: 'Roche', value: '$1.1B', structure: 'Global rights (ADC)', paradox_score: 78 }
+  ]
+};

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { TerminalSquare, Target, History, LogIn, User, LogOut, ShieldCheck, AlertCircle, MessageSquare, Star, BookOpen, Bell, Check, Cpu, FileText } from 'lucide-react';
+import { TerminalSquare, Target, History, LogIn, User, LogOut, ShieldCheck, AlertCircle, MessageSquare, Star, BookOpen, Bell, Check, Cpu, FileText, ShieldAlert } from 'lucide-react';
 import Button from './ui/Button';
 
 const Layout = ({ 
@@ -112,7 +112,16 @@ const Layout = ({
             </Button>
           )}
 
-
+          {userRole === 'admin' && (
+            <Button 
+              variant={view === 'biosecure' ? 'primary' : 'outline'}
+              onClick={() => { setView('biosecure'); setShowPastDeals(false); }} 
+              icon={ShieldAlert}
+              className="border-red-500/30 text-red-500 hover:bg-red-500/10 hover:text-red-400 font-black tracking-widest uppercase text-xs px-2"
+            >
+              PHARMA BD
+            </Button>
+          )}
 
           <Button 
             variant={view === 'blog' ? 'primary' : 'outline'}

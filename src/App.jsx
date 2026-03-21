@@ -28,6 +28,7 @@ import Guidance from './components/Guidance';
 import ComparisonView from './components/ComparisonView';
 import SmartMoney from './components/SmartMoney';
 import GapMap from './components/GapMap';
+import BiosecureTracker from './components/BiosecureTracker';
 import Blog from './components/Blog';
 import Checkout from './components/Checkout';
 
@@ -570,6 +571,7 @@ const App = () => {
       compare: 'Asset Comparison | BioQuantix',
       smartmoney: 'Smart Money Consensus | BioQuantix',
       blog: 'Bio-Pharma Intelligence Blog | BioQuantix',
+      biosecure: 'Pharma BD & Biosecure | BioQuantix',
     };
     document.title = titles[view] || 'BioQuantix – Quantitative Bio-Pharma Intelligence';
   }, [view]);
@@ -849,6 +851,10 @@ const App = () => {
             pipelineGapsData={pipelineGapsData}
             setView={setView}
           />
+        )}
+
+        {view === 'biosecure' && (
+          <BiosecureTracker userRole={userRole} />
         )}
 
         {view === 'upgrade' && (
