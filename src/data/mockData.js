@@ -462,3 +462,284 @@ export const biosecureData = {
     { date: 'Jan 10, 2026', licensor: 'MediLink', licensee: 'Roche', value: '$1.1B', structure: 'Global rights (ADC)', paradox_score: 78 }
   ]
 };
+
+export const aiBiotechData = {
+  capitalFlows: [
+    { name: 'Earendil', amount: '$787M', round: 'Series A', date: 'Mar 2026', focus: 'Foundation Models for Biology', investors: ['Qiming', 'Sequoia', 'SoftBank', 'ARCH'] },
+    { name: 'Xaira Therapeutics', amount: '$1.0B', round: 'Launch', date: 'Apr 2024', focus: 'AI-Guided Drug Design', investors: ['ARCH Venture', 'F-Prime', 'Sequoia', 'Lightspeed'] },
+    { name: 'Formation Bio', amount: '$372M', round: 'Series D', date: 'Jun 2024', focus: 'AI Clinical Trial Acceleration', investors: ['a16z', 'Sanofi', 'Sequoia'] },
+    { name: 'Latent Bio', amount: '$80M', round: 'Series A', date: 'Feb 2026', focus: 'Generative Protein Design', investors: ['Lightspeed', 'GV'] },
+    { name: 'EvolutionaryScale', amount: '$142M', round: 'Seed', date: 'Jun 2024', focus: 'Language Models for Biology', investors: ['Nat Friedman', 'Daniel Gross', 'Lux Capital'] }
+  ],
+  platformCompanies: [
+    { name: 'Recursion (RXRX)', type: 'Phenomics / Wet-Lab + Dry-Lab', focus: 'Oncology, Rare Disease', funding: 'Public ($2.3B Market Cap)', recent: 'Exscientia Acquisition ($688M)' },
+    { name: 'Isomorphic Labs', type: 'AlphaFold3 / Generative AI', focus: 'Small Molecules', funding: 'Alphabet Backed', recent: 'Novartis ($1.2B) & Novartis Deals' },
+    { name: 'Insilico Medicine', type: 'End-to-End Pharma.AI', focus: 'Fibrosis, Oncology', funding: '>$400M', recent: 'Phase 2 success for AI-designed IPF drug' },
+    { name: 'Generate:Biomedicines', type: 'Generative Protein Design', focus: 'Immunology, Oncology', funding: '>$700M', recent: '$273M Series C' },
+    { name: 'Genesis Therapeutics', type: 'GNNs for 3D Molecular Design', focus: 'Undruggable Targets', funding: '>$280M', recent: '$200M Series B (a16z)' }
+  ],
+  timeline: [
+    { date: 'Nov 2020', event: 'AlphaFold2 Solves Protein Folding', desc: 'DeepMind achieves unprecedented accuracy in 3D protein structure prediction.' },
+    { date: 'Jan 2024', event: 'Isomorphic Inks Big Pharma Deals', desc: 'Novartis and Sanofi sign multi-target deals worth up to $3B combined.' },
+    { date: 'May 2024', event: 'AlphaFold3 Released', desc: 'Predicts structure and interactions of all life\'s molecules (DNA, RNA, ligands).' },
+    { date: 'Aug 2024', event: 'Recursion Acquires Exscientia', desc: '$688M mega-merger consolidates two of the largest AI biotech pioneers.' },
+    { date: 'Mar 2026', event: 'Earendil $787M Series A', desc: 'Massive capital fusion into generative biology foundation models.' }
+  ],
+  strategicImplications: [
+    {
+      title: 'MNC Build vs. Buy',
+      desc: 'Top 20 Pharma companies are actively deciding whether to build internal AI capabilities (Sanofi) or partner extensively/acquire (Novartis, Eli Lilly). Expect high-premium acquisitions of proven platforms by 2027.',
+      icon: 'Building2',
+      color: 'blue'
+    },
+    {
+      title: 'Clinical Moat Validation',
+      desc: 'AI can design molecules faster, but clinical trial execution remains the bottleneck. Convergence favors "Wet-Lab + Dry-Lab" hybrids. Insilico\'s Phase 2 success is the first major de-risking event.',
+      icon: 'Activity',
+      color: 'emerald'
+    },
+    {
+      title: 'The Tech-Bio Premium',
+      desc: 'Valuations for pure-play Biotech vs Tech-Bio have decoupled. Investors are assigning software-like multiples to AI platforms, causing traditional, single-asset biotechs to struggle for funding.',
+      icon: 'TrendingUp',
+      color: 'purple'
+    }
+  ]
+};
+
+export const outLicensingSummary = {
+  totalValue: '$52.0B+',
+  dealCount: 41,
+  avgDealSize: '$1.3B',
+  topTherapeuticArea: 'Oncology',
+  timePeriod: 'Q1 2026 (Jan–Mar)',
+  yoyGrowth: '+76% avg deal size vs 2025'
+};
+
+export const outLicensingDeals = [
+  {
+    id: 1,
+    date: 'Mar 2026',
+    licensor: 'Sino Biopharmaceutical',
+    licensee: 'Sanofi',
+    value: '$1.53B',
+    upfront: '$135M',
+    drug: 'Rovadicitinib (Anxu)',
+    target: 'JAK / ROCK',
+    therapeuticArea: 'Oncology / Autoimmune',
+    stage: 'Approved (CN) / Ph3 (US)',
+    structure: 'Global rights',
+    modality: 'Small molecule',
+    notes: 'Sanofi secures rovadicitinib for myelofibrosis and cGVHD. Received CN approval in Feb 2026. $1.395B in milestones.'
+  },
+  {
+    id: 2,
+    date: 'Dec 2025',
+    licensor: 'CSPC Pharmaceutical',
+    licensee: 'AstraZeneca',
+    value: '$18.5B',
+    upfront: 'Undisclosed',
+    drug: 'Multiple Assets',
+    target: 'Cardio-Metabolic',
+    therapeuticArea: 'Metabolic',
+    stage: 'Preclinical / Ph1',
+    structure: 'Global ex-China',
+    modality: 'Small molecule / Biologic',
+    notes: 'Massive partnership signaling AZ\'s commitment to securing next-gen obesity and metabolic disease treatments from China.'
+  },
+  {
+    id: 3,
+    date: 'Jan 2026',
+    licensor: 'RemeGen',
+    licensee: 'AbbVie',
+    value: '$5.6B',
+    upfront: 'Undisclosed',
+    drug: 'Novel ADCs',
+    target: 'Various Oncology',
+    therapeuticArea: 'Oncology',
+    stage: 'Preclinical / Ph1',
+    structure: 'Global',
+    modality: 'Antibody-Drug Conjugate',
+    notes: 'AbbVie expands its oncology pipeline by tapping into RemeGen\'s ADC proprietary platform. Focus on solid tumors.'
+  },
+  {
+    id: 4,
+    date: 'Feb 2026',
+    licensor: 'Antengene Corporation',
+    licensee: 'UCB',
+    value: '$1.18B',
+    upfront: 'Undisclosed',
+    drug: 'ATG-XXX',
+    target: 'Undisclosed',
+    therapeuticArea: 'Neurology / Autoimmune',
+    stage: 'Phase 1',
+    structure: 'Global',
+    modality: 'Biologic',
+    notes: 'UCB reinforces its neurology and immunology pipeline by licensing an early-stage biologic from Antengene.'
+  },
+  {
+    id: 5,
+    date: 'Jan 2026',
+    licensor: 'MediLink Therapeutics',
+    licensee: 'Roche',
+    value: '$1.0B+',
+    upfront: '$570M (Near-term)',
+    drug: 'YL201',
+    target: 'TROP2',
+    therapeuticArea: 'Oncology',
+    stage: 'Phase 1/2',
+    structure: 'Global ex-China',
+    modality: 'Antibody-Drug Conjugate',
+    notes: 'Roche secures MediLink\'s next-gen TROP2 ADC. Highly competitive asset class. $570M in near-term payments reflects the intense bidding war.'
+  },
+  {
+    id: 6,
+    date: 'Nov 2025',
+    licensor: 'Hengrui Pharma',
+    licensee: 'GSK',
+    value: '$12.0B+',
+    upfront: 'Undisclosed',
+    drug: 'Multiple Assets',
+    target: 'Various',
+    therapeuticArea: 'Oncology / Immunology',
+    stage: 'Clinical',
+    structure: 'Global / Co-development',
+    modality: 'Antibody-Drug Conjugate / Bispecific',
+    notes: 'Broad strategic alliance covering multiple Hengrui pipeline assets. A watershed moment for Chinese biotech global integration.'
+  },
+  {
+    id: 7,
+    date: 'Oct 2025',
+    licensor: '3SBio',
+    licensee: 'Pfizer',
+    value: '$6.0B',
+    upfront: 'Undisclosed',
+    drug: 'SSGJ-707',
+    target: 'PD-1 / VEGF',
+    therapeuticArea: 'Oncology',
+    stage: 'Phase 2',
+    structure: 'Global ex-Greater China',
+    modality: 'Bispecific Antibody',
+    notes: 'Pfizer bets heavily on a PD-1/VEGF bispecific to strengthen its immuno-oncology portfolio post-Seagen.'
+  },
+  {
+    id: 8,
+    date: 'Feb 2026',
+    licensor: 'Biotheus',
+    licensee: 'BioNTech',
+    value: '$800M',
+    upfront: 'Undisclosed',
+    drug: 'PM8002',
+    target: 'PD-L1 / VEGF',
+    therapeuticArea: 'Oncology',
+    stage: 'Phase 2',
+    structure: 'Global ex-Greater China',
+    modality: 'Bispecific Antibody',
+    notes: 'BioNTech continues to aggressively license from China to build out its solid tumor pipeline beyond mRNA.'
+  },
+  {
+    id: 9,
+    date: 'Mar 2026',
+    licensor: 'Hengrui Pharma',
+    licensee: 'Merck (MRK)',
+    value: '$1.4B',
+    upfront: '$Undisclosed',
+    drug: 'SHR-A1904',
+    target: 'Claudin 18.2',
+    therapeuticArea: 'Oncology',
+    stage: 'Phase 1/2',
+    structure: 'Global ex-China',
+    modality: 'Antibody-Drug Conjugate',
+    notes: 'Merck bolsters its ADC portfolio in gastric/pancreatic cancer to offset future Keytruda LOE pressure.'
+  },
+  {
+    id: 10,
+    date: 'Jan 2026',
+    licensor: 'Sysimmune',
+    licensee: 'BMS',
+    value: '$8.4B',
+    upfront: '$800M',
+    drug: 'BL-B01D1',
+    target: 'EGFR / HER3',
+    therapeuticArea: 'Oncology',
+    stage: 'Phase 2/3',
+    structure: 'Global ex-China',
+    modality: 'Bispecific ADC',
+    notes: '$800M upfront demonstrates the massive premium attached to dual-targeting ADCs in lung and breast cancer.'
+  },
+  {
+    id: 11,
+    date: 'Feb 2026',
+    licensor: 'Mabwell',
+    licensee: 'Novartis',
+    value: '$1.2B',
+    upfront: 'Undisclosed',
+    drug: '9MW2821',
+    target: 'Nectin-4',
+    therapeuticArea: 'Oncology',
+    stage: 'Phase 2',
+    structure: 'Global',
+    modality: 'Antibody-Drug Conjugate',
+    notes: 'Novartis challenges Padcev\'s dominance in urothelial cancer with Mabwell\'s Nectin-4 ADC candidate.'
+  },
+  {
+    id: 12,
+    date: 'Mar 2026',
+    licensor: 'Laekna',
+    licensee: 'Eli Lilly',
+    value: '$900M',
+    upfront: 'Undisclosed',
+    drug: 'LAE102',
+    target: 'ActRIIA',
+    therapeuticArea: 'Metabolic',
+    stage: 'Phase 1',
+    structure: 'Global',
+    modality: 'Monoclonal Antibody',
+    notes: 'Eli Lilly secures an ActRIIA monoclonal antibody for muscle preservation in obesity to pair with its incretin pipeline.'
+  },
+  {
+    id: 13,
+    date: 'Jan 2026',
+    licensor: 'Argo Biopharma',
+    licensee: 'Novartis',
+    value: '$4.1B',
+    upfront: '$185M',
+    drug: 'Multiple Assets',
+    target: 'Various',
+    therapeuticArea: 'Cardiovascular',
+    stage: 'Phase 1 / Preclinical',
+    structure: 'Global',
+    modality: 'siRNA',
+    notes: 'Novartis expands its cardiovascular RNAi portfolio, building upon the success of Leqvio (inclisiran).'
+  },
+  {
+    id: 14,
+    date: 'Dec 2025',
+    licensor: 'Hansoh Pharma',
+    licensee: 'GSK',
+    value: '$1.7B',
+    upfront: '$185M',
+    drug: 'HS-20093',
+    target: 'B7-H3',
+    therapeuticArea: 'Oncology',
+    stage: 'Phase 2',
+    structure: 'Global ex-Greater China',
+    modality: 'Antibody-Drug Conjugate',
+    notes: 'GSK strengthens its oncology pipeline with a B7-H3 targeted ADC for solid tumors, a highly sought-after target.'
+  },
+  {
+    id: 15,
+    date: 'Nov 2025',
+    licensor: 'DualityBio',
+    licensee: 'BioNTech',
+    value: '$1.5B',
+    upfront: 'Undisclosed',
+    drug: 'DB-1303',
+    target: 'HER2',
+    therapeuticArea: 'Oncology',
+    stage: 'Phase 3',
+    structure: 'Global',
+    modality: 'Antibody-Drug Conjugate',
+    notes: 'BioNTech reinforces its ADC strategy in women\'s cancers with another deal from DualityBio.'
+  }
+];

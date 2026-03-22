@@ -31,6 +31,8 @@ import GapMap from './components/GapMap';
 import BiosecureTracker from './components/BiosecureTracker';
 import Blog from './components/Blog';
 import Checkout from './components/Checkout';
+import DealTracker from './components/DealTracker';
+import AiBiotechTracker from './components/AiBiotechTracker';
 
 const App = () => {
   const [view, setView] = useState('landing');
@@ -572,6 +574,8 @@ const App = () => {
       smartmoney: 'Smart Money Consensus | BioQuantix',
       blog: 'Bio-Pharma Intelligence Blog | BioQuantix',
       biosecure: 'Pharma BD & Biosecure | BioQuantix',
+      'deal-tracker': 'China Out-Licensing Tracker | BioQuantix',
+      'ai-biotech': 'AI × Biotech Capital Tracker | BioQuantix',
     };
     document.title = titles[view] || 'BioQuantix – Quantitative Bio-Pharma Intelligence';
   }, [view]);
@@ -855,6 +859,14 @@ const App = () => {
 
         {view === 'biosecure' && (
           <BiosecureTracker userRole={userRole} />
+        )}
+
+        {view === 'deal-tracker' && (
+          <DealTracker userRole={userRole} setView={setView} />
+        )}
+
+        {view === 'ai-biotech' && (
+          <AiBiotechTracker />
         )}
 
         {view === 'upgrade' && (

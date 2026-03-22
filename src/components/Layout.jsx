@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { TerminalSquare, Target, History, LogIn, User, LogOut, ShieldCheck, AlertCircle, MessageSquare, Star, BookOpen, Bell, Check, Cpu, FileText, ShieldAlert } from 'lucide-react';
+import { TerminalSquare, Target, History, LogIn, User, LogOut, ShieldCheck, AlertCircle, MessageSquare, Star, BookOpen, Bell, Check, Cpu, FileText, ShieldAlert, Globe, Brain } from 'lucide-react';
 import Button from './ui/Button';
 
 const Layout = ({ 
@@ -129,6 +129,22 @@ const Layout = ({
             icon={FileText}
           >
             BLOG
+          </Button>
+
+          <Button 
+            variant={view === 'deal-tracker' ? 'primary' : 'outline'}
+            onClick={() => { setView('deal-tracker'); setShowPastDeals(false); }} 
+            icon={Globe}
+          >
+            DEAL TRACKER
+          </Button>
+
+          <Button 
+            variant={view === 'ai-biotech' ? 'primary' : 'outline'}
+            onClick={() => { setView('ai-biotech'); setShowPastDeals(false); }} 
+            icon={Brain}
+          >
+            AI × BIO
           </Button>
 
           <Button 
