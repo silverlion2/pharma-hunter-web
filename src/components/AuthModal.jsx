@@ -28,7 +28,7 @@ const AuthModal = ({
             {authMode === 'login' 
               ? 'Enter your credentials to access your intelligence dashboard.' 
               : authMode === 'signup' 
-                ? 'Join BioQuantix to track institutional M&A signals.'
+                ? 'Join BioQuantix today to claim your 15-Day Free Pro Access.'
                 : 'Enter your email address and we will send you a secure link to reset your password.'}
           </p>
 

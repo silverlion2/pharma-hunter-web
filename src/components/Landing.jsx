@@ -7,9 +7,15 @@ const Landing = ({ setView, setShowPastDeals }) => {
     <div className="min-h-[70vh] flex flex-col justify-center max-w-6xl mx-auto py-12 px-6">
       <div className="text-center mb-16 relative">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-cyan-500/10 blur-[120px] rounded-full pointer-events-none" />
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800/50 border border-slate-700 text-cyan-400 text-xs font-black uppercase tracking-widest mb-8">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800/50 border border-slate-700 text-cyan-400 text-xs font-black uppercase tracking-widest mb-4">
           <Zap size={14} className="fill-cyan-400" /> Powered by AI & Indepth Industry Data
         </div>
+        
+        {/* LAUNCH PROMO BANNER */}
+        <div className="inline-flex items-center justify-center gap-2 px-6 py-2 rounded-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/50 text-cyan-300 text-sm font-bold tracking-wide mb-8 shadow-[0_0_15px_rgba(34,211,238,0.2)]">
+          🚀 LAUNCH SPECIAL: Get 15 Days of Pro Access FREE (No Credit Card Required)
+        </div>
+
         <h1 className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tighter leading-tight">
           Algorithmic Bio-Pharma <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Market Intelligence.</span>
