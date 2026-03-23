@@ -446,6 +446,17 @@ export const TARGET_DICTIONARY = {
 };
 
 export const biosecureData = {
+  strategicThesis: {
+    headline: 'Cross-Border Pharma BD: Restructured, Not Dead',
+    subheadline: 'Three data points converge into a single message — and it changes the competitive intelligence calculus.',
+    convergencePoints: [
+      { label: 'Board of Trade Framework', detail: 'New regulatory corridors formalize cross-border BD pathways, replacing ad-hoc deal structures with institutional frameworks.', icon: 'Landmark' },
+      { label: 'Biosecure Act — Delayed Enforcement', detail: 'CDMO decoupling deadline pushed to 2032, giving companies a 6-year window to restructure supply chains while deals continue.', icon: 'ShieldAlert' },
+      { label: 'Earendil $787M Dual-Hub Success', detail: 'Massive Series A proves the China+US dual-hub model is investor-validated. Capital is flowing into cross-border structures, not away.', icon: 'Rocket' }
+    ],
+    implication: "BioQuantix's competitive intelligence becomes MORE valuable as companies need to navigate these complex regulatory corridors. The winners won't be those who avoid cross-border — they'll be those with the best intelligence to navigate it.",
+    updatedDate: 'Mar 23, 2026'
+  },
   timeline: [
     { date: 'Dec 18, 2025', event: 'Biosecure Act Signed', status: 'past' },
     { date: 'Dec 2026', event: 'OMB Final BCC List Published', status: 'imminent' },
@@ -743,3 +754,138 @@ export const outLicensingDeals = [
     notes: 'BioNTech reinforces its ADC strategy in women\'s cancers with another deal from DualityBio.'
   }
 ];
+
+export const conferencePulseData = {
+  conference: {
+    name: 'BIO-Europe Spring 2026',
+    location: 'Lisbon, Portugal',
+    dates: 'March 23–25, 2026',
+    status: 'LIVE',
+    description: 'Premier European biotechnology partnering conference. Key venue for cross-border BD deal announcements, especially China out-licensing.',
+  },
+  stats: {
+    attendees: '4,200+',
+    partneringMeetings: '22,000+',
+    chinaDelegates: '380+',
+    companiesPresenting: '1,800+',
+  },
+  rumoredDeals: [
+    {
+      id: 1,
+      company: 'Hengrui Pharma',
+      partner: 'Roche',
+      asset: 'SHR-A2009 (ADC)',
+      target: 'HER2-low',
+      modality: 'Antibody-Drug Conjugate',
+      therapeuticArea: 'Oncology',
+      dealStage: 'Term Sheet',
+      estimatedValue: '$2.5B–$3.5B',
+      probability: 75,
+      notes: 'Roche actively seeking next-gen HER2-low ADC to defend Kadcyla franchise. Multiple sources confirm active data room access.',
+    },
+    {
+      id: 2,
+      company: 'BeiGene',
+      partner: 'Novartis',
+      asset: 'BG-B0011 (Bispecific)',
+      target: 'PD-1 × TIGIT',
+      modality: 'Bispecific Antibody',
+      therapeuticArea: 'Oncology',
+      dealStage: 'Due Diligence',
+      estimatedValue: '$1.8B–$2.2B',
+      probability: 55,
+      notes: 'Novartis TIGIT strategy failed internally. BeiGene\'s bispecific approach offers a differentiated second shot. Lisbon meetings scheduled.',
+    },
+    {
+      id: 3,
+      company: 'Akeso (康方生物)',
+      partner: 'Merck KGaA',
+      asset: 'AK129',
+      target: 'CLDN18.2 × CD3',
+      modality: 'Bispecific T-cell Engager',
+      therapeuticArea: 'Oncology',
+      dealStage: 'Exploratory',
+      estimatedValue: '$800M–$1.2B',
+      probability: 40,
+      notes: 'Merck KGaA desperate for GI oncology pipeline. Akeso presenting Phase 1 gastric cancer data at a closed-door satellite session.',
+    },
+    {
+      id: 4,
+      company: 'Connect Biopharma',
+      partner: 'Sanofi',
+      asset: 'CBP-307',
+      target: 'S1P1',
+      modality: 'Small Molecule',
+      therapeuticArea: 'Autoimmune',
+      dealStage: 'LOI Signed',
+      estimatedValue: '$1.4B–$1.8B',
+      probability: 82,
+      notes: 'Sanofi actively hunting oral immunology assets for Dupixent succession. CBP-307 Phase 2 IBD data is compelling. Expect announcement Day 2.',
+    },
+    {
+      id: 5,
+      company: 'Zymeworks',
+      partner: 'AstraZeneca',
+      asset: 'ZW191',
+      target: 'B7-H4',
+      modality: 'Antibody-Drug Conjugate',
+      therapeuticArea: 'Oncology',
+      dealStage: 'BD Meeting Confirmed',
+      estimatedValue: '$1.0B–$1.5B',
+      probability: 50,
+      notes: 'AZ building ADC portfolio beyond Enhertu. B7-H4 is a hot target in breast/ovarian. Partnering meeting slotted for Day 1 AM.',
+    },
+    {
+      id: 6,
+      company: 'Chia Tai Tianqing (正大天晴)',
+      partner: 'GSK',
+      asset: 'TQB2858',
+      target: 'PD-L1 / TGF-β Trap',
+      modality: 'Bifunctional Fusion Protein',
+      therapeuticArea: 'Oncology',
+      dealStage: 'Exploratory',
+      estimatedValue: '$600M–$900M',
+      probability: 35,
+      notes: 'GSK expanding IO franchise. TGF-β trap approach differentiates from crowded PD-L1 space. Early-stage BD discussion.',
+    },
+  ],
+  agenda: [
+    {
+      day: 'Day 1 — Mar 23',
+      sessions: [
+        { time: '09:00', title: 'Opening Keynote: Cross-Border Partnering in 2026', type: 'Keynote', highlight: false },
+        { time: '10:30', title: 'China Biotech Global Ambitions Panel', type: 'Panel', highlight: true },
+        { time: '13:00', title: 'One-on-One Partnering Begins', type: 'BD Meetings', highlight: true },
+        { time: '14:30', title: 'ADC Innovation: Next-Gen Payloads & Targets', type: 'Track', highlight: false },
+        { time: '16:00', title: 'Regulatory Harmonization: FDA-NMPA Mutual Recognition', type: 'Workshop', highlight: false },
+      ],
+    },
+    {
+      day: 'Day 2 — Mar 24',
+      sessions: [
+        { time: '08:30', title: 'BD Breakfast: Asia-Europe Licensing Deal Structures', type: 'Networking', highlight: true },
+        { time: '10:00', title: 'Immunology Pipeline Showcase', type: 'Presentations', highlight: false },
+        { time: '11:30', title: 'FIRESIDE: Sanofi Head of BD — Oral Immunology Strategy', type: 'Fireside', highlight: true },
+        { time: '14:00', title: 'One-on-One Partnering (Peak Window)', type: 'BD Meetings', highlight: true },
+        { time: '16:30', title: 'Satellite Symposium: Biosecure Act & CDMO Supply Chains', type: 'Symposium', highlight: false },
+      ],
+    },
+    {
+      day: 'Day 3 — Mar 25',
+      sessions: [
+        { time: '09:00', title: 'Final Partnering Window', type: 'BD Meetings', highlight: true },
+        { time: '10:30', title: 'Cell & Gene Therapy Manufacturing Scale-Up', type: 'Track', highlight: false },
+        { time: '12:00', title: 'Closing Plenary: Deal of the Conference Awards', type: 'Closing', highlight: true },
+        { time: '13:30', title: 'Press Embargo Lifts — Expect Deal Announcements', type: 'Media', highlight: true },
+      ],
+    },
+  ],
+  signalFeed: [
+    { time: '18:15 CST', mood: 'RUMOR', source: 'Industry Analyst', text: 'Hengrui delegation seen entering Roche partnering suite for extended session. Multiple execs from both sides present.', day: 'Day 1' },
+    { time: '17:40 CST', mood: 'STRATEGIC', source: 'Conference Floor', text: 'Connect Biopharma CEO and Sanofi BD SVP photographed at networking dinner. Handshake moment captured.', day: 'Day 1' },
+    { time: '16:20 CST', mood: 'BREAKING', source: 'BioCentury', text: 'BREAKING: Unnamed Chinese biotech to announce >$1B global rights deal during Day 2 plenary. Oncology ADC.', day: 'Day 1' },
+    { time: '14:50 CST', mood: 'CONFIRMED', source: 'Company PR', text: 'BeiGene confirms "multiple scheduled partnering meetings with Top 10 Pharma" at BIO-Europe Spring.', day: 'Day 1' },
+    { time: '11:30 CST', mood: 'RUMOR', source: 'X / Twitter', text: 'Unverified: AstraZeneca team in Lisbon includes Head of Oncology BD + Legal counsel. Suggests active deal negotiation.', day: 'Day 1' },
+    { time: '09:15 CST', mood: 'STRATEGIC', source: 'EuroBiotech Weekly', text: 'Conference preview notes record-high China biotech registrations (+42% vs 2025). ADC and bispecific presentations dominate abstract book.', day: 'Day 1' },
+  ],
+};

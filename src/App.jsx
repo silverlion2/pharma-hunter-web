@@ -573,7 +573,7 @@ const App = () => {
       compare: 'Asset Comparison | BioQuantix',
       smartmoney: 'Smart Money Consensus | BioQuantix',
       blog: 'Bio-Pharma Intelligence Blog | BioQuantix',
-      biosecure: 'Pharma BD & Biosecure | BioQuantix',
+      biosecure: 'Pharma BD & Conference Pulse | BioQuantix',
       'deal-tracker': 'China Out-Licensing Tracker | BioQuantix',
       'ai-biotech': 'AI × Biotech Capital Tracker | BioQuantix',
     };
