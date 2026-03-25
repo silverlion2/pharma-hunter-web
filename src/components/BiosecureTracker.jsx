@@ -90,7 +90,8 @@ export default function BiosecureTracker({ userRole }) {
                     </span>
                     {conference.status}
                   </span>
-                  <span className="text-[9px] bg-slate-800 text-slate-400 border border-slate-700 px-2 py-1 rounded-full font-bold tracking-widest">DAY 1 IN PROGRESS</span>
+                  <span className="text-[9px] bg-slate-800 text-slate-400 border border-slate-700 px-2 py-1 rounded-full font-bold tracking-widest">DAY {conference.currentDay || 3} — FINAL DAY</span>
+                  {stats.dealsAnnounced && <span className="text-[9px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2 py-1 rounded-full font-bold tracking-widest">{stats.chinaDealsAnnounced} CHINA DEALS CONFIRMED</span>}
                 </div>
                 <h2 className="text-xl font-black text-white tracking-tight mb-1">{conference.name}</h2>
                 <div className="flex items-center gap-3 text-sm text-slate-400">
@@ -105,7 +106,7 @@ export default function BiosecureTracker({ userRole }) {
                   { label: 'Attendees', value: stats.attendees, icon: Users },
                   { label: 'BD Meetings', value: stats.partneringMeetings, icon: Briefcase },
                   { label: 'China Delegates', value: stats.chinaDelegates, icon: MapPin },
-                  { label: 'Companies', value: stats.companiesPresenting, icon: Building2 },
+                  { label: 'Deals Announced', value: stats.dealsAnnounced || '0', icon: Zap },
                 ].map((s, i) => (
                   <div key={i} className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-center min-w-[100px]">
                     <s.icon size={14} className="text-amber-400 mx-auto mb-1.5" />
@@ -140,7 +141,7 @@ export default function BiosecureTracker({ userRole }) {
                   </thead>
                   <tbody>
                     {rumoredDeals.sort((a, b) => b.probability - a.probability).map((deal) => (
-                      <tr key={deal.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors group">
+                      <tr key={deal.id} className={`border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors group ${deal.probability === 100 ? 'bg-emerald-500/5' : ''}`}>
                         <td className="py-4 px-4">
                           <span className="font-bold text-slate-200 text-sm">{deal.company}</span>
                         </td>

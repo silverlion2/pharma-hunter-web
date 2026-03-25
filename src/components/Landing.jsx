@@ -1,44 +1,63 @@
 import React from 'react';
-import { Zap, Database, TerminalSquare, ShieldCheck } from 'lucide-react';
+import { Zap, Database, TerminalSquare, ShieldCheck, TrendingUp, Brain, Target } from 'lucide-react';
 
 const Landing = ({ setView, setShowPastDeals }) => {
   return (
     <section aria-label="BioQuantix - AI-powered bio-pharma M&A intelligence platform">
     <div className="min-h-[70vh] flex flex-col justify-center max-w-6xl mx-auto py-12 px-6">
       <div className="text-center mb-16 relative">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-cyan-500/10 blur-[120px] rounded-full pointer-events-none" />
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800/50 border border-slate-700 text-cyan-400 text-xs font-black uppercase tracking-widest mb-4">
-          <Zap size={14} className="fill-cyan-400" /> Powered by AI & Indepth Industry Data
+        {/* Ambient glow orbs */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-cyan-500/8 blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute top-1/4 left-1/4 w-[300px] h-[300px] bg-indigo-500/5 blur-[100px] rounded-full pointer-events-none animate-pulse" style={{ animationDuration: '6s' }} />
+        
+        {/* Badge */}
+        <div className="animate-slideUp inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800/50 border border-slate-700/50 text-cyan-400 text-[10px] font-black uppercase tracking-widest mb-4">
+          <Zap size={12} className="fill-cyan-400" /> Powered by AI & Deep Industry Data
         </div>
         
-        {/* LAUNCH PROMO BANNER */}
-        <div className="inline-flex items-center justify-center gap-2 px-6 py-2 rounded-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/50 text-cyan-300 text-sm font-bold tracking-wide mb-8 shadow-[0_0_15px_rgba(34,211,238,0.2)]">
-          🚀 LAUNCH SPECIAL: Get 15 Days of Pro Access FREE (No Credit Card Required)
+        {/* Launch Promo */}
+        <div className="animate-slideUp delay-100 inline-flex items-center justify-center gap-2 px-6 py-2 rounded-full bg-gradient-to-r from-cyan-500/15 to-blue-500/15 border border-cyan-500/30 text-cyan-300 text-xs font-bold tracking-wide mb-8 shadow-[0_0_20px_rgba(34,211,238,0.1)]">
+          🚀 LAUNCH SPECIAL: 15 Days of Pro Access FREE (No Credit Card)
         </div>
 
-        <h1 className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tighter leading-tight">
+        {/* Hero Heading */}
+        <h1 className="animate-slideUp delay-200 text-4xl sm:text-5xl md:text-7xl font-black text-white mb-6 tracking-tighter leading-[1.1]">
           Algorithmic Bio-Pharma <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Market Intelligence.</span>
         </h1>
-        <p className="text-slate-400 text-lg md:text-xl max-w-3xl mx-auto leading-relaxed mb-10">
+        <p className="animate-slideUp delay-300 text-slate-400 text-base sm:text-lg md:text-xl max-w-3xl mx-auto leading-relaxed mb-10">
           Institutional research requires armies of analysts. <strong className="text-white">BioQuantix uses machine learning.</strong> We track clinical milestones, pipeline gaps, and alternative data to quantify bio-pharma M&A trends.
         </p>
         
-        <div className="flex flex-wrap justify-center gap-4 mb-10 text-xs font-mono font-bold text-slate-500 uppercase tracking-widest">
-          <span className="bg-slate-900 border border-slate-800 px-4 py-2 rounded-lg text-cyan-400">[ $15B+ M&A Value Tracked ]</span>
-          <span className="bg-slate-900 border border-slate-800 px-4 py-2 rounded-lg text-blue-400">[ 150+ Clinical Assets Monitored ]</span>
-          <span className="bg-slate-900 border border-slate-800 px-4 py-2 rounded-lg text-indigo-400">[ 12 Institutional Anomalies Flagged ]</span>
+        {/* Stats Row */}
+        <div className="animate-slideUp delay-400 flex flex-wrap justify-center gap-3 mb-10">
+          <div className="bg-slate-900/80 border border-slate-800 px-5 py-2.5 rounded-xl flex items-center gap-2">
+            <TrendingUp size={14} className="text-cyan-400" />
+            <span className="text-[11px] font-mono font-bold text-cyan-400">$15B+ M&A Tracked</span>
+          </div>
+          <div className="bg-slate-900/80 border border-slate-800 px-5 py-2.5 rounded-xl flex items-center gap-2">
+            <Brain size={14} className="text-blue-400" />
+            <span className="text-[11px] font-mono font-bold text-blue-400">150+ Clinical Assets</span>
+          </div>
+          <div className="bg-slate-900/80 border border-slate-800 px-5 py-2.5 rounded-xl flex items-center gap-2">
+            <Target size={14} className="text-indigo-400" />
+            <span className="text-[11px] font-mono font-bold text-indigo-400">12 Anomalies Flagged</span>
+          </div>
         </div>
 
-        <button 
-          onClick={() => {setView('dashboard'); setShowPastDeals(false);}}
-          className="bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-black text-lg px-10 py-5 rounded-2xl transition-all transform hover:scale-105 active:scale-95 shadow-2xl shadow-cyan-500/20 flex items-center gap-3 mx-auto"
-        >
-          <Database size={24} /> ENTER TERMINAL
-        </button>
+        {/* CTA */}
+        <div className="animate-slideUp delay-500">
+          <button 
+            onClick={() => {setView('dashboard'); setShowPastDeals(false);}}
+            className="bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-black text-base sm:text-lg px-10 py-5 rounded-2xl transition-all transform hover:scale-105 active:scale-95 shadow-2xl shadow-cyan-500/20 flex items-center gap-3 mx-auto animate-pulseGlow"
+          >
+            <Database size={22} /> ENTER TERMINAL
+          </button>
+        </div>
         
-        <div className="mt-20 max-w-2xl mx-auto text-left bg-slate-900/60 border border-slate-800 rounded-3xl p-8 shadow-2xl backdrop-blur-sm relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-10">
+        {/* Case Study Card */}
+        <div className="animate-slideUp delay-600 mt-20 max-w-2xl mx-auto text-left bg-slate-900/60 border border-slate-800/60 rounded-3xl p-8 shadow-2xl backdrop-blur-sm relative overflow-hidden group hover:border-slate-700 transition-colors">
+          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
             <TerminalSquare className="w-24 h-24 text-cyan-400" />
           </div>
           <div className="flex items-center gap-2 text-[10px] text-cyan-500 font-bold uppercase tracking-widest mb-4">
