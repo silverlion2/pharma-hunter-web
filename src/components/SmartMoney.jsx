@@ -40,9 +40,9 @@ const SmartMoney = ({
         <div className="p-3 bg-amber-500/10 rounded-2xl border border-amber-500/20 mb-4 shadow-lg shadow-amber-500/10">
           <User className="w-8 h-8 text-amber-400" />
         </div>
-        <h2 className="text-3xl font-black text-white tracking-tight">Smart Money Consensus</h2>
+        <h2 className="text-3xl font-black text-white tracking-tight">BioQuantix Institutional Flow</h2>
         <p className="text-xs text-slate-400 font-medium mt-2 max-w-xl text-center leading-relaxed">
-          The ultimate aggregated view of high-intent market behavior. See exactly which assets are being starred and tracked most heavily by other Pro-tier users on the BioQuantix network.
+          The ultimate aggregated view of high-intent market behavior. See exactly which assets are tracking the heaviest institutional flow on the BioQuantix network.
         </p>
       </div>
 
@@ -51,9 +51,9 @@ const SmartMoney = ({
         <div className="grid grid-cols-12 gap-4 p-4 lg:p-6 border-b border-slate-800 bg-slate-900/80 items-center">
           <div className="col-span-1 text-center text-[10px] font-black text-slate-500 tracking-widest uppercase">Rank</div>
           <div className="col-span-4 lg:col-span-5 text-left text-[10px] font-black text-slate-500 tracking-widest uppercase">Target Asset</div>
-          <div className="col-span-3 lg:col-span-2 text-center text-[10px] font-black text-amber-500 tracking-widest uppercase flex items-center justify-center gap-1"><Star size={12}/> Pro Trackers</div>
-          <div className="col-span-2 lg:col-span-2 text-center text-[10px] font-black text-slate-500 tracking-widest uppercase hidden sm:block">Retail Trackers</div>
-          <div className="col-span-4 sm:col-span-2 lg:col-span-2 text-center text-[10px] font-black text-slate-500 tracking-widest uppercase">Total Heat</div>
+          <div className="col-span-3 lg:col-span-2 text-center text-[10px] font-black text-amber-500 tracking-widest uppercase flex items-center justify-center gap-1"><Star size={12}/> Pro Flow</div>
+          <div className="col-span-2 lg:col-span-2 text-center text-[10px] font-black text-slate-500 tracking-widest uppercase hidden sm:block">Retail Flow</div>
+          <div className="col-span-4 sm:col-span-2 lg:col-span-2 text-center text-[10px] font-black text-slate-500 tracking-widest uppercase">Conviction Heat</div>
         </div>
 
         {/* Table Body */}

@@ -104,9 +104,9 @@ const GapMap = ({ pipelineGapsData, setView }) => {
             <ArrowLeft size={14} /> Back to Terminal
           </button>
           <h2 className="text-3xl font-black text-white flex items-center gap-3 tracking-tight">
-            <Cpu className="text-cyan-500" size={28} /> Pipeline Gap Map
+            <Cpu className="text-cyan-500" size={28} /> BioQuantix Gap Map
           </h2>
-          <p className="text-slate-500 text-xs mt-1.5 max-w-xl">Comprehensive intelligence on MNC pipeline deficiencies, patent cliffs, and acquisition urgency across therapeutic areas.</p>
+          <p className="text-slate-500 text-xs mt-1.5 max-w-xl">Algorithmic intelligence on MNC pipeline deficiencies, patent cliffs, and acquisition urgency across therapeutic areas.</p>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full xl:w-auto">
           <div className="flex bg-slate-900/80 backdrop-blur-sm border border-slate-800 rounded-xl p-1 shadow-lg shrink-0">

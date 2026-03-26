@@ -3,6 +3,7 @@ import { TerminalSquare, Target, History, LogIn, User, LogOut, ShieldCheck, Aler
 import Button from './ui/Button';
 
 const NAV_ITEMS = [
+  { key: 'dashboard', label: 'Terminal', icon: TerminalSquare },
   { key: 'blog', label: 'Blog', icon: FileText },
   { key: 'deal-tracker', label: 'Deal Tracker', icon: Globe },
   { key: 'ai-biotech', label: 'AI × Bio', icon: Brain },
@@ -58,15 +59,18 @@ const Layout = ({
         <div className="flex justify-between items-center gap-4">
           {/* Logo */}
           <div className="flex items-center gap-3 cursor-pointer group shrink-0" onClick={() => {setView('landing'); setShowPastDeals(false);}}>
-            <div className="p-2 bg-cyan-500 rounded-xl shadow-lg shadow-cyan-500/10 group-hover:bg-cyan-400 transition-colors">
+            <div className="p-2 bg-cyan-500 rounded-xl shadow-lg shadow-cyan-500/10 group-hover:bg-cyan-400 transition-colors relative">
               <TerminalSquare className="text-slate-900 w-5 h-5" />
+              <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-[#0A0C10] animate-pulse" />
             </div>
             <div>
               <h1 className="text-xl font-black tracking-tighter text-white flex items-center gap-2 group-hover:text-cyan-400 transition-colors">
                 BIOQUANTIX 
-                {view === 'dashboard' && <span className="bg-slate-800 text-slate-500 px-1.5 py-0.5 rounded text-[8px] font-mono border border-slate-700 uppercase">Terminal</span>}
+                <span className="bg-slate-800 text-cyan-400 px-1.5 py-0.5 rounded text-[8px] font-mono border border-cyan-500/30 uppercase flex items-center gap-1">
+                  <span className="w-1 h-1 bg-cyan-400 rounded-full animate-pulse" /> ENGINE ONLINE
+                </span>
               </h1>
-              <p className="text-slate-600 text-[10px] font-medium hidden sm:block">Quantitative Bio-Pharma Intelligence</p>
+              <p className="text-slate-600 text-[10px] font-medium hidden sm:block tracking-widest uppercase">Algorithmic Market Intelligence</p>
             </div>
           </div>
           

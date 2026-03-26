@@ -74,8 +74,8 @@ const ComparisonView = ({ tickers = [], assetData = [], userRole = 'visitor', se
         <div className="p-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 mb-4 shadow-lg shadow-indigo-500/10">
           <Swords className="w-6 h-6 text-indigo-400" />
         </div>
-        <h2 className="text-2xl font-black text-white tracking-tight">Asset Combat</h2>
-        <p className="text-[11px] text-slate-500 font-medium uppercase tracking-widest mt-1">Head-to-Head Quantitative Profile</p>
+        <h2 className="text-2xl font-black text-white tracking-tight">Quant Matchup</h2>
+        <p className="text-[11px] text-slate-500 font-medium uppercase tracking-widest mt-1">Algorithmic Conviction Matchup</p>
       </div>
 
       {/* Versus Headers */}
@@ -92,7 +92,7 @@ const ComparisonView = ({ tickers = [], assetData = [], userRole = 'visitor', se
               <span className="text-xs text-slate-400 font-medium">{assetA.name}</span>
             </div>
             <div className="text-right">
-              <span className="block text-[9px] font-black text-slate-500 tracking-widest uppercase mb-1">Overall Quant</span>
+              <span className="block text-[9px] font-black text-slate-500 tracking-widest uppercase mb-1">BioQuantix Score</span>
               <span className={`text-4xl font-mono font-black ${winner === 'A' ? 'text-amber-400' : 'text-slate-300'}`}>
                 {scoreA.toFixed(1)}
               </span>
@@ -116,7 +116,7 @@ const ComparisonView = ({ tickers = [], assetData = [], userRole = 'visitor', se
               <span className="text-xs text-slate-400 font-medium">{assetB.name}</span>
             </div>
             <div className="text-right">
-              <span className="block text-[9px] font-black text-slate-500 tracking-widest uppercase mb-1">Overall Quant</span>
+              <span className="block text-[9px] font-black text-slate-500 tracking-widest uppercase mb-1">BioQuantix Score</span>
               <span className={`text-4xl font-mono font-black ${winner === 'B' ? 'text-amber-400' : 'text-slate-300'}`}>
                 {scoreB.toFixed(1)}
               </span>
@@ -149,7 +149,7 @@ const ComparisonView = ({ tickers = [], assetData = [], userRole = 'visitor', se
           </div>
         )}
         <div className={`bg-slate-900/60 border border-slate-800 rounded-3xl p-6 lg:px-12 ${userRole !== 'pro' && userRole !== 'admin' ? 'blur-[4px] opacity-40 select-none pointer-events-none' : ''}`}>
-          <h3 className="text-center text-[10px] font-black tracking-widest text-slate-600 uppercase mb-6">Algorithm Sub-Scores</h3>
+          <h3 className="text-center text-[10px] font-black tracking-widest text-slate-600 uppercase mb-6">BioQuantix Engine Scoring</h3>
         <FactorRow label="Asset Scarcity" icon={Target} valA={Math.round(assetA.scarcity_score || 0)} valB={Math.round(assetB.scarcity_score || 0)} />
         <FactorRow label="Cash Strain" icon={AlertCircle} valA={Math.round(assetA.cash_score || 0)} valB={Math.round(assetB.cash_score || 0)} />
         <FactorRow label="Clinical Alpha" icon={Activity} valA={Math.round(assetA.clinical_score || 0)} valB={Math.round(assetB.clinical_score || 0)} />

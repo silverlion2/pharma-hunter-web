@@ -33,11 +33,11 @@ export default function AiBiotechTracker() {
             <div className="p-3 bg-cyan-500/10 rounded-xl border border-cyan-500/30">
               <Brain size={32} className="text-cyan-400" />
             </div>
-            AI × Biotech Capital Tracker
+            BioQuantix AI Asset Tracker
             <span className="text-[10px] bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 px-2 py-1 rounded font-black tracking-widest hidden md:inline-block ml-2 align-middle">NEW ASSET CLASS</span>
           </h1>
           <p className="text-sm text-slate-400 mt-4 max-w-3xl leading-relaxed">
-            The convergence of generative AI and drug discovery is absorbing massive capital. We track the mega-rounds, platform pioneers, and strategic M&A implications of the "Tech-Bio" supercycle.
+            The convergence of generative AI and drug discovery is absorbing massive capital. BioQuantix physically tracks the mega-rounds, platform pioneers, and strategic M&A implications of the "Tech-Bio" supercycle through proprietary capital flow monitoring.
           </p>
         </div>
         <div className="flex gap-4 shrink-0">
