@@ -33,6 +33,7 @@ import Blog from './components/Blog';
 import Checkout from './components/Checkout';
 import DealTracker from './components/DealTracker';
 import AiBiotechTracker from './components/AiBiotechTracker';
+import PatentRadar from './components/PatentRadar';
 
 const App = () => {
   const [view, setView] = useState('landing');
@@ -57,6 +58,12 @@ const App = () => {
   const [authLoading, setAuthLoading] = useState(false);
 
   // New Phase: Tracked Tickers
+  // eslint-disable-next-line no-unused-vars
+  const [isSearching, setIsSearching] = useState(false);
+  // eslint-disable-next-line no-unused-vars
+  const [searchStep, setSearchStep] = useState(0);
+  // eslint-disable-next-line no-unused-vars
+  const [searchedTicker, setSearchedTicker] = useState('');
   const [trackedTickers, setTrackedTickers] = useState([]);
   const [showOnlyTracked, setShowOnlyTracked] = useState(false);
   const [watchlistHistory, setWatchlistHistory] = useState({});
@@ -106,6 +113,7 @@ const App = () => {
     });
 
     return () => subscription.unsubscribe();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const determineUserRole = async (user) => {
@@ -128,7 +136,7 @@ const App = () => {
         const VALID_ROLES = ['free', 'pro', 'admin'];
         role = VALID_ROLES.includes(dbRole) ? dbRole : 'free';
       }
-    } catch (error) {
+    } catch {
       // Gracefully fallback if the get_user_role RPC hasn't been created in Supabase yet
     }
     
@@ -518,7 +526,6 @@ const App = () => {
     // Auto-refresh every 60 seconds when Supabase is configured
     const refreshInterval = isSupabaseConfigured ? setInterval(fetchAllData, 60_000) : null;
     return () => { if (refreshInterval) clearInterval(refreshInterval); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const pipelineMaxUrgencies = React.useMemo(() => {
@@ -856,6 +863,29 @@ const App = () => {
             setView={setView}
           />
         )}
+
+        {view === 'patent-radar' && (
+          <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+            {userRole === 'pro' || userRole === 'admin' ? (
+              <PatentRadar userRole={userRole} />
+            ) : (
+              <div className="mt-8 text-center bg-slate-900/40 rounded-3xl p-12 border border-slate-800">
+                <ShieldCheck className="w-16 h-16 text-cyan-500/50 mx-auto mb-6" />
+                <h2 className="text-2xl font-black text-white mb-4">Pro Feature Locked</h2>
+                <p className="text-slate-400 mb-8 max-w-lg mx-auto">
+                  Patent Cliff analysis and CNIPA intelligence are restricted to Pro subscribers.
+                </p>
+                <button 
+                  onClick={() => setView('upgrade')}
+                  className="bg-cyan-500 hover:bg-cyan-400 text-slate-900 px-8 py-3 rounded-xl font-black tracking-wider transition-all shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:shadow-[0_0_30px_rgba(6,182,212,0.5)]"
+                >
+                  UPGRADE TO PRO
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
 
         {view === 'biosecure' && (
           <BiosecureTracker userRole={userRole} />

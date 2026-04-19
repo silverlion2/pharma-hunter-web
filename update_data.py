@@ -11,6 +11,9 @@ import argparse
 import concurrent.futures
 from datetime import datetime, timedelta
 from supabase import create_client, Client
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # ==========================================
 # 1. 初始化环境变量与容灾报警配置
@@ -23,8 +26,8 @@ def clean_secret(val):
         val = val.split("](")[1].strip(")")
     return val
 
-SUPABASE_URL = clean_secret(os.environ.get("SUPABASE_URL"))
-SUPABASE_KEY = clean_secret(os.environ.get("SUPABASE_KEY"))
+SUPABASE_URL = clean_secret(os.environ.get("SUPABASE_URL")) or clean_secret(os.environ.get("VITE_SUPABASE_URL"))
+SUPABASE_KEY = clean_secret(os.environ.get("SUPABASE_KEY")) or clean_secret(os.environ.get("VITE_SUPABASE_ANON_KEY"))
 DEEPSEEK_KEY = clean_secret(os.environ.get("DEEPSEEK_KEY"))
 MARKETDATA_TOKEN = clean_secret(os.environ.get("MARKETDATA_TOKEN"))
 BARK_KEY = clean_secret(os.environ.get("BARK_KEY")) 
@@ -39,10 +42,11 @@ def send_alert(title, message):
 if SUPABASE_URL and not SUPABASE_URL.startswith("http"):
     SUPABASE_URL = "https://" + SUPABASE_URL
 
-if not SUPABASE_URL or not SUPABASE_KEY:
-    raise ValueError("Missing Supabase credentials in environment variables.")
-
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+supabase = None
+if SUPABASE_URL and SUPABASE_KEY:
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+else:
+    logging.warning("Missing Supabase credentials in environment variables. Some functions requiring database access will fail.")
 
 # ==========================================
 # 2. 基础字典与 SEC 双防线机制
@@ -1128,14 +1132,297 @@ def evaluate_alerts(records):
     except Exception as e:
         logging.error(f"❌ 评估自定义预警失败: {e}")
 
+def sync_outbound_deals():
+    logging.info("🧠 Syncing cross-border BD intelligence from Knowledge Base into Supabase...")
+    kb_files = [
+        r"d:\knowledge-base\news-wiki\China_Biotech_Outbound.md",
+        r"d:\knowledge-base\industry-research\Healthcare_Pharma\Reflection_创新药_BD_超预期，全球化合作推动价值重构.md"
+    ]
+    texts = []
+    for fp in kb_files:
+        if os.path.exists(fp):
+            with open(fp, "r", encoding="utf-8") as f:
+                texts.append(f.read())
+    
+    if not texts:
+        logging.error("No knowledge base files found.")
+        return
+        
+    combined_text = "\n\n---\n\n".join(texts)
+    
+    # Try multiple keys/providers seamlessly
+    api_key = DEEPSEEK_KEY or os.environ.get("OPENAI_API_KEY")
+    if not api_key:
+        logging.warning("No API key found (DEEPSEEK_KEY or OPENAI_API_KEY). Cannot sync deals.")
+        return
+        
+    prompt = f"""
+    Extract all specific OUTBOUND licensing or M&A deals involving Chinese biotechs from the following text.
+    Return ONLY a JSON object with a single key 'new_deals' containing a list of objects exactly matching this format:
+    {{
+        "date": "Month Year (e.g. Mar 2026)",
+        "licensor": "Chinese company name",
+        "licensee": "MNC / Partner name",
+        "value": "Total deal value (e.g. $1.5B)",
+        "upfront": "Upfront payment if known, else 'Undisclosed'",
+        "drug": "Asset name or 'Multiple Assets'",
+        "target": "Biological target or Mechanism",
+        "therapeutic_area": "e.g. Oncology, Metabolic",
+        "stage": "Development stage",
+        "structure": "e.g. Global, Global ex-China",
+        "modality": "e.g. Antibody-Drug Conjugate, siRNA",
+        "notes": "1-2 sentence brief strategic rationale."
+    }}
+    Text:
+    {combined_text[:6000]}
+    """
+    
+    logging.info("📡 Requesting LLM to extract deals...")
+    try:
+        from openai import OpenAI
+        # Defaulting to deepseek if using their key, else fallback to standard openai format
+        base_url = "https://api.deepseek.com" if DEEPSEEK_KEY else "https://api.openai.com/v1"
+        model_name = "deepseek-chat" if DEEPSEEK_KEY else "gpt-4o"
+        
+        client = OpenAI(api_key=api_key, base_url=base_url)
+        response = client.chat.completions.create(
+            model=model_name,
+            messages=[
+                {"role": "system", "content": "You are a pharma financial data extraction bot. Output only valid JSON."},
+                {"role": "user", "content": prompt}
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.1
+        )
+        
+        content = response.choices[0].message.content
+        data = json.loads(content)
+        new_deals = data.get("new_deals", [])
+        
+        if not new_deals:
+            logging.info("No deals found to sync.")
+            return
+            
+        logging.info(f"✅ Extracted {len(new_deals)} deals from LLM!")
+        
+        if not supabase:
+            logging.error("No Supabase client initialized. Cannot push deals to database.")
+            return
+            
+        # Get existing deals to avoid duplicates
+        existing_res = supabase.table('outbound_deals').select('licensor', 'licensee').execute()
+        existing_deals = existing_res.data if existing_res.data else []
+        
+        inserted_count = 0
+        for deal in new_deals:
+            licensor = deal.get('licensor', '').lower()
+            licensee = deal.get('licensee', '').lower()
+            
+            # Simple dedup strategy
+            is_dup = any(
+                (licensor in e.get('licensor', '').lower() or e.get('licensor', '').lower() in licensor) and
+                (licensee in e.get('licensee', '').lower() or e.get('licensee', '').lower() in licensee)
+                for e in existing_deals
+            )
+            
+            if is_dup:
+                logging.info(f"Skipping duplicate deal: {licensor} & {licensee}")
+                continue
+                
+            insert_res = supabase.table('outbound_deals').insert(deal).execute()
+            if insert_res.data:
+                inserted_count += 1
+                
+        logging.info(f"✅ Inserted {inserted_count} new distinct deals into Database.")
+        
+    except Exception as e:
+        logging.error(f"Sync Deals Error: {e}")
+
+def sync_patents():
+    logging.info("🧠 Syncing Patent Radar mock data into Supabase...")
+    if not supabase:
+        logging.error("No Supabase client initialized. Cannot push deals to database.")
+        return
+
+    patent_cliffs = [
+        {"mnc": "Pfizer", "asset": "Prevnar 13", "year": 2026, "revenue_at_risk": 1.5, "therapeutic_area": "Vaccines", "successor_status": "Prevnar 20 launched", "severity": "MODERATE"},
+        {"mnc": "Pfizer", "asset": "Ibrance", "year": 2027, "revenue_at_risk": 4.0, "therapeutic_area": "Oncology", "successor_status": "CDK4 inhibitor in Phase 3", "severity": "HIGH"},
+        {"mnc": "Pfizer", "asset": "Eliquis", "year": 2028, "revenue_at_risk": 14.0, "therapeutic_area": "Cardiovascular", "successor_status": "No successor identified", "severity": "CRITICAL"},
+        {"mnc": "Pfizer", "asset": "Xtandi", "year": 2027, "revenue_at_risk": 1.8, "therapeutic_area": "Oncology", "successor_status": "ADC pipeline (Seagen)", "severity": "MODERATE"},
+        {"mnc": "Merck", "asset": "Januvia", "year": 2026, "revenue_at_risk": 2.0, "therapeutic_area": "Metabolic", "successor_status": "No direct successor", "severity": "MODERATE"},
+        {"mnc": "Merck", "asset": "Keytruda", "year": 2028, "revenue_at_risk": 29.5, "therapeutic_area": "Oncology", "successor_status": "SubQ Qlex + ADC pipeline", "severity": "CRITICAL"},
+        {"mnc": "AstraZeneca", "asset": "Soliris", "year": 2025, "revenue_at_risk": 2.6, "therapeutic_area": "Rare Disease", "successor_status": "Ultomiris transition", "severity": "LOW"},
+        {"mnc": "AstraZeneca", "asset": "Farxiga", "year": 2025, "revenue_at_risk": 7.7, "therapeutic_area": "Cardiovascular", "successor_status": "No successor — major gap", "severity": "CRITICAL"},
+        {"mnc": "AstraZeneca", "asset": "Brilinta", "year": 2025, "revenue_at_risk": 2.3, "therapeutic_area": "Cardiovascular", "successor_status": "Discontinuing R&D investment", "severity": "HIGH"},
+        {"mnc": "Novartis", "asset": "Entresto", "year": 2025, "revenue_at_risk": 6.5, "therapeutic_area": "Cardiovascular", "successor_status": "Pelacarsen (Lp(a)) in Phase 3", "severity": "HIGH"},
+        {"mnc": "Novartis", "asset": "Promacta", "year": 2026, "revenue_at_risk": 2.3, "therapeutic_area": "Hematology", "successor_status": "Iptacopan approved", "severity": "MODERATE"},
+        {"mnc": "Eli Lilly", "asset": "Trulicity", "year": 2027, "revenue_at_risk": 4.0, "therapeutic_area": "Metabolic", "successor_status": "Mounjaro/Zepbound dominate", "severity": "LOW"},
+        {"mnc": "Roche", "asset": "Perjeta", "year": 2025, "revenue_at_risk": 3.5, "therapeutic_area": "Oncology", "successor_status": "Phesgo transition", "severity": "HIGH"},
+        {"mnc": "Roche", "asset": "Kadcyla", "year": 2026, "revenue_at_risk": 2.0, "therapeutic_area": "Oncology", "successor_status": "No direct successor ADC", "severity": "MODERATE"},
+        {"mnc": "Roche", "asset": "Ocrevus", "year": 2029, "revenue_at_risk": 7.2, "therapeutic_area": "Neurology", "successor_status": "Anti-CD20 biosimilar defense TBD", "severity": "CRITICAL"},
+        {"mnc": "AbbVie", "asset": "Humira", "year": 2023, "revenue_at_risk": 8.0, "therapeutic_area": "Autoimmune", "successor_status": "Skyrizi + Rinvoq replacing", "severity": "MODERATE"},
+        {"mnc": "AbbVie", "asset": "Imbruvica", "year": 2026, "revenue_at_risk": 3.6, "therapeutic_area": "Oncology", "successor_status": "CELMoD/ADC pipeline", "severity": "HIGH"},
+        {"mnc": "AbbVie", "asset": "Botox", "year": 2029, "revenue_at_risk": 5.3, "therapeutic_area": "Aesthetics/Neuro", "successor_status": "No biosimilar defense", "severity": "HIGH"},
+        {"mnc": "Bristol-Myers Squibb", "asset": "Revlimid", "year": 2025, "revenue_at_risk": 5.7, "therapeutic_area": "Oncology", "successor_status": "CELMoDs (Mezigdomide)", "severity": "CRITICAL"},
+        {"mnc": "Bristol-Myers Squibb", "asset": "Eliquis", "year": 2027, "revenue_at_risk": 12.2, "therapeutic_area": "Cardiovascular", "successor_status": "No successor", "severity": "CRITICAL"},
+        {"mnc": "Bristol-Myers Squibb", "asset": "Opdivo", "year": 2028, "revenue_at_risk": 9.0, "therapeutic_area": "Oncology", "successor_status": "IO combinations", "severity": "HIGH"},
+        {"mnc": "Sanofi", "asset": "Dupixent", "year": 2031, "revenue_at_risk": 22.0, "therapeutic_area": "Immunology", "successor_status": "Amlitelimab, Frexalimab pipeline", "severity": "CRITICAL"},
+    ]
+
+    cnipa_signals = [
+        {"signal_date": "Apr 12, 2026", "company": "Hengrui Pharmaceuticals (恒瑞医药)", "signal_type": "NEW_FILING", "patent_title": "Novel ADC Linker-Payload Technology for TROP2 Targets", "cnipa_number": "CN2026-1-0045678", "jurisdictions_filed": ["CNIPA", "PCT"], "therapeutic_area": "Oncology", "implications": "Hengrui expanding ADC IP beyond existing Roche deal. Next-gen asset preparation for separate out-licensing.", "severity": "HIGH", "related_mnc_interest": ["Novartis", "AstraZeneca"]},
+        {"signal_date": "Apr 8, 2026", "company": "BeiGene (百济神州)", "signal_type": "PATENT_GRANTED", "patent_title": "Bispecific PD-1/CTLA-4 Antibody Compositions", "cnipa_number": "CN2024-1-0123456", "jurisdictions_filed": ["CNIPA", "USPTO", "EPO"], "therapeutic_area": "Oncology", "implications": "Granted CNIPA patent strengthens BeiGene negotiating position in AstraZeneca partnership discussions.", "severity": "MODERATE", "related_mnc_interest": ["AstraZeneca", "Roche"]},
+        {"signal_date": "Apr 5, 2026", "company": "Innovent Biologics (信达生物)", "signal_type": "OPPOSITION", "patent_title": "GLP-1/GCGR Dual Agonist Patent Opposition by Eli Lilly", "cnipa_number": "CN2023-1-0987654", "jurisdictions_filed": ["CNIPA"], "therapeutic_area": "Metabolic", "implications": "Lilly CNIPA opposition signals FTO concern. May accelerate Innovent out-licensing to non-Lilly MNCs.", "severity": "CRITICAL", "related_mnc_interest": ["Eli Lilly", "Novo Nordisk", "Pfizer"]},
+        {"signal_date": "Mar 28, 2026", "company": "Akeso (康方生物)", "signal_type": "PCT_NATIONAL_PHASE", "patent_title": "CLDN18.2 × CD3 Bispecific T-Cell Engager", "cnipa_number": "CN2024-1-0567890", "jurisdictions_filed": ["CNIPA", "USPTO", "EPO", "JPO"], "therapeutic_area": "Oncology", "implications": "Akeso entering national phase in 4 jurisdictions simultaneously. Strong global out-licensing intent.", "severity": "HIGH", "related_mnc_interest": ["BMS", "Merck"]},
+        {"signal_date": "Mar 15, 2026", "company": "Legend Biotech (传奇生物)", "signal_type": "NEW_FILING", "patent_title": "Allogeneic CAR-T Manufacturing Process Enhancements", "cnipa_number": "CN2026-1-0023456", "jurisdictions_filed": ["CNIPA", "PCT"], "therapeutic_area": "Hematology", "implications": "Key process patent filing indicates readiness for next-gen off-the-shelf CAR-T scale-up.", "severity": "MODERATE", "related_mnc_interest": ["J&J", "Novartis"]}
+    ]
+
+    try:
+        supabase.table('patent_cliff_timeline').delete().neq('id', 0).execute()
+        res_cliffs = supabase.table('patent_cliff_timeline').insert(patent_cliffs).execute()
+        logging.info(f"✅ Inserted {len(res_cliffs.data)} patent cliffs.")
+        
+        supabase.table('cnipa_scout_signals').delete().neq('id', 0).execute()
+        res_cnipa = supabase.table('cnipa_scout_signals').insert(cnipa_signals).execute()
+        logging.info(f"✅ Inserted {len(res_cnipa.data)} CNIPA signals.")
+    except Exception as e:
+        logging.error(f"Failed to sync patent data: {e}")
+
+def sync_biosecure():
+    logging.info("🧠 Syncing Biosecure & Conference data into Supabase...")
+    if not supabase:
+        logging.error("No Supabase client initialized. Cannot push biosecure to database.")
+        return
+
+    biosecure_data = {
+        "strategic_thesis": {
+            "headline": 'Cross-Border Pharma BD: Restructured, Not Dead',
+            "subheadline": 'Three data points converge into a single message — and it changes the competitive intelligence calculus.',
+            "convergencePoints": [
+              { "label": 'Board of Trade Framework', "detail": 'New regulatory corridors formalize cross-border BD pathways, replacing ad-hoc deal structures with institutional frameworks.', "icon": 'Landmark' },
+              { "label": 'Biosecure Act — Delayed Enforcement', "detail": 'CDMO decoupling deadline pushed to 2032, giving companies a 6-year window to restructure supply chains while deals continue.', "icon": 'ShieldAlert' },
+              { "label": 'Earendil $787M Dual-Hub Success', "detail": 'Massive Series A proves the China+US dual-hub model is investor-validated. Capital is flowing into cross-border structures, not away.', "icon": 'Rocket' }
+            ],
+            "implication": "BioQuantix's competitive intelligence becomes MORE valuable as companies need to navigate these complex regulatory corridors. The winners won't be those who avoid cross-border — they'll be those with the best intelligence to navigate it.",
+            "updatedDate": 'Mar 23, 2026'
+        },
+        "timeline": [
+            { "date": 'Dec 18, 2025', "event": 'Biosecure Act Signed', "status": 'past' },
+            { "date": 'Dec 2026', "event": 'OMB Final BCC List Published', "status": 'imminent' },
+            { "date": 'Jan 1, 2032', "event": 'Legacy Grandfathering Ends', "status": 'future' }
+        ],
+        "exposure_map": [
+            { "entity": 'WuXi AppTec', "risk": 'High', "westernPartners": ['Eli Lilly', 'Pfizer', 'Amgen'], "shiftTrend": 'Moving to India/EU CDMOs' },
+            { "entity": 'BGI', "risk": 'High', "westernPartners": ['Natera', 'Illumina'], "shiftTrend": 'Shift to in-house US testing' },
+            { "entity": 'WuXi Biologics', "risk": 'High', "westernPartners": ['GSK', 'AstraZeneca'], "shiftTrend": 'Samsung Biologics & Lonza capturing share' }
+        ],
+        "deal_flow": [
+            { "date": 'Mar 15, 2026', "licensor": 'Hengrui Pharma', "licensee": 'Merck', "value": '$1.4B', "structure": 'Global ex-China rights (ADC)', "paradox_score": 85 },
+            { "date": 'Feb 28, 2026', "licensor": 'Biotheus', "licensee": 'BioNTech', "value": '$800M', "structure": 'Global rights (Bispecific)', "paradox_score": 92 },
+            { "date": 'Jan 10, 2026', "licensor": 'MediLink', "licensee": 'Roche', "value": '$1.1B', "structure": 'Global rights (ADC)', "paradox_score": 78 }
+        ]
+    }
+
+    conference_data = {
+        "conference": {
+            "name": 'BIO-Europe Spring 2026',
+            "location": 'Lisbon, Portugal',
+            "dates": 'March 23–25, 2026',
+            "status": 'LIVE',
+            "currentDay": 3,
+            "description": 'Premier European biotechnology partnering conference. Key venue for cross-border BD deal announcements, especially China out-licensing. Day 3 — final partnering window and press embargo lift imminent.',
+        },
+        "stats": {
+            "attendees": '4,200+',
+            "partneringMeetings": '24,500+',
+            "chinaDelegates": '380+',
+            "companiesPresenting": '1,800+',
+            "dealsAnnounced": '3',
+            "chinaDealsAnnounced": '2',
+        },
+        "rumored_deals": [
+            { "id": 4, "company": 'Connect Biopharma', "partner": 'Sanofi', "asset": 'CBP-307', "target": 'S1P1', "modality": 'Small Molecule', "therapeuticArea": 'Autoimmune', "dealStage": '✅ CONFIRMED', "estimatedValue": '$1.6B', "probability": 100, "notes": 'DEAL CLOSED — Announced Day 2. Sanofi acquires global ex-China rights. $200M upfront + $1.4B milestones. Oral S1P1 for ulcerative colitis. Validates Dupixent oral succession thesis.' },
+            { "id": 1, "company": 'Hengrui Pharma', "partner": 'Roche', "asset": 'SHR-A2009 (ADC)', "target": 'HER2-low', "modality": 'Antibody-Drug Conjugate', "therapeuticArea": 'Oncology', "dealStage": '✅ CONFIRMED', "estimatedValue": '$3.1B', "probability": 100, "notes": 'DEAL CLOSED — Announced Day 3 closing plenary. Roche secures global rights for $400M upfront + $2.7B milestones. "Deal of the Conference" nominee. Phase 2 data showed ORR 52% in HER2-low breast cancer.' },
+            { "id": 2, "company": 'BeiGene', "partner": 'Novartis', "asset": 'BG-B0011 (Bispecific)', "target": 'PD-1 × TIGIT', "modality": 'Bispecific Antibody', "therapeuticArea": 'Oncology', "dealStage": 'Advanced Negotiations', "estimatedValue": '$1.8B–$2.5B', "probability": 72, "notes": 'Multiple sources confirm term sheet exchanged in Lisbon. Novartis BD team extended hotel stay through Mar 26. Expect announcement within 2 weeks post-conference.' }
+        ],
+        "agenda": [
+            { "day": 'Day 1 — Mar 23', "sessions": [{ "time": '09:00', "title": 'Opening Keynote: Cross-Border Partnering in 2026', "type": 'Keynote', "highlight": False }] }
+        ],
+        "signal_feed": [
+            { "time": '14:30 CST', "mood": 'BREAKING', "source": 'Endpoints News', "text": '🏆 Hengrui × Roche ADC deal nominated for "Deal of the Conference" at BIO-Europe Spring closing plenary. $3.1B total value.', "day": 'Day 3' }
+        ]
+    }
+
+    try:
+        supabase.table('biosecure_signals').delete().neq('id', 0).execute()
+        supabase.table('biosecure_signals').insert(biosecure_data).execute()
+        logging.info("✅ Inserted biosecure_signals into Supabase.")
+        
+        supabase.table('conference_pulse').delete().neq('id', 0).execute()
+        supabase.table('conference_pulse').insert(conference_data).execute()
+        logging.info("✅ Inserted conference_pulse into Supabase.")
+    except Exception as e:
+        logging.error(f"Failed to sync biosecure data: {e}")
+
+def sync_ai():
+    logging.info("🧠 Syncing AI Biotech Landscape data into Supabase...")
+    if not supabase:
+        logging.error("No Supabase client initialized. Cannot push ai to database.")
+        return
+
+    ai_data = {
+        "capital_flows": [
+            { "name": 'Earendil', "amount": '$787M', "round": 'Series A', "date": 'Mar 2026', "focus": 'Foundation Models for Biology', "investors": ['Qiming', 'Sequoia', 'SoftBank', 'ARCH'] },
+            { "name": 'Xaira Therapeutics', "amount": '$1.0B', "round": 'Launch', "date": 'Apr 2024', "focus": 'AI-Guided Drug Design', "investors": ['ARCH Venture', 'F-Prime', 'Sequoia', 'Lightspeed'] },
+            { "name": 'Formation Bio', "amount": '$372M', "round": 'Series D', "date": 'Jun 2024', "focus": 'AI Clinical Trial Acceleration', "investors": ['a16z', 'Sanofi', 'Sequoia'] }
+        ],
+        "platform_companies": [
+            { "name": 'Recursion (RXRX)', "type": 'Phenomics / Wet-Lab + Dry-Lab', "focus": 'Oncology, Rare Disease', "funding": 'Public ($2.3B Market Cap)', "recent": 'Exscientia Acquisition ($688M)' },
+            { "name": 'Isomorphic Labs', "type": 'AlphaFold3 / Generative AI', "focus": 'Small Molecules', "funding": 'Alphabet Backed', "recent": 'Novartis ($1.2B) & Novartis Deals' }
+        ],
+        "timeline": [
+            { "date": 'Nov 2020', "event": 'AlphaFold2 Solves Protein Folding', "desc": 'DeepMind achieves unprecedented accuracy in 3D protein structure prediction.' },
+            { "date": 'Mar 2026', "event": 'Earendil $787M Series A', "desc": 'Massive capital fusion into generative biology foundation models.' }
+        ],
+        "strategic_implications": [
+            { "title": 'MNC Build vs. Buy', "desc": 'Top 20 Pharma companies are actively deciding whether to build internal AI capabilities (Sanofi) or partner extensively/acquire (Novartis, Eli Lilly). Expect high-premium acquisitions of proven platforms by 2027.', "icon": 'Building2', "color": 'blue' }
+        ]
+    }
+
+    try:
+        supabase.table('ai_biotech_landscape').delete().neq('id', 0).execute()
+        supabase.table('ai_biotech_landscape').insert(ai_data).execute()
+        logging.info("✅ Inserted ai_biotech_landscape into Supabase.")
+    except Exception as e:
+        logging.error(f"Failed to sync AI biotech data: {e}")
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="BioQuantix 数据管理引擎")
     parser.add_argument("--expand", action="store_true", help="执行宇宙扩容: SEC SIC过滤 -> FDA 验证 -> 入库 Watchlist")
     parser.add_argument("--daily", action="store_true", help="执行日常更新: 引入差分控制与多线程并发优化")
+    parser.add_argument("--sync-deals", action="store_true", help="同步知识库中的跨境BD交易到本地 mockData.js")
+    parser.add_argument("--sync-patents", action="store_true", help="同步Patent Radar预设数据到Supabase")
+    parser.add_argument("--sync-biosecure", action="store_true", help="同步Biosecure数据到Supabase")
+    parser.add_argument("--sync-ai", action="store_true", help="同步AI Biotech数据到Supabase")
+    parser.add_argument("--sync-all", action="store_true", help="执行所有同步任务")
     
     args = parser.parse_args()
     
+    if args.sync_all:
+        sync_outbound_deals()
+        sync_patents()
+        sync_biosecure()
+        sync_ai()
+        
     if args.expand:
         run_universe_expansion()
+    elif args.sync_deals:
+        sync_outbound_deals()
+    elif args.sync_patents:
+        sync_patents()
+    elif args.sync_biosecure:
+        sync_biosecure()
+    elif args.sync_ai:
+        sync_ai()
     else:
         main()

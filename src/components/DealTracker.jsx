@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { outLicensingDeals, outLicensingSummary } from '../data/mockData';
+import React, { useState, useEffect } from 'react';
+import { outLicensingDeals as mockDeals, outLicensingSummary } from '../data/mockData';
+import { supabase, isSupabaseConfigured } from '../utils/supabase';
 import { 
   Briefcase, Activity, TrendingUp, DollarSign, Search, 
   MapPin, Globe, Lock, CheckCircle2, FlaskConical, Target, Building2, ChevronRight, BarChart3, PieChart, Star
@@ -10,6 +11,37 @@ export default function DealTracker({ userRole, setView }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [targetArea, setTargetArea] = useState('All');
   const [expandedRow, setExpandedRow] = useState(null);
+  const [outLicensingDeals, setOutLicensingDeals] = useState(mockDeals);
+
+  useEffect(() => {
+    async function fetchDeals() {
+      if (!isSupabaseConfigured) return;
+      const { data, error } = await supabase
+        .from('outbound_deals')
+        .select('*')
+        .order('id', { ascending: false });
+      if (!error && data && data.length > 0) {
+        // Map snake_case from DB back to camelCase properties used in component
+        const formattedData = data.map(d => ({
+          id: d.id,
+          date: d.date,
+          licensor: d.licensor,
+          licensee: d.licensee,
+          value: d.value,
+          upfront: d.upfront,
+          drug: d.drug,
+          target: d.target,
+          therapeuticArea: d.therapeutic_area,
+          stage: d.stage,
+          structure: d.structure,
+          modality: d.modality,
+          notes: d.notes
+        }));
+        setOutLicensingDeals(formattedData);
+      }
+    }
+    fetchDeals();
+  }, []);
 
   const areas = ['All', 'Oncology', 'Autoimmune', 'Metabolic', 'Neurology / Autoimmune', 'Cardiovascular'];
 
@@ -21,12 +53,7 @@ export default function DealTracker({ userRole, setView }) {
     return matchSearch && matchArea;
   });
 
-  const chartData = {
-    'Oncology': 10,
-    'Autoimmune': 2,
-    'Metabolic': 2,
-    'Cardiovascular': 1
-  };
+
 
   return (
     <div className="space-y-8 animate-in mt-6">

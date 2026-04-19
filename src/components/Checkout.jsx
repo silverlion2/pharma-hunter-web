@@ -10,7 +10,7 @@ const PADDLE_ENV = import.meta.env.VITE_PADDLE_ENV || 'sandbox'; // 'sandbox' or
 const SALE_PRICE = '19.90';
 const ORIGINAL_PRICE = '49.90';
 
-const Checkout = ({ setView, userRole, showToast, onUpgradeSuccess }) => {
+const Checkout = ({ setView, showToast, onUpgradeSuccess }) => {
   const [paddle, setPaddle] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState('idle'); // idle, processing, success, error
   const [isLoading, setIsLoading] = useState(true);

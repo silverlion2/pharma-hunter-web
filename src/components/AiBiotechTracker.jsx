@@ -1,9 +1,26 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Brain, Cpu, Database, Network, Activity, TrendingUp, Building2, Beaker, ChevronRight } from 'lucide-react';
-import { aiBiotechData } from '../data/mockData';
-
+import { aiBiotechData as mockAiBiotechData } from '../data/mockData';
+import { supabase, isSupabaseConfigured } from '../utils/supabase';
 export default function AiBiotechTracker() {
-  const { capitalFlows, platformCompanies, timeline, strategicImplications } = aiBiotechData;
+  const [aiBiotechData, setAiBiotechData] = useState(mockAiBiotechData);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!isSupabaseConfigured) return;
+      try {
+        const { data: aiData } = await supabase.from('ai_biotech_landscape').select('*').limit(1);
+        if (aiData && aiData.length > 0) {
+          setAiBiotechData(aiData[0]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch AiBiotech component data: ", err);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const { capitalFlows, platformCompanies, timeline, strategicImplications } = aiBiotechData || mockAiBiotechData;
 
   const getIcon = (iconName) => {
     switch(iconName) {

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { TrendingUp, AlertCircle, Cpu, Clock, Database, Activity, Lock, CheckCircle2, DollarSign, Newspaper, BarChart3, Star, Search, User, Swords, ArrowRight } from 'lucide-react';
 
 const Dashboard = ({
-  availableAreas = ['Metabolic', 'Autoimmune'], targetArea, setTargetArea, showPastDeals, themeColorText, themeColorBg,
+  availableAreas = ['Metabolic', 'Autoimmune'], targetArea, setTargetArea, showPastDeals, themeColorText,
   activeList, currentGaps, activeAsset, safeTicker, safeName, safeCategory,
   safeScore, safeDealInfo, userRole, safeFactors, safeTime, safeUpside,
   safeDigest, safeSignals, safeCashAmount, safeNewsHeadline, safeMarketCap, isCurrentlyLocked, handleSelect,
@@ -194,19 +194,31 @@ const Dashboard = ({
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      {(item.warning_flag === 'AI_TIMEOUT' || item.warning_flag === 'SEC_MISSING') && !item.locked && (
-                        <div className="group/tooltip relative flex items-center">
-                          <AlertCircle className="w-4 h-4 text-amber-500 cursor-help" />
-                          <div className="absolute right-0 top-6 w-52 p-2 bg-slate-800 border border-slate-700 text-[9px] text-slate-300 rounded opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-50 shadow-xl">
-                            {item.warning_flag === 'AI_TIMEOUT' 
-                              ? 'Data source feedback delayed. Displaying T-1 cached evaluation.' 
-                              : 'Data source feedback delayed. Using historical or neutral baseline.'}
-                          </div>
+                    <div className="flex items-center gap-4">
+                      {item.fto_risk && !item.locked && !isCompareMode && (
+                        <div className="hidden sm:flex flex-col items-end gap-0.5 mr-2">
+                          <span className={`text-[9px] font-black tracking-widest ${item.fto_risk === 'LOW' ? 'text-emerald-500' : item.fto_risk === 'MODERATE' ? 'text-amber-500' : 'text-red-500'}`}>
+                            {item.fto_risk} FTO
+                          </span>
+                          <span className="text-[8px] text-slate-500 font-mono tracking-widest">
+                            IP: {item.ip_score}/100
+                          </span>
                         </div>
                       )}
-                      <div className={`text-sm font-mono font-black ${item.locked ? 'text-slate-800' : (isCompareMode && isSelectedForCompare ? 'text-indigo-400' : 'text-slate-300')}`}>
-                        {item.locked ? '?.?' : item.score}
+                      <div className="flex items-center gap-2">
+                        {(item.warning_flag === 'AI_TIMEOUT' || item.warning_flag === 'SEC_MISSING') && !item.locked && (
+                          <div className="group/tooltip relative flex items-center">
+                            <AlertCircle className="w-4 h-4 text-amber-500 cursor-help" />
+                            <div className="absolute right-0 top-6 w-52 p-2 bg-slate-800 border border-slate-700 text-[9px] text-slate-300 rounded opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-50 shadow-xl">
+                              {item.warning_flag === 'AI_TIMEOUT' 
+                                ? 'Data source feedback delayed. Displaying T-1 cached evaluation.' 
+                                : 'Data source feedback delayed. Using historical or neutral baseline.'}
+                            </div>
+                          </div>
+                        )}
+                        <div className={`text-sm font-mono font-black ${item.locked ? 'text-slate-800' : (isCompareMode && isSelectedForCompare ? 'text-indigo-400' : 'text-slate-300')}`}>
+                          {item.locked ? '?.?' : item.score}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -466,46 +478,98 @@ const Dashboard = ({
                     Monitors real-time institutional footprint and API data to detect front-running activity prior to public M&A.
                   </p>
                   
-                  <div className="space-y-6 relative">
-                    <div className="absolute left-[7px] top-2 bottom-2 w-[1px] bg-slate-800" />
-                    
-                    {safeSignals.map((s, idx) => {
-                      let displayDesc = s.desc;
-                      if (s.type === 'OPTIONS' && (userRole === 'visitor' || userRole === 'free') && !showPastDeals) {
-                        displayDesc = displayDesc.replace(/\$\d+(\.\d+)?/g, '$***').replace(/\d{3,}/g, '***');
-                      }
-
-                      let sentiment = 'Neutral';
-                      if (s.mood === 'HIGH-INTENT' || s.mood === 'STRATEGIC' || s.mood === 'VALIDATED') sentiment = '🐂 Bullish';
-                      else if (s.mood === 'DELAYED' || s.mood === 'RISK') sentiment = '🐻 Bearish';
-
-                      let explanation = 'System indicator for baseline observation.';
-                      if (s.type === 'OPTIONS') explanation = 'Options Flow Interpretation: Abnormal unhedged block trades often precede public M&A announcements as informed institutional capital positions itself.';
-                      else if (s.type === 'CLINICAL') explanation = 'Clinical Interpretation: Strategic pipeline progress perfectly aligns with known acquirer gaps.';
-
-                      return (
-                        <div key={idx} className="flex gap-5 relative">
-                          <div className={`w-3.5 h-3.5 rounded-full bg-slate-950 border-2 z-10 shrink-0 mt-1 flex items-center justify-center ${showPastDeals || targetArea === 'Autoimmune' ? 'border-indigo-500/50' : 'border-slate-700'}`}>
-                            <div className={`w-1.5 h-1.5 rounded-full ${idx === 0 ? (showPastDeals || targetArea === 'Autoimmune' ? 'bg-indigo-400' : 'bg-cyan-400') : 'bg-slate-800'}`} />
+                    <div className="space-y-6 relative">
+                      <div className="absolute left-[7px] top-2 bottom-2 w-[1px] bg-slate-800" />
+                      
+                      {safeSignals.map((s, idx) => {
+                        let displayDesc = s.desc;
+                        if (s.type === 'OPTIONS' && (userRole === 'visitor' || userRole === 'free') && !showPastDeals) {
+                          displayDesc = displayDesc.replace(/\$\d+(\.\d+)?/g, '$***').replace(/\d{3,}/g, '***');
+                        }
+  
+                        let sentiment = 'Neutral';
+                        if (s.mood === 'HIGH-INTENT' || s.mood === 'STRATEGIC' || s.mood === 'VALIDATED') sentiment = '🐂 Bullish';
+                        else if (s.mood === 'DELAYED' || s.mood === 'RISK') sentiment = '🐻 Bearish';
+  
+                        let explanation = 'System indicator for baseline observation.';
+                        if (s.type === 'OPTIONS') explanation = 'Options Flow Interpretation: Abnormal unhedged block trades often precede public M&A announcements as informed institutional capital positions itself.';
+                        else if (s.type === 'CLINICAL') explanation = 'Clinical Interpretation: Strategic pipeline progress perfectly aligns with known acquirer gaps.';
+  
+                        return (
+                          <div key={idx} className="flex gap-5 relative">
+                            <div className={`w-3.5 h-3.5 rounded-full bg-slate-950 border-2 z-10 shrink-0 mt-1 flex items-center justify-center ${showPastDeals || targetArea === 'Autoimmune' ? 'border-indigo-500/50' : 'border-slate-700'}`}>
+                              <div className={`w-1.5 h-1.5 rounded-full ${idx === 0 ? (showPastDeals || targetArea === 'Autoimmune' ? 'bg-indigo-400' : 'bg-cyan-400') : 'bg-slate-800'}`} />
+                            </div>
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] text-slate-500 font-mono font-bold">{s.date}</span>
+                                <span className={`text-[8px] font-black tracking-widest px-1.5 py-0.5 rounded ${showPastDeals || targetArea === 'Autoimmune' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-slate-800 text-slate-400'}`}>{s.mood}</span>
+                                <span className={`text-[9px] font-bold ${sentiment.includes('Bullish') ? 'text-emerald-400' : sentiment.includes('Bearish') ? 'text-red-400' : 'text-slate-500'}`}>{sentiment}</span>
+                              </div>
+                              <div className="text-xs font-bold text-slate-200 leading-tight">
+                                {displayDesc}
+                              </div>
+                              <div className="text-[9px] text-slate-500 italic mt-1 font-medium leading-relaxed">
+                                {explanation}
+                              </div>
+                            </div>
                           </div>
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] text-slate-500 font-mono font-bold">{s.date}</span>
-                              <span className={`text-[8px] font-black tracking-widest px-1.5 py-0.5 rounded ${showPastDeals || targetArea === 'Autoimmune' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-slate-800 text-slate-400'}`}>{s.mood}</span>
-                              <span className={`text-[9px] font-bold ${sentiment.includes('Bullish') ? 'text-emerald-400' : sentiment.includes('Bearish') ? 'text-red-400' : 'text-slate-500'}`}>{sentiment}</span>
+                        );
+                      })}
+                    </div>
+                  </section>
+  
+                  {safeDealInfo?.ip_score !== undefined && (
+                    <section className="lg:col-span-12 bg-slate-950 border rounded-[2rem] p-6 border-cyan-900/30">
+                      <h3 className="text-sm font-black uppercase mb-4 flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-emerald-400">
+                          <ShieldCheck className="w-4 h-4" /> 
+                          Patent Intelligence
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[9px] font-black tracking-widest px-2 py-1 rounded ${
+                            safeDealInfo.fto_risk === 'LOW' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 
+                            safeDealInfo.fto_risk === 'MODERATE' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 
+                            'bg-red-500/10 text-red-400 border border-red-500/20'
+                          }`}>
+                            FTO RISK: {safeDealInfo.fto_risk}
+                          </span>
+                        </div>
+                      </h3>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                        <div>
+                          <div className="flex justify-between items-end mb-2">
+                            <span className="text-[10px] font-black text-slate-400 tracking-widest">COMPOSITE IP SCORE</span>
+                            <span className="text-xl font-black font-mono text-white">{safeDealInfo.ip_score}<span className="text-xs text-slate-500">/100</span></span>
+                          </div>
+                          <div className="w-full bg-slate-900 rounded-full h-2 mb-4 overflow-hidden border border-slate-800">
+                            <div 
+                              className={`h-2 rounded-full ${safeDealInfo.ip_score >= 80 ? 'bg-emerald-500' : safeDealInfo.ip_score >= 60 ? 'bg-amber-500' : 'bg-red-500'}`} 
+                              style={{ width: `${safeDealInfo.ip_score}%` }}
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-800">
+                              <span className="text-[9px] text-slate-500 font-bold block mb-1">PATENT FAMILIES</span>
+                              <span className="text-sm font-mono text-emerald-400">{safeDealInfo.patent_families}</span>
                             </div>
-                            <div className="text-xs font-bold text-slate-200 leading-tight">
-                              {displayDesc}
-                            </div>
-                            <div className="text-[9px] text-slate-500 italic mt-1 font-medium leading-relaxed">
-                              {explanation}
+                            <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-800">
+                              <span className="text-[9px] text-slate-500 font-bold block mb-1">KEY PATENTS</span>
+                              <span className="text-xs text-slate-300 font-mono line-clamp-1" title={safeDealInfo.key_patents?.join(', ')}>{safeDealInfo.key_patents?.[0] || 'N/A'}</span>
                             </div>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                </section>
+                        
+                        <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+                          <h4 className="text-[10px] font-black tracking-widest text-slate-500 mb-2">DEFENSIVE STRATEGY</h4>
+                          <p className="text-xs text-slate-300 leading-relaxed">
+                            {safeDealInfo.defensive_strategy || 'No publicly disclosed strategic moat. IP relies on standard compound coverage.'}
+                          </p>
+                        </div>
+                      </div>
+                    </section>
+                  )}
               </div>
             </div>
           </section>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Star, TrendingUp, TrendingDown, Minus, ArrowRight, ChevronLeft, Newspaper, Bell } from 'lucide-react';
+import { AreaChart, Area, ResponsiveContainer, YAxis } from 'recharts';
 import AlertConfigModal from './AlertConfigModal';
 
 const DeltaPill = ({ label, current, historical }) => {
@@ -32,6 +33,45 @@ const DeltaPill = ({ label, current, historical }) => {
   );
 };
 
+const Sparkline = ({ current, history }) => {
+  const data = [
+    { name: '30D', score: history?.d30 || current },
+    { name: '7D', score: history?.d7 || current },
+    { name: '1D', score: history?.d1 || current },
+    { name: 'NOW', score: current }
+  ];
+
+  const startValue = history?.d30 || current;
+  const isUp = current >= startValue;
+  const color = isUp ? '#10b981' : '#f43f5e'; // emerald-500 or rose-500
+  const gradientId = `gradient-${current}-${startValue}`;
+
+  return (
+    <div className="w-28 h-10 flex items-center justify-center">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
+          <defs>
+            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={color} stopOpacity={0.4}/>
+              <stop offset="95%" stopColor={color} stopOpacity={0}/>
+            </linearGradient>
+          </defs>
+          <YAxis domain={['dataMin - 1', 'dataMax + 1']} hide />
+          <Area 
+            type="monotone" 
+            dataKey="score" 
+            stroke={color} 
+            strokeWidth={1.5}
+            fillOpacity={1} 
+            fill={`url(#${gradientId})`} 
+            isAnimationActive={true}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
+
 const ScoreBar = ({ label, score, color }) => (
   <div className="flex items-center gap-2">
     <span className="text-[9px] font-bold text-slate-500 w-20 shrink-0 truncate">{label}</span>
@@ -51,7 +91,6 @@ const Watchlist = ({
   watchlistHistory = {},
   toggleTrackTicker,
   setView,
-  setSelectedTicker,
   handleSelect,
 }) => {
   const trackedAssets = assetData.filter(a => trackedTickers.includes(a.ticker));
@@ -144,11 +183,20 @@ const Watchlist = ({
                         {score.toFixed(1)}
                       </span>
                     </div>
-                    {/* Delta Pills */}
-                    <div className="flex gap-1.5">
-                      <DeltaPill label="1D" current={score} historical={history.d1} />
-                      <DeltaPill label="7D" current={score} historical={history.d7} />
-                      <DeltaPill label="30D" current={score} historical={history.d30} />
+                    <div className="flex gap-1.5 items-center bg-slate-800/20 px-3 py-1 rounded-xl border border-slate-700/50">
+                      <div className="flex flex-col">
+                        <span className="text-[8px] font-black text-slate-500 tracking-widest">VELOCITY 30D</span>
+                        <div className="flex items-center gap-1">
+                          {score >= (history.d30 || score) ? 
+                            <TrendingUp size={10} className="text-emerald-400" /> : 
+                            <TrendingDown size={10} className="text-rose-400" />
+                          }
+                          <span className={`text-[10px] font-black ${score >= (history.d30 || score) ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {score >= (history.d30 || score) ? '+' : ''}{(score - (history.d30 || score)).toFixed(1)}
+                          </span>
+                        </div>
+                      </div>
+                      <Sparkline current={score} history={history} />
                     </div>
                   </div>
                 </div>

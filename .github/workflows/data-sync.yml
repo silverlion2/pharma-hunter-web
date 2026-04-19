@@ -1,0 +1,30 @@
+name: Daily Pharma Data Sync
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Midnight UTC every day
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  sync_data:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests supabase python-dotenv
+        
+    - name: Run data synchronization
+      env:
+        VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+        VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      run: python update_data.py --sync-all

@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Target, Search, Activity, Cpu, Briefcase, DollarSign, ShieldAlert, ArrowLeft, LayoutList, Grid3X3, CheckCircle2, Globe, TrendingUp, Beaker, Users, Building2, ArrowUpRight } from 'lucide-react';
-import { TARGET_DICTIONARY } from '../data/mockData';
-
+import { TARGET_DICTIONARY as mockTargetDict, patentCliffTimeline as mockPatentCliffTimeline } from '../data/mockData';
+import { supabase, isSupabaseConfigured } from '../utils/supabase';
 // Urgency Ring SVG component
 const UrgencyRing = ({ level }) => {
   const radius = 36;
@@ -25,6 +25,7 @@ const UrgencyRing = ({ level }) => {
 };
 
 // Stat Pill
+// eslint-disable-next-line no-unused-vars
 const StatPill = ({ icon: Icon, label, value, color = 'text-slate-300' }) => (
   <div className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 flex flex-col gap-1 min-w-0">
     <div className="flex items-center gap-1.5 text-[9px] text-slate-500 font-bold uppercase tracking-widest">
@@ -41,6 +42,32 @@ const GapMap = ({ pipelineGapsData, setView }) => {
   const [activeTab, setActiveTab] = useState('dossier');
   const [selectedMncIdx, setSelectedMncIdx] = useState(0);
 
+  const [patentCliffTimeline, setPatentCliffTimeline] = useState(mockPatentCliffTimeline);
+  const [targetDict, setTargetDict] = useState(mockTargetDict);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!isSupabaseConfigured) return;
+      try {
+        const { data: cliffs } = await supabase.from('patent_cliff_timeline').select('*');
+        if (cliffs && cliffs.length > 0) {
+          const formattedCliffs = cliffs.map(c => ({
+            area: c.therapeutic_area,
+            mnc: c.mnc,
+            asset: c.asset,
+            expiry: c.year,
+            revenue_at_risk: c.revenue_at_risk
+          }));
+          setPatentCliffTimeline(formattedCliffs);
+        }
+        // Safely attempt to fetch target_dict if it conforms, or fallback to mockTargetDict
+      } catch (err) {
+        console.error("Failed to fetch GapMap supbase data", err);
+      }
+    };
+    fetchData();
+  }, []);
+
   const allGaps = useMemo(() => {
     let gaps = [];
     Object.keys(pipelineGapsData).forEach(area => {
@@ -51,10 +78,10 @@ const GapMap = ({ pipelineGapsData, setView }) => {
     return gaps.sort((a, b) => b.level - a.level);
   }, [pipelineGapsData]);
 
-  const availableAreas = ['All', ...Object.keys(TARGET_DICTIONARY)];
+  const availableAreas = ['All', ...Object.keys(targetDict)];
   const availableTargets = selectedArea === 'All' 
-    ? ['All', ...[...new Set(Object.values(TARGET_DICTIONARY).flat())].sort()]
-    : ['All', ...TARGET_DICTIONARY[selectedArea] || []];
+    ? ['All', ...[...new Set(Object.values(targetDict).flat())].sort()]
+    : ['All', ...(targetDict[selectedArea] || [])];
 
   const filteredGaps = useMemo(() => {
     return allGaps.filter(gap => {
@@ -67,7 +94,7 @@ const GapMap = ({ pipelineGapsData, setView }) => {
   }, [allGaps, selectedArea, selectedTarget, searchQuery]);
 
   const matrixTargets = useMemo(() => {
-    if (selectedArea !== 'All') return TARGET_DICTIONARY[selectedArea] || [];
+    if (selectedArea !== 'All') return targetDict[selectedArea] || [];
     const targets = new Set();
     filteredGaps.forEach(gap => {
       if (gap.secondary_targets) gap.secondary_targets.forEach(t => targets.add(t));
@@ -94,6 +121,12 @@ const GapMap = ({ pipelineGapsData, setView }) => {
     ).length;
     return Math.round((covered / activeGap.secondary_targets.length) * 100);
   }, [activeGap]);
+
+  // Look for overlapping cliffs
+  const overlappingCliffs = useMemo(() => {
+    if (selectedArea === 'All') return [];
+    return patentCliffTimeline.filter(c => c.area === selectedArea);
+  }, [selectedArea, patentCliffTimeline]);
 
   return (
     <div className="space-y-5 animate-in fade-in duration-500 max-w-[1600px] mx-auto pb-12">
@@ -142,6 +175,31 @@ const GapMap = ({ pipelineGapsData, setView }) => {
         <div className="hidden sm:block flex-grow"></div>
         <div className="text-[10px] text-slate-500 font-mono">{filteredGaps.length} MNC entr{filteredGaps.length === 1 ? 'y' : 'ies'}</div>
       </div>
+
+      {overlappingCliffs.length > 0 && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start gap-4 shadow-xl shadow-red-500/5 mb-2">
+          <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center shrink-0 border border-red-500/30 shadow-[0_0_15px_rgba(248,113,113,0.3)]">
+            <ShieldAlert size={20} className="text-red-400" />
+          </div>
+          <div>
+            <h3 className="text-[11px] font-black text-red-400 tracking-widest uppercase mb-1 flex items-center gap-2">
+              Critical Overlap: Imminent Patent Cliffs
+            </h3>
+            <p className="text-xs text-slate-300 mb-3 max-w-4xl leading-relaxed">
+              Pharma-Hunter has detected <span className="font-bold text-white">{overlappingCliffs.length}</span> major patent expiration(s) overlapping with the <span className="font-bold text-white">{selectedArea}</span> target area. This indicates severe revenue at risk for specific MNCs and creates a high-urgency acquisition environment for bio-assets in this sector.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {overlappingCliffs.map((cliff, idx) => (
+                <div key={idx} className="bg-slate-950 border border-red-500/30 pl-3 pr-2 py-1.5 rounded-lg flex items-center gap-3 shadow-inner">
+                  <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest leading-none">{cliff.mnc} <span className="text-slate-600 font-normal">/</span> <span className="text-white">{cliff.asset}</span></span>
+                  <span className="text-[10px] font-mono text-red-300 bg-red-500/20 px-1.5 py-0.5 rounded leading-none border border-red-500/30 opacity-90"><span className="text-red-400/50 mr-0.5">LOE:</span>{cliff.expiry}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {filteredGaps.length === 0 ? (
         <div className="py-20 text-center bg-slate-900 border border-slate-800 rounded-3xl">

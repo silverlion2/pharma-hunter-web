@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { TerminalSquare, Target, History, LogIn, User, LogOut, ShieldCheck, AlertCircle, MessageSquare, Star, BookOpen, Bell, Check, Cpu, FileText, ShieldAlert, Globe, Brain, Menu, X, ChevronDown } from 'lucide-react';
+import { TerminalSquare, Target, History, LogIn, User, LogOut, ShieldCheck, AlertCircle, MessageSquare, Star, BookOpen, Bell, Check, Cpu, FileText, ShieldAlert, Globe, Brain, Menu, X, ChevronDown, Shield } from 'lucide-react';
 import Button from './ui/Button';
 
 const NAV_ITEMS = [
@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { key: 'deal-tracker', label: 'Deal Tracker', icon: Globe },
   { key: 'ai-biotech', label: 'AI × Bio', icon: Brain },
   { key: 'gap-map', label: 'Gap Map', icon: Cpu },
+  { key: 'patent-radar', label: 'Patent Radar', icon: Shield, badge: 'NEW' },
   { key: 'guidance', label: 'Guide & FAQ', icon: BookOpen },
 ];
 
@@ -39,10 +40,7 @@ const Layout = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Close mobile menu on view change
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [view]);
+
 
   const navigateTo = (v) => {
     setView(v);
@@ -90,6 +88,9 @@ const Layout = ({
                 >
                   <item.icon size={12} />
                   {item.label}
+                  {item.badge && (
+                    <span className="ml-1 px-1.5 py-0.5 text-[7px] font-black bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-full leading-none tracking-wider">{item.badge}</span>
+                  )}
                 </button>
               ))}
             </nav>
@@ -286,6 +287,9 @@ const Layout = ({
               >
                 <item.icon size={16} />
                 {item.label}
+                {item.badge && (
+                  <span className="ml-auto px-1.5 py-0.5 text-[7px] font-black bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-full leading-none tracking-wider">{item.badge}</span>
+                )}
               </button>
             ))}
             

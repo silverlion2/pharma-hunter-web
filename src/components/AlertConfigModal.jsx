@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Bell, ShieldAlert } from 'lucide-react';
 import { supabase } from '../utils/supabase';
 
-const AlertConfigModal = ({ isOpen, onClose, ticker, assetName }) => {
+const AlertConfigModal = ({ isOpen, onClose, ticker }) => {
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);

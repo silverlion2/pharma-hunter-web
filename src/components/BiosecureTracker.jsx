@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ShieldAlert, Clock, TrendingUp, AlertTriangle, ArrowRight, Building2, Map, Zap, Users, CalendarDays, Radio, MapPin, Briefcase, MessageCircle } from 'lucide-react';
-import { biosecureData, conferencePulseData } from '../data/mockData';
-
+import { biosecureData as mockBiosecureData, conferencePulseData as mockConferencePulseData } from '../data/mockData';
+import { supabase, isSupabaseConfigured } from '../utils/supabase';
 export default function BiosecureTracker({ userRole }) {
   const [activeTab, setActiveTab] = useState('conference'); // 'biosecure' | 'conference'
   const [agendaDay, setAgendaDay] = useState(0);
@@ -16,8 +16,31 @@ export default function BiosecureTracker({ userRole }) {
     );
   }
 
-  const { timeline, exposureMap, dealFlow } = biosecureData;
-  const { conference, stats, rumoredDeals, agenda, signalFeed } = conferencePulseData;
+  const [biosecureData, setBiosecureData] = useState(mockBiosecureData);
+  const [conferencePulseData, setConferencePulseData] = useState(mockConferencePulseData);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!isSupabaseConfigured) return;
+      try {
+        const { data: bData } = await supabase.from('biosecure_signals').select('*').limit(1);
+        if (bData && bData.length > 0) {
+          setBiosecureData(bData[0]);
+        }
+        
+        const { data: cData } = await supabase.from('conference_pulse').select('*').limit(1);
+        if (cData && cData.length > 0) {
+          setConferencePulseData(cData[0]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch Biosecure component data: ", err);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const { timeline, exposureMap, dealFlow } = biosecureData || mockBiosecureData;
+  const { conference, stats, rumoredDeals, agenda, signalFeed } = conferencePulseData || mockConferencePulseData;
 
   const moodColors = {
     'RUMOR': { text: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', dot: 'bg-amber-400' },

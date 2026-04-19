@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { User, ChevronLeft, Lock, Star, Activity, AlertCircle, ArrowRight } from 'lucide-react';
+import { User, ChevronLeft, Lock, Star, Activity, AlertCircle, ArrowRight, ShieldAlert, Zap } from 'lucide-react';
 
 const SmartMoney = ({ 
   smartMoneyData = [], 
@@ -16,6 +16,7 @@ const SmartMoney = ({
     if (userRole === 'pro' || userRole === 'admin') {
       fetchSmartMoneyData();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
 
@@ -145,11 +146,74 @@ const SmartMoney = ({
                 <p className="text-sm font-bold tracking-widest uppercase text-slate-400 mb-2">No Tracking Data Available Yet</p>
                 <p className="text-xs max-w-md">Our network of institutional users hasn't starred enough assets to form a consensus. Check back later as the market develops.</p>
               </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
+
+        {/* Shadow Ledger Section */}
+        <div className="mt-12 mb-6 border-t border-slate-800/50 pt-12">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-purple-500/10 rounded-xl border border-purple-500/20">
+              <Zap className="w-5 h-5 text-purple-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-white tracking-tight">Institutional Shadow Ledger</h3>
+              <p className="text-[10px] text-slate-500 font-medium tracking-widest uppercase mt-0.5">Live Options & Capital Flow Anomalies</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {smartMoneyData.map(item => {
+              const fullAsset = assetData.find(a => a.ticker === item.ticker) || {};
+              if (!fullAsset.shadow_signals || fullAsset.shadow_signals.length === 0) return null;
+
+              return fullAsset.shadow_signals.map((signal, sIdx) => {
+                const isHighIntent = signal.mood === 'HIGH-INTENT';
+                
+                return (
+                  <div key={`${item.ticker}-${sIdx}`} className={`bg-slate-900/60 border rounded-2xl p-4 transition-all hover:bg-slate-800/40 relative overflow-hidden ${(userRole !== 'pro' && userRole !== 'admin') ? 'blur-[3px] select-none pointer-events-none opacity-60' : 'border-slate-800 hover:border-slate-700'}`}>
+                    {isHighIntent && <div className="absolute top-0 right-0 w-16 h-1 bg-gradient-to-l from-rose-500 to-transparent"></div>}
+                    
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 bg-slate-800 border border-slate-700 rounded text-[9px] font-black text-slate-400 tracking-wider">
+                          {signal.type}
+                        </span>
+                        {isHighIntent && (
+                          <span className="px-2 py-0.5 bg-rose-500/10 border border-rose-500/20 rounded text-[9px] font-black text-rose-400 flex items-center gap-1">
+                            <ShieldAlert size={10} /> {signal.mood}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[9px] font-mono text-slate-500">{signal.date}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-base font-black text-white">{item.ticker}</span>
+                      <span className="text-[10px] text-slate-500">{fullAsset.name}</span>
+                    </div>
+
+                    <p className="text-xs text-slate-400 font-medium leading-relaxed italic border-l-2 border-slate-800 pl-3">
+                      {signal.desc}
+                    </p>
+                  </div>
+                );
+              });
+            })}
+          </div>
+          {(userRole !== 'pro' && userRole !== 'admin') && (
+            <div className="flex justify-center -mt-16 relative z-30">
+               <button
+                  onClick={() => setView('upgrade')}
+                  className="bg-indigo-500 hover:bg-indigo-400 text-white font-black text-[10px] px-6 py-2.5 rounded-lg uppercase tracking-widest transition-all shadow-xl shadow-indigo-500/20"
+                >
+                  DECRYPT SIGNALS
+              </button>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
   );
 };
 

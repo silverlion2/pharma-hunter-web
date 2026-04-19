@@ -1,10 +1,34 @@
-import React from 'react';
 import { 
   ChevronLeft, Swords, DollarSign, BarChart3, Newspaper, 
   Activity, TrendingUp, AlertCircle, Cpu, Target, Clock 
 } from 'lucide-react';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
-const ComparisonView = ({ tickers = [], assetData = [], userRole = 'visitor', setView, setSelectedTicker, handleSelect }) => {
+// eslint-disable-next-line no-unused-vars
+const FactorRow = ({ label, icon: Icon, valA, valB, isPercent = false, isDollar = false }) => {
+  const numA = parseFloat(valA) || 0;
+  const numB = parseFloat(valB) || 0;
+  
+  const winA = numA > numB;
+  const winB = numB > numA;
+
+  return (
+    <div className="flex items-center justify-between py-3 border-b border-slate-800/50 group hover:bg-slate-800/20 px-4 rounded-lg transition-colors">
+      <div className={`w-1/3 text-right font-mono text-sm font-black ${winA ? 'text-amber-400' : 'text-slate-400'}`}>
+        {isDollar ? '$' : ''}{valA}{isPercent ? '%' : ''}
+      </div>
+      <div className="w-1/3 flex flex-col items-center justify-center gap-1 shrink-0 px-2">
+        <Icon size={14} className="text-slate-600 group-hover:text-slate-400 transition-colors" />
+        <span className="text-[9px] font-black text-slate-500 tracking-widest uppercase text-center">{label}</span>
+      </div>
+      <div className={`w-1/3 text-left font-mono text-sm font-black ${winB ? 'text-amber-400' : 'text-slate-400'}`}>
+        {isDollar ? '$' : ''}{valB}{isPercent ? '%' : ''}
+      </div>
+    </div>
+  );
+};
+
+const ComparisonView = ({ tickers = [], assetData = [], userRole = 'visitor', setView }) => {
   if (tickers.length !== 2) {
     return (
       <div className="flex flex-col items-center justify-center h-96 text-center">
@@ -27,30 +51,6 @@ const ComparisonView = ({ tickers = [], assetData = [], userRole = 'visitor', se
   // Decide who is winning overall
   const winner = scoreA > scoreB ? 'A' : scoreA < scoreB ? 'B' : 'TIE';
 
-  const FactorRow = ({ label, icon: Icon, valA, valB, invert = false, isPercent = false, isDollar = false }) => {
-    const numA = parseFloat(valA) || 0;
-    const numB = parseFloat(valB) || 0;
-    
-    // For standard scores, higher is better. If invert is true (like Cash Pressure), lower might be better or it's just raw comparison.
-    // In our model: Factor scores are 0-100, HIGHER means more attractive target (even cash: 100 cash score = highly distressed/distressed is good for M&A).
-    const winA = numA > numB;
-    const winB = numB > numA;
-
-    return (
-      <div className="flex items-center justify-between py-3 border-b border-slate-800/50 group hover:bg-slate-800/20 px-4 rounded-lg transition-colors">
-        <div className={`w-1/3 text-right font-mono text-sm font-black ${winA ? 'text-amber-400' : 'text-slate-400'}`}>
-          {isDollar ? '$' : ''}{valA}{isPercent ? '%' : ''}
-        </div>
-        <div className="w-1/3 flex flex-col items-center justify-center gap-1 shrink-0 px-2">
-          <Icon size={14} className="text-slate-600 group-hover:text-slate-400 transition-colors" />
-          <span className="text-[9px] font-black text-slate-500 tracking-widest uppercase text-center">{label}</span>
-        </div>
-        <div className={`w-1/3 text-left font-mono text-sm font-black ${winB ? 'text-amber-400' : 'text-slate-400'}`}>
-          {isDollar ? '$' : ''}{valB}{isPercent ? '%' : ''}
-        </div>
-      </div>
-    );
-  };
 
   const getStatusBadge = (score) => {
     if (score >= 90) return { text: 'S-CLASS', bg: 'bg-rose-500/20 text-rose-400 border-rose-500/30' };
@@ -149,7 +149,31 @@ const ComparisonView = ({ tickers = [], assetData = [], userRole = 'visitor', se
           </div>
         )}
         <div className={`bg-slate-900/60 border border-slate-800 rounded-3xl p-6 lg:px-12 ${userRole !== 'pro' && userRole !== 'admin' ? 'blur-[4px] opacity-40 select-none pointer-events-none' : ''}`}>
-          <h3 className="text-center text-[10px] font-black tracking-widest text-slate-600 uppercase mb-6">BioQuantix Engine Scoring</h3>
+          <h3 className="text-center text-[10px] font-black tracking-widest text-slate-600 uppercase mb-8">BioQuantix Engine Scoring</h3>
+          
+          {/* Radar Chart */}
+          <div className="w-full h-[350px] mb-12">
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart outerRadius="70%" data={[
+                { metric: 'Scarcity', A: Math.round(assetA.scarcity_score || 50), B: Math.round(assetB.scarcity_score || 50), fullMark: 100 },
+                { metric: 'Cash Strain', A: Math.round(assetA.cash_score || 50), B: Math.round(assetB.cash_score || 50), fullMark: 100 },
+                { metric: 'Clinical', A: Math.round(assetA.clinical_score || 50), B: Math.round(assetB.clinical_score || 50), fullMark: 100 },
+                { metric: 'Catalyst', A: Math.round(assetA.milestone_score || 50), B: Math.round(assetB.milestone_score || 50), fullMark: 100 },
+                { metric: 'Value Gap', A: Math.round(assetA.valuation_score || 50), B: Math.round(assetB.valuation_score || 50), fullMark: 100 }
+              ]}>
+                <PolarGrid stroke="#334155" />
+                <PolarAngleAxis dataKey="metric" tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 900 }} />
+                <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                <Radar name={assetA.ticker} dataKey="A" stroke="#06b6d4" strokeWidth={2} fill="#06b6d4" fillOpacity={0.3} />
+                <Radar name={assetB.ticker} dataKey="B" stroke="#f59e0b" strokeWidth={2} fill="#f59e0b" fillOpacity={0.3} />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 'bold' }} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px' }}
+                  itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
+                />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
         <FactorRow label="Asset Scarcity" icon={Target} valA={Math.round(assetA.scarcity_score || 0)} valB={Math.round(assetB.scarcity_score || 0)} />
         <FactorRow label="Cash Strain" icon={AlertCircle} valA={Math.round(assetA.cash_score || 0)} valB={Math.round(assetB.cash_score || 0)} />
         <FactorRow label="Clinical Alpha" icon={Activity} valA={Math.round(assetA.clinical_score || 0)} valB={Math.round(assetB.clinical_score || 0)} />

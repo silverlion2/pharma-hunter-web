@@ -2,6 +2,9 @@ export const fallbackData = [
   {
     ticker: 'ALT', name: 'Altimmune', score: 94.5, target_area: 'Metabolic', is_past_deal: false, warning_flag: null,
     clinical_score: 85.0, cash_score: 82.0, scarcity_score: 95.0, milestone_score: 100.0, valuation_score: 88.0,
+    ip_score: 72, patent_families: 8, fto_risk: 'LOW',
+    defensive_strategy: 'Composition-of-matter patents on Pemvidutide (GLP-1/Glucagon dual agonist) with method-of-use claims covering MASH and obesity. Limited geographic filing — primarily USPTO and EPO.',
+    key_patents: [{id: 'US11,345,721', title: 'GLP-1/Glucagon Dual Agonist Peptides', expiry: '2039', jurisdictions: ['USPTO', 'EPO']}, {id: 'US11,890,312', title: 'Methods for Treating NASH with Dual Agonists', expiry: '2041', jurisdictions: ['USPTO']}],
     cash_amount: '$48M', runway_years: '~0.6 Yrs', market_cap: '$580M',
     latest_news_headline: 'Altimmune reports positive Pemvidutide Phase 2 liver fat reduction data',
     predicted_time: '14-30 Days (Imminent)', estimated_premium: '+65% ~ +80%',
@@ -11,6 +14,9 @@ export const fallbackData = [
   {
     ticker: 'TERN', name: 'Terns Pharma', score: 88.0, target_area: 'Metabolic', is_past_deal: false, warning_flag: 'AI_TIMEOUT',
     clinical_score: 85.0, cash_score: 70.0, scarcity_score: 95.0, milestone_score: 75.0, valuation_score: 80.0,
+    ip_score: 85, patent_families: 14, fto_risk: 'LOW',
+    defensive_strategy: 'Extensive oral GLP-1 formulation patents covering novel absorption enhancers and enteric coating technology. Strong defensive moat in oral delivery — 14 patent families across USPTO, EPO, CNIPA, and JPO.',
+    key_patents: [{id: 'US11,678,234', title: 'Oral GLP-1 Receptor Agonist Compositions', expiry: '2042', jurisdictions: ['USPTO', 'EPO', 'CNIPA', 'JPO']}, {id: 'WO2024/012345', title: 'Absorption Enhancement for Peptide Therapeutics', expiry: '2044', jurisdictions: ['PCT']}],
     cash_amount: '$120M', runway_years: '~1.4 Yrs', market_cap: '$720M',
     latest_news_headline: 'Terns Pharma advances TERN-601 oral GLP-1 into dose-ranging study',
     predicted_time: '1-3 Months', estimated_premium: '+55% ~ +70%',
@@ -20,6 +26,9 @@ export const fallbackData = [
   {
     ticker: 'ETNB', name: '89bio', score: 82.3, target_area: 'Metabolic', is_past_deal: false, warning_flag: 'SEC_MISSING',
     clinical_score: 85.0, cash_score: 50.0, scarcity_score: 85.0, milestone_score: 90.0, valuation_score: 75.0,
+    ip_score: 78, patent_families: 11, fto_risk: 'MODERATE',
+    defensive_strategy: 'Core FGF21 analog patents plus combination therapy claims. Moderate FTO risk due to overlapping FGF21 filings from Eli Lilly and Pfizer. Strong in composition-of-matter but weaker in method-of-use.',
+    key_patents: [{id: 'US11,234,567', title: 'Modified FGF21 Polypeptides for NASH Treatment', expiry: '2040', jurisdictions: ['USPTO', 'EPO', 'JPO']}, {id: 'US11,456,789', title: 'Combination Therapies for Liver Fibrosis', expiry: '2041', jurisdictions: ['USPTO', 'EPO']}],
     cash_amount: '$210M', runway_years: '~2.1 Yrs', market_cap: '$1.1B',
     latest_news_headline: '89bio initiates Phase III ENLIVEN trial for Pegozafermin in MASH',
     predicted_time: '3-6 Months', estimated_premium: '+45% ~ +60%',
@@ -29,6 +38,9 @@ export const fallbackData = [
   {
     ticker: 'MDGL', name: 'Madrigal', score: 75.0, target_area: 'Metabolic', is_past_deal: false, warning_flag: null,
     clinical_score: 85.0, cash_score: 40.0, scarcity_score: 70.0, milestone_score: 100.0, valuation_score: 60.0,
+    ip_score: 88, patent_families: 18, fto_risk: 'LOW',
+    defensive_strategy: 'First-mover advantage with FDA-approved Rezdiffra. Broad composition-of-matter and method-of-treatment patents for resmetirom across MASH and NASH. Orange Book listed. Global filings in 40+ countries.',
+    key_patents: [{id: 'US10,987,654', title: 'THR-β Selective Agonists for Liver Disease', expiry: '2036', jurisdictions: ['USPTO', 'EPO', 'CNIPA', 'JPO']}, {id: 'US11,111,222', title: 'Methods of Treating NASH with THR-β Agonists', expiry: '2038', jurisdictions: ['USPTO', 'EPO']}],
     cash_amount: '$680M', runway_years: '~3.2 Yrs', market_cap: '$4.2B',
     latest_news_headline: 'Rezdiffra commercial launch exceeds initial Street projections',
     predicted_time: 'TBD / Event Driven', estimated_premium: '+30% ~ +45%', shadow_signals: [],
@@ -37,6 +49,9 @@ export const fallbackData = [
   {
     ticker: 'VKTX', name: 'Viking Tx', score: 68.5, target_area: 'Metabolic', is_past_deal: false, warning_flag: null,
     clinical_score: 85.0, cash_score: 30.0, scarcity_score: 95.0, milestone_score: 75.0, valuation_score: 30.0,
+    ip_score: 91, patent_families: 22, fto_risk: 'LOW',
+    defensive_strategy: 'Extensive patent estate covering both injectable VK2735 and oral formulation. 22 patent families across all major jurisdictions. Strong claims on dual GLP-1/GIP agonism and oral peptide delivery technology.',
+    key_patents: [{id: 'US11,567,890', title: 'Dual GLP-1/GIP Receptor Agonist Peptides', expiry: '2043', jurisdictions: ['USPTO', 'EPO', 'CNIPA', 'JPO']}, {id: 'WO2024/098765', title: 'Oral Formulations of Incretin Receptor Agonists', expiry: '2044', jurisdictions: ['PCT']}],
     cash_amount: '$950M', runway_years: '~4.5 Yrs', market_cap: '$8.6B',
     latest_news_headline: 'Viking announces oral VK2735 Phase 2 topline results with 8.2% weight loss',
     predicted_time: '3-6 Months', estimated_premium: '+35% ~ +50%', shadow_signals: [],
@@ -45,6 +60,9 @@ export const fallbackData = [
   {
     ticker: 'IMVT', name: 'Immunovant', score: 89.5, target_area: 'Autoimmune', is_past_deal: false, warning_flag: null,
     clinical_score: 85.0, cash_score: 65.0, scarcity_score: 80.0, milestone_score: 90.0, valuation_score: 75.0,
+    ip_score: 76, patent_families: 10, fto_risk: 'MODERATE',
+    defensive_strategy: 'FcRn inhibitor patents with method-of-use claims across MG, CIDP, and autoimmune indications. Moderate FTO risk due to argenx (Vyvgart) dominant patent estate in the FcRn space. Differentiated by subcutaneous formulation IP.',
+    key_patents: [{id: 'US11,432,100', title: 'Anti-FcRn Antibodies for Autoimmune Disorders', expiry: '2040', jurisdictions: ['USPTO', 'EPO']}, {id: 'US11,654,321', title: 'Subcutaneous Formulations of FcRn Inhibitors', expiry: '2042', jurisdictions: ['USPTO', 'EPO', 'JPO']}],
     cash_amount: '$180M', runway_years: '~1.3 Yrs', market_cap: '$3.8B',
     latest_news_headline: 'Immunovant IMVT-1402 achieves primary endpoint in myasthenia gravis trial',
     predicted_time: '1-3 Months', estimated_premium: '+50% ~ +65%', shadow_signals: [],
@@ -53,6 +71,9 @@ export const fallbackData = [
   {
     ticker: 'APLS', name: 'Apellis', score: 86.0, target_area: 'Autoimmune', is_past_deal: false, warning_flag: null,
     clinical_score: 85.0, cash_score: 55.0, scarcity_score: 75.0, milestone_score: 100.0, valuation_score: 85.0,
+    ip_score: 82, patent_families: 16, fto_risk: 'LOW',
+    defensive_strategy: 'Dominant C3 complement inhibitor IP with pegcetacoplan composition-of-matter and formulation patents. Orange Book listed for Syfovre (GA). Broad geographic coverage across 35+ jurisdictions.',
+    key_patents: [{id: 'US10,765,432', title: 'Compstatin Analogs as Complement C3 Inhibitors', expiry: '2035', jurisdictions: ['USPTO', 'EPO', 'CNIPA', 'JPO']}, {id: 'US11,222,333', title: 'Intravitreal Compositions for Geographic Atrophy', expiry: '2039', jurisdictions: ['USPTO', 'EPO']}],
     cash_amount: '$320M', runway_years: '~1.8 Yrs', market_cap: '$2.9B',
     latest_news_headline: 'Apellis expands Syfovre label to broader geographic atrophy population',
     predicted_time: '1-3 Months', estimated_premium: '+55% ~ +70%', shadow_signals: [],
@@ -61,6 +82,9 @@ export const fallbackData = [
   {
     ticker: 'CABA', name: 'Cabaletta Bio', score: 85.5, target_area: 'Autoimmune', is_past_deal: false, warning_flag: null,
     clinical_score: 85.0, cash_score: 70.0, scarcity_score: 90.0, milestone_score: 75.0, valuation_score: 80.0,
+    ip_score: 88, patent_families: 12, fto_risk: 'LOW',
+    defensive_strategy: 'Proprietary CABA-201 (DesCAARTes) CAR-T platform with exclusive autoimmune indications. Patent estate covers CAR construct design, manufacturing process, and lupus/myositis treatment methods. Strong FTO — differentiated from BMS Breyanzi IP.',
+    key_patents: [{id: 'US11,789,012', title: 'CD19-Targeted CAR-T Cell Therapies for Autoimmune Disease', expiry: '2042', jurisdictions: ['USPTO', 'EPO']}, {id: 'WO2023/067890', title: 'Manufacturing Methods for Autologous CAR-T in Autoimmune Indications', expiry: '2043', jurisdictions: ['PCT']}],
     cash_amount: '$130M', runway_years: '~1.2 Yrs', market_cap: '$1.4B',
     latest_news_headline: 'Cabaletta presents durable CD19-CAR T remission data in lupus at ASH',
     predicted_time: '3-6 Months', estimated_premium: '+60% ~ +75%', shadow_signals: [],
@@ -69,6 +93,9 @@ export const fallbackData = [
   {
     ticker: 'KYTX', name: 'Kymera', score: 81.0, target_area: 'Autoimmune', is_past_deal: false, warning_flag: null,
     clinical_score: 85.0, cash_score: 50.0, scarcity_score: 80.0, milestone_score: 75.0, valuation_score: 70.0,
+    ip_score: 90, patent_families: 20, fto_risk: 'LOW',
+    defensive_strategy: 'Pegasus degrader platform IP with broad composition-of-matter patents covering IRAK4, STAT3, and MDM2 degrader molecules. Sanofi collaboration validates IP. 20 patent families across major markets.',
+    key_patents: [{id: 'US11,345,678', title: 'IRAK4 Targeted Protein Degraders', expiry: '2041', jurisdictions: ['USPTO', 'EPO', 'CNIPA']}, {id: 'US11,567,891', title: 'Heterobifunctional Compounds for Targeted Protein Degradation', expiry: '2042', jurisdictions: ['USPTO', 'EPO', 'JPO']}],
     cash_amount: '$280M', runway_years: '~2.4 Yrs', market_cap: '$2.2B',
     latest_news_headline: 'Kymera reports positive IRAK4 degrader data from Sanofi-partnered trial',
     predicted_time: '3-6 Months', estimated_premium: '+40% ~ +55%', shadow_signals: [],
@@ -77,6 +104,9 @@ export const fallbackData = [
   {
     ticker: 'VTYX', name: 'Ventyx Bio', score: 72.0, target_area: 'Autoimmune', is_past_deal: false, warning_flag: null,
     clinical_score: 85.0, cash_score: 85.0, scarcity_score: 60.0, milestone_score: 50.0, valuation_score: 95.0,
+    ip_score: 65, patent_families: 7, fto_risk: 'MODERATE',
+    defensive_strategy: 'NLRP3 inflammasome and TYK2 inhibitor patents. Post-trial failure reduced IP value perception. Moderate FTO risk — IFM Tre and Novartis hold competing NLRP3 claims. Value primarily in platform optionality.',
+    key_patents: [{id: 'US11,890,123', title: 'NLRP3 Inflammasome Inhibitors', expiry: '2041', jurisdictions: ['USPTO', 'EPO']}, {id: 'US11,901,234', title: 'Selective TYK2 Inhibitor Compounds', expiry: '2040', jurisdictions: ['USPTO']}],
     cash_amount: '$410M', runway_years: '~3.8 Yrs', market_cap: '$350M',
     latest_news_headline: 'Ventyx Bio trades below cash; Sanofi increases equity stake to 12%',
     predicted_time: 'TBD / Event Driven', estimated_premium: '+45% ~ +60%', shadow_signals: [],
@@ -85,6 +115,9 @@ export const fallbackData = [
   {
     ticker: 'ALPN', name: 'Alpine Immune', score: 96.5, target_area: 'Autoimmune', is_past_deal: true, deal_info: "Acquired by Vertex ($4.9B) | April 2024", warning_flag: null,
     clinical_score: 85.0, cash_score: 85.0, scarcity_score: 95.0, milestone_score: 100.0, valuation_score: 80.0,
+    ip_score: 92, patent_families: 15, fto_risk: 'LOW',
+    defensive_strategy: 'Povetacicept dual APRIL/BAFF antagonist covered by robust composition-of-matter patents. Clean FTO enabled rapid Vertex acquisition.',
+    key_patents: [{id: 'US11,100,200', title: 'TACI-Fc Fusion Proteins', expiry: '2040', jurisdictions: ['USPTO', 'EPO']}],
     cash_amount: '$95M', runway_years: '~0.8 Yrs', market_cap: '$2.8B',
     latest_news_headline: 'Vertex completes $4.9B acquisition of Alpine Immune Sciences',
     predicted_time: 'REALIZED', estimated_premium: 'REALIZED',
@@ -94,6 +127,9 @@ export const fallbackData = [
   {
     ticker: 'RXDX', name: 'Prometheus', score: 98.0, target_area: 'Autoimmune', is_past_deal: true, deal_info: "Acquired by Merck ($10.8B) | April 2023", warning_flag: null,
     clinical_score: 85.0, cash_score: 88.0, scarcity_score: 95.0, milestone_score: 100.0, valuation_score: 75.0,
+    ip_score: 95, patent_families: 19, fto_risk: 'LOW',
+    defensive_strategy: 'PRA023 (TL1A) covered by foundational composition-of-matter and method-of-treatment patents. First-in-class TL1A IP enabled $10.8B Merck premium.',
+    key_patents: [{id: 'US10,800,100', title: 'Anti-TL1A Antibodies', expiry: '2039', jurisdictions: ['USPTO', 'EPO', 'JPO']}],
     cash_amount: '$60M', runway_years: '~0.5 Yrs', market_cap: '$6.2B',
     latest_news_headline: 'Merck announces $10.8B definitive agreement to acquire Prometheus Biosciences',
     predicted_time: 'REALIZED', estimated_premium: 'REALIZED', shadow_signals: [],
@@ -102,6 +138,9 @@ export const fallbackData = [
   {
     ticker: 'HIBI', name: 'HI-Bio', score: 91.5, target_area: 'Autoimmune', is_past_deal: true, deal_info: "Acquired by Biogen ($1.8B) | May 2024", warning_flag: null,
     clinical_score: 85.0, cash_score: 75.0, scarcity_score: 85.0, milestone_score: 90.0, valuation_score: 80.0,
+    ip_score: 80, patent_families: 9, fto_risk: 'LOW',
+    defensive_strategy: 'Felzartamab CD38 antibody for nephrology with clean FTO in autoimmune indications.',
+    key_patents: [{id: 'US11,200,300', title: 'Anti-CD38 for Membranous Nephropathy', expiry: '2041', jurisdictions: ['USPTO', 'EPO']}],
     cash_amount: '$110M', runway_years: '~1.1 Yrs', market_cap: '$1.0B',
     latest_news_headline: 'Biogen closes $1.8B HI-Bio acquisition to expand immunology portfolio',
     predicted_time: 'REALIZED', estimated_premium: 'REALIZED', shadow_signals: [],
@@ -110,6 +149,9 @@ export const fallbackData = [
   {
     ticker: 'CBAY', name: 'CymaBay', score: 95.0, target_area: 'Metabolic', is_past_deal: true, deal_info: "Acquired by Gilead ($4.3B) | Feb 2024", warning_flag: null,
     clinical_score: 85.0, cash_score: 80.0, scarcity_score: 90.0, milestone_score: 100.0, valuation_score: 85.0,
+    ip_score: 87, patent_families: 12, fto_risk: 'LOW',
+    defensive_strategy: 'Seladelpar PPARδ agonist for PBC. NDA-stage IP with Orange Book listing imminent at acquisition.',
+    key_patents: [{id: 'US10,900,500', title: 'PPARδ Selective Agonists for PBC', expiry: '2037', jurisdictions: ['USPTO', 'EPO', 'JPO']}],
     cash_amount: '$75M', runway_years: '~0.9 Yrs', market_cap: '$2.5B',
     latest_news_headline: 'Gilead to acquire CymaBay Therapeutics for $4.3B in liver disease push',
     predicted_time: 'REALIZED', estimated_premium: 'REALIZED', shadow_signals: [],
@@ -118,10 +160,182 @@ export const fallbackData = [
   {
     ticker: 'CRMO', name: 'Carmot', score: 88.5, target_area: 'Metabolic', is_past_deal: true, deal_info: "Acquired by Roche ($2.7B) | Dec 2023", warning_flag: null,
     clinical_score: 85.0, cash_score: 90.0, scarcity_score: 95.0, milestone_score: 50.0, valuation_score: 75.0,
+    ip_score: 90, patent_families: 16, fto_risk: 'LOW',
+    defensive_strategy: 'Novel GLP-1/GIP dual agonist peptide IP with oral formulation technology. Key driver of $2.7B Roche acquisition.',
+    key_patents: [{id: 'US11,050,400', title: 'Dual Incretin Receptor Agonists', expiry: '2042', jurisdictions: ['USPTO', 'EPO', 'CNIPA']}],
     cash_amount: '$35M', runway_years: '~0.4 Yrs', market_cap: '$1.6B',
     latest_news_headline: 'Roche acquires Carmot Therapeutics for $2.7B to enter obesity market',
     predicted_time: 'REALIZED', estimated_premium: 'REALIZED', shadow_signals: [],
     digest: "[T-7 Days Report]: Private Biotech Carmot owns a highly potent dual GLP-1/GIP receptor agonist. Roche completely missed the initial obesity wave and is desperate to enter the market. Capital infusion patterns suggest immediate M&A action.\n\nOUTCOME: Acquired upfront for $2.7B + milestones."
+  },
+  {
+    ticker: 'SGEN', name: 'Seagen', score: 99.0, target_area: 'Oncology', is_past_deal: true, deal_info: "Acquired by Pfizer ($43.0B) | Dec 2023", warning_flag: null,
+    clinical_score: 95.0, cash_score: 90.0, scarcity_score: 100.0, milestone_score: 100.0, valuation_score: 85.0,
+    ip_score: 98, patent_families: 45, fto_risk: 'LOW',
+    defensive_strategy: 'Gold-standard ADC technology platform with 4 approved products and 50+ patent families covering linker-payload chemistry. Justified $43B Pfizer premium.',
+    key_patents: [{id: 'US9,211,319', title: 'Auristatin Drug-Linker Conjugates', expiry: '2032', jurisdictions: ['USPTO', 'EPO', 'CNIPA', 'JPO']}],
+    cash_amount: '$1.5B', runway_years: '~2.0 Yrs', market_cap: '$30.0B',
+    latest_news_headline: 'Pfizer completes $43B acquisition of Seagen, doubling oncology portfolio',
+    predicted_time: 'REALIZED', estimated_premium: 'REALIZED', shadow_signals: [],
+    digest: "[T-14 Days Report]: Seagen is the crown jewel of ADC technology with 4 approved products. Pfizer is facing massive patent cliffs (Keytruda/Eliquis) and needs an instant oncology powerhouse. Valuation is steep but justified by scarcity.\n\nOUTCOME: Acquired for $43B."
+  },
+  {
+    ticker: 'MRUS', name: 'Merus', score: 92.5, target_area: 'Oncology', is_past_deal: false, warning_flag: null,
+    clinical_score: 88.0, cash_score: 75.0, scarcity_score: 95.0, milestone_score: 80.0, valuation_score: 70.0,
+    ip_score: 93, patent_families: 25, fto_risk: 'LOW',
+    defensive_strategy: 'Biclonics bispecific antibody platform with broad composition-of-matter patents covering common light chain technology. 25 patent families. IP moat validated by Lilly collaboration.',
+    key_patents: [{id: 'US11,400,500', title: 'Bispecific Antibodies with Common Light Chain', expiry: '2041', jurisdictions: ['USPTO', 'EPO', 'CNIPA', 'JPO']}, {id: 'EP3,500,600', title: 'Anti-EGFR/LGR5 Biclonic Antibodies', expiry: '2040', jurisdictions: ['EPO']}],
+    cash_amount: '$350M', runway_years: '~2.5 Yrs', market_cap: '$2.8B',
+    latest_news_headline: 'Merus presents strong Phase 2 data for petosemtamab in HNSCC',
+    predicted_time: '3-6 Months', estimated_premium: '+40% ~ +55%', 
+    shadow_signals: [{ type: 'CLINICAL', date: 'ACTIVE', desc: 'Phase 3 protocol aligned with Big Pharma endpoints', mood: 'STRATEGIC' }],
+    digest: "Merus possesses a validated biclonics platform. Their lead asset petosemtamab shows best-in-class potential in head & neck squamous cell carcinoma. Potential acquirers include Eli Lilly who already has an ongoing collaboration.\n\nVERDICT: High-value bolt-on acquisition target."
+  },
+  {
+    ticker: 'ARVN', name: 'Arvinas', score: 86.5, target_area: 'Oncology', is_past_deal: false, warning_flag: null,
+    clinical_score: 85.0, cash_score: 80.0, scarcity_score: 85.0, milestone_score: 90.0, valuation_score: 75.0,
+    ip_score: 95, patent_families: 30, fto_risk: 'LOW',
+    defensive_strategy: 'Pioneer PROTAC technology platform. 30+ patent families covering PROTAC chimeric molecules, E3 ligase binders, and degradation methods. Pfizer partnership further strengthens IP position.',
+    key_patents: [{id: 'US10,500,700', title: 'Targeted Protein Degradation via PROTAC', expiry: '2038', jurisdictions: ['USPTO', 'EPO', 'CNIPA', 'JPO']}, {id: 'US11,600,800', title: 'Estrogen Receptor PROTAC Degraders', expiry: '2041', jurisdictions: ['USPTO', 'EPO']}],
+    cash_amount: '$410M', runway_years: '~2.2 Yrs', market_cap: '$2.1B',
+    latest_news_headline: 'Arvinas completes enrollment in Phase 3 trial for PROTAC degrader vepdegestrant',
+    predicted_time: '6-9 Months', estimated_premium: '+50% ~ +60%', shadow_signals: [],
+    digest: "Pioneers in PROTAC targeted protein degradation. Partnered with Pfizer on vepdegestrant. If Phase 3 breast cancer data hits, Pfizer is highly likely to exercise a full buyout rather than share commercial economics.\n\nVERDICT: Partnership-driven M&A candidate pending Phase 3 readout."
+  },
+  {
+    ticker: 'KRTX', name: 'Karuna', score: 96.0, target_area: 'Neurology', is_past_deal: true, deal_info: "Acquired by BMS ($14.0B) | Dec 2023", warning_flag: null,
+    clinical_score: 90.0, cash_score: 85.0, scarcity_score: 95.0, milestone_score: 100.0, valuation_score: 80.0,
+    ip_score: 94, patent_families: 18, fto_risk: 'LOW',
+    defensive_strategy: 'KarXT muscarinic agonist first-in-class IP. NDA submitted at acquisition. $14B BMS premium driven by IP exclusivity.',
+    key_patents: [{id: 'US10,600,800', title: 'Muscarinic Agonist Combinations for Schizophrenia', expiry: '2038', jurisdictions: ['USPTO', 'EPO', 'JPO']}],
+    cash_amount: '$1.4B', runway_years: '~3.0 Yrs', market_cap: '$9.5B',
+    latest_news_headline: 'BMS agrees to acquire Karuna Therapeutics for $14.0 billion in neuroscience push',
+    predicted_time: 'REALIZED', estimated_premium: 'REALIZED', shadow_signals: [],
+    digest: "[T-30 Days Report]: KarXT is the first novel mechanism for schizophrenia in decades. NDA is submitted. BMS is desperate to diversify beyond its aging oncology portfolio prior to Revlimid/Eliquis cliffs.\n\nOUTCOME: Acquired at 53% premium."
+  },
+  {
+    ticker: 'CERE', name: 'Cerevel', score: 94.5, target_area: 'Neurology', is_past_deal: true, deal_info: "Acquired by AbbVie ($8.7B) | Dec 2023", warning_flag: null,
+    clinical_score: 85.0, cash_score: 88.0, scarcity_score: 95.0, milestone_score: 85.0, valuation_score: 75.0,
+    ip_score: 91, patent_families: 14, fto_risk: 'LOW',
+    defensive_strategy: 'Emraclidine next-gen muscarinic IP plus BBB-crossing technology platform. AbbVie acquired for both product and platform.',
+    key_patents: [{id: 'US11,300,100', title: 'Selective M4 PAM Compounds', expiry: '2041', jurisdictions: ['USPTO', 'EPO']}],
+    cash_amount: '$850M', runway_years: '~2.5 Yrs', market_cap: '$6.2B',
+    latest_news_headline: 'AbbVie bolsters neuroscience pipeline with $8.7B Cerevel acquisition',
+    predicted_time: 'REALIZED', estimated_premium: 'REALIZED', shadow_signals: [],
+    digest: "[T-14 Days Report]: Following the BMS-Karuna deal, muscarinic assets are in extreme demand. Cerevel's emraclidine offers a vital next-gen schizophrenia asset. AbbVie needs a third pillar beyond immunology and aesthetics.\n\nOUTCOME: Acquired at 73% premium just weeks after Karuna deal."
+  },
+  {
+    ticker: 'PRTA', name: 'Prothena', score: 84.0, target_area: 'Neurology', is_past_deal: false, warning_flag: null,
+    clinical_score: 80.0, cash_score: 85.0, scarcity_score: 88.0, milestone_score: 75.0, valuation_score: 70.0,
+    ip_score: 86, patent_families: 17, fto_risk: 'LOW',
+    defensive_strategy: 'Deep protein misfolding IP. PRX012 subcutaneous anti-amyloid patents differentiated from IV competitors (Leqembi, Aduhelm). Roche and Novo partnerships validate platform.',
+    key_patents: [{id: 'US11,500,200', title: 'Subcutaneous Anti-Amyloid Antibody Formulations', expiry: '2042', jurisdictions: ['USPTO', 'EPO', 'JPO']}, {id: 'US11,600,300', title: 'Antibodies Targeting Aggregated α-Synuclein', expiry: '2041', jurisdictions: ['USPTO', 'EPO']}],
+    cash_amount: '$620M', runway_years: '~3.5 Yrs', market_cap: '$1.8B',
+    latest_news_headline: 'Prothena advances next-gen subcutaneous anti-amyloid portfolio',
+    predicted_time: '6-12 Months', estimated_premium: '+45% ~ +65%', shadow_signals: [],
+    digest: "Deep expertise in protein misfolding. Partnered heavily with Roche and Novo Nordisk. Their PRX012 asset offers a highly convenient subcutaneous alternative to Leqembi for Alzheimer's. If early data looks superior, a partnered buyout is logical.\n\nVERDICT: Strategically valuable but dependent on high-risk neuro readouts."
+  },
+  {
+    ticker: 'CYTK', name: 'Cytokinetics', score: 89.0, target_area: 'Cardiovascular', is_past_deal: false, warning_flag: 'M&A_RUMOR',
+    clinical_score: 90.0, cash_score: 65.0, scarcity_score: 90.0, milestone_score: 95.0, valuation_score: 80.0,
+    ip_score: 89, patent_families: 19, fto_risk: 'LOW',
+    defensive_strategy: 'Cardiac myosin inhibitor IP with aficamten composition-of-matter and method-of-use patents. Differentiated from BMS Camzyos via mechanism selectivity. Strong global filing.',
+    key_patents: [{id: 'US11,700,400', title: 'Cardiac Myosin Inhibitors for HCM', expiry: '2040', jurisdictions: ['USPTO', 'EPO', 'CNIPA', 'JPO']}, {id: 'US11,800,500', title: 'Methods of Treating Hypertrophic Cardiomyopathy', expiry: '2042', jurisdictions: ['USPTO', 'EPO']}],
+    cash_amount: '$550M', runway_years: '~1.5 Yrs', market_cap: '$4.2B',
+    latest_news_headline: 'Cytokinetics aficamten shows positive Phase 3 results in hypertrophic cardiomyopathy',
+    predicted_time: '1-3 Months', estimated_premium: '+30% ~ +45%', 
+    shadow_signals: [{ type: 'OPTIONS', date: 'T-2 DAYS', desc: 'Heavy Put Selling + Call Buying Detected', mood: 'HIGH-INTENT' }],
+    digest: "Aficamten aims to rival BMS's Camzyos. With clean Phase 3 data, Cytokinetics is a de-risked cardiovascular asset. Novartis and AstraZeneca were rumored to be in bidding war. Deal negotiations appear to have temporarily stalled on price.\n\nVERDICT: Highly actionable target. Buyout announced at any moment if valuation gaps close."
+  },
+  {
+    ticker: 'CRNX', name: 'Crinetics', score: 87.5, target_area: 'Rare Diseases', is_past_deal: false, warning_flag: null,
+    clinical_score: 85.0, cash_score: 82.0, scarcity_score: 92.0, milestone_score: 88.0, valuation_score: 78.0,
+    ip_score: 84, patent_families: 13, fto_risk: 'LOW',
+    defensive_strategy: 'Oral somatostatin receptor agonist IP. Paltusotine NDA submitted — Orange Book listing expected. Rare disease orphan drug exclusivity provides additional IP moat.',
+    key_patents: [{id: 'US11,900,600', title: 'Oral Somatostatin Receptor 2 Agonists', expiry: '2041', jurisdictions: ['USPTO', 'EPO', 'JPO']}, {id: 'US12,000,700', title: 'Methods for Oral Treatment of Acromegaly', expiry: '2043', jurisdictions: ['USPTO']}],
+    cash_amount: '$950M', runway_years: '~3.8 Yrs', market_cap: '$4.1B',
+    latest_news_headline: 'Crinetics Pharma submits NDA for paltusotine in acromegaly',
+    predicted_time: '3-6 Months', estimated_premium: '+40% ~ +55%', shadow_signals: [],
+    digest: "Leading endocrinology player. Paltusotine is a highly anticipated oral once-daily asset for acromegaly. Strong cash position means they can launch independently, forcing acquirers to pay a massive premium to take them out.\n\nVERDICT: Premium rare-disease target with near-term commercial execution."
+  },
+  {
+    ticker: 'IMMU', name: 'Immunomedics', score: 97.0, target_area: 'Oncology', is_past_deal: true, deal_info: "Acquired by Gilead ($21.0B) | Sep 2020", warning_flag: null,
+    clinical_score: 95.0, cash_score: 80.0, scarcity_score: 95.0, milestone_score: 100.0, valuation_score: 75.0,
+    ip_score: 96, patent_families: 28, fto_risk: 'LOW',
+    defensive_strategy: 'Trodelvy TROP-2 ADC platform IP with foundational drug-linker chemistry patents. 108% acquisition premium driven by IP scarcity.',
+    key_patents: [{id: 'US9,500,600', title: 'TROP-2 Antibody-Drug Conjugates', expiry: '2034', jurisdictions: ['USPTO', 'EPO', 'CNIPA', 'JPO']}],
+    cash_amount: '$450M', runway_years: '~1.5 Yrs', market_cap: '$10.5B',
+    latest_news_headline: 'Gilead to acquire Immunomedics for $21 billion to expand in solid tumors',
+    predicted_time: 'REALIZED', estimated_premium: 'REALIZED', shadow_signals: [],
+    digest: "[T-21 Days Report]: Trodelvy (TROP-2 ADC) has transformed breast cancer treatment. Gilead desperately needs to pivot away from its declining Hepatitis C runway. TROP-2 ADCs are the most coveted assets in oncology.\n\nOUTCOME: Acquired at an astounding 108% premium."
+  },
+  {
+    ticker: 'SRPT', name: 'Sarepta', score: 82.0, target_area: 'Rare Diseases', is_past_deal: false, warning_flag: null,
+    clinical_score: 88.0, cash_score: 70.0, scarcity_score: 95.0, milestone_score: 100.0, valuation_score: 65.0,
+    ip_score: 94, patent_families: 35, fto_risk: 'LOW',
+    defensive_strategy: 'Gene therapy platform IP with Elevidys (micro-dystrophin AAV) covered by broad composition-of-matter and manufacturing patents. Orphan drug exclusivity. 35 patent families globally.',
+    key_patents: [{id: 'US11,150,250', title: 'AAV-Mediated Micro-Dystrophin Gene Therapy', expiry: '2040', jurisdictions: ['USPTO', 'EPO', 'JPO']}, {id: 'US11,250,350', title: 'Exon Skipping Oligonucleotides for DMD', expiry: '2036', jurisdictions: ['USPTO', 'EPO', 'CNIPA']}],
+    cash_amount: '$1.1B', runway_years: '~2.0 Yrs', market_cap: '$12.0B',
+    latest_news_headline: 'Sarepta wins expanded FDA approval for Elevidys in Duchenne muscular dystrophy',
+    predicted_time: 'TBD / Event Driven', estimated_premium: '+25% ~ +35%', shadow_signals: [],
+    digest: "Absolute market leader in DMD with gene therapy (Elevidys) approved. Revenue is skyrocketing. However, the $12B+ valuation makes it a difficult pill to swallow for anyone except true mega-caps looking for rare disease dominance.\n\nVERDICT: Highly commercialized, expensive asset. Unlikely to be acquired without a broader strategic shift."
+  },
+  {
+    ticker: 'BBIO', name: 'BridgeBio', score: 88.5, target_area: 'Cardiovascular', is_past_deal: false, warning_flag: 'AI_TIMEOUT',
+    clinical_score: 90.0, cash_score: 60.0, scarcity_score: 85.0, milestone_score: 100.0, valuation_score: 75.0,
+    ip_score: 83, patent_families: 15, fto_risk: 'MODERATE',
+    defensive_strategy: 'Acoramidis TTR stabilizer patents. FDA-approved. Moderate FTO risk due to Pfizer Vyndaqel established IP estate in the same TTR-CM space. Differentiated by selectivity data.',
+    key_patents: [{id: 'US11,350,450', title: 'TTR Stabilizer Compounds for Cardiomyopathy', expiry: '2040', jurisdictions: ['USPTO', 'EPO', 'JPO']}, {id: 'US11,450,550', title: 'Methods of Treating ATTR-CM', expiry: '2041', jurisdictions: ['USPTO', 'EPO']}],
+    cash_amount: '$650M', runway_years: '~1.8 Yrs', market_cap: '$5.8B',
+    latest_news_headline: 'BridgeBio acoramidis receives FDA approval for ATTR-CM, launching next month',
+    predicted_time: '3-6 Months', estimated_premium: '+40% ~ +55%', shadow_signals: [],
+    digest: "Acoramidis introduces a stiff challenger to Pfizer's Vyndaqel/Vyndamax in the TTR-amyloidosis space. Big Pharma giants looking for standalone rare-cardio assets see massive potential here, providing direct competition with Pfizer's dying patents.\n\nVERDICT: De-risked asset; high likelihood of a buyout bid if the launch curve underperforms independently."
+  },
+  {
+    ticker: 'DNLI', name: 'Denali', score: 91.0, target_area: 'Neurology', is_past_deal: false, warning_flag: null,
+    clinical_score: 85.0, cash_score: 80.0, scarcity_score: 95.0, milestone_score: 85.0, valuation_score: 70.0,
+    ip_score: 97, patent_families: 32, fto_risk: 'LOW',
+    defensive_strategy: 'Transport Vehicle (TV) platform patents for BBB-crossing biologics — platform-defining IP. 32 patent families covering TV engineering, BBB receptor binding, and cargo delivery. Biogen/Sanofi partnerships validate.',
+    key_patents: [{id: 'US11,550,650', title: 'Blood-Brain Barrier Transport Vehicles', expiry: '2042', jurisdictions: ['USPTO', 'EPO', 'CNIPA', 'JPO']}, {id: 'US11,650,750', title: 'TV-Conjugated Antibodies for Neurodegeneration', expiry: '2043', jurisdictions: ['USPTO', 'EPO']}],
+    cash_amount: '$1.4B', runway_years: '~3.5 Yrs', market_cap: '$3.5B',
+    latest_news_headline: 'Denali presents robust blood-brain barrier transport vehicle data',
+    predicted_time: '6-12 Months', estimated_premium: '+50% ~ +75%', 
+    shadow_signals: [{ type: 'CLINICAL', date: 'ACTIVE', desc: 'Sanofi/Biogen deep collaboration footprints', mood: 'STRATEGIC' }],
+    digest: "Denali's Transport Vehicle (TV) platform is standard-setting for delivering large molecules across the blood-brain barrier. Partnered with Biogen and Sanofi. If one of their pivotal trials hits, an immediate acquisition from a major partner is expected to consolidate the platform.\n\nVERDICT: Essential neurological infrastructure. Premium partner buyout target."
+  },
+  {
+    ticker: 'NUVL', name: 'Nuvalent', score: 92.5, target_area: 'Oncology', is_past_deal: false, warning_flag: null,
+    clinical_score: 95.0, cash_score: 75.0, scarcity_score: 80.0, milestone_score: 90.0, valuation_score: 65.0,
+    ip_score: 87, patent_families: 14, fto_risk: 'LOW',
+    defensive_strategy: 'Next-gen ALK/ROS1 kinase inhibitor IP. NVL-655 designed to overcome resistance mutations covered by prior Pfizer (Lorbrena) patents. Clean FTO via distinct binding mode.',
+    key_patents: [{id: 'US11,750,850', title: 'Macrocyclic ALK Inhibitors', expiry: '2043', jurisdictions: ['USPTO', 'EPO', 'JPO']}, {id: 'US11,850,950', title: 'Methods for Overcoming ALK Resistance', expiry: '2044', jurisdictions: ['USPTO', 'EPO']}],
+    cash_amount: '$710M', runway_years: '~2.8 Yrs', market_cap: '$5.5B',
+    latest_news_headline: 'Nuvalent NVL-655 demonstrates best-in-class efficacy in ALK+ NSCLC',
+    predicted_time: '3-6 Months', estimated_premium: '+35% ~ +50%', shadow_signals: [],
+    digest: "Nuvalent designs perfectly optimized kinase inhibitors. NVL-655 is carving out a massive niche for ALK-positive NSCLC patients who have exhausted Pfizer’s Lorbrena. Precision oncology acquirers looking for guaranteed revenue find this extremely attractive.\n\nVERDICT: High-probability bolt-on target for top-tier oncology franchises."
+  },
+  {
+    ticker: 'KURA', name: 'Kura Oncology', score: 85.0, target_area: 'Oncology', is_past_deal: false, warning_flag: null,
+    clinical_score: 85.0, cash_score: 75.0, scarcity_score: 85.0, milestone_score: 85.0, valuation_score: 80.0,
+    ip_score: 81, patent_families: 11, fto_risk: 'MODERATE',
+    defensive_strategy: 'Menin inhibitor ziftomenib with composition-of-matter patents. Moderate FTO risk — Syndax (revumenib) holds competing menin inhibitor IP. Differentiated by safety/PK profile.',
+    key_patents: [{id: 'US11,950,100', title: 'Menin-MLL Interaction Inhibitors', expiry: '2042', jurisdictions: ['USPTO', 'EPO']}, {id: 'US12,050,200', title: 'Methods of Treating AML via Menin Inhibition', expiry: '2043', jurisdictions: ['USPTO']}],
+    cash_amount: '$450M', runway_years: '~2.5 Yrs', market_cap: '$1.8B',
+    latest_news_headline: 'Kura Oncology reports menin inhibitor ziftomenib pivotal data',
+    predicted_time: '1-3 Months', estimated_premium: '+60% ~ +80%', 
+    shadow_signals: [{ type: 'OPTIONS', date: 'T-5 DAYS', desc: 'Sustained OTM Call Buying in near-term expiries', mood: 'HIGH-INTENT' }],
+    digest: "Menin inhibitors are an intensely watched battleground in acute leukemia following Syndax's recent success. Kura's ziftomenib offers differentiated safety and combinations. Options market reflects extreme M&A anticipation post-data.\n\nVERDICT: Prime target for companies wishing to capture a durable footprint in blood cancers."
+  },
+  {
+    ticker: 'HRMY', name: 'Harmony', score: 78.5, target_area: 'Neurology', is_past_deal: false, warning_flag: null,
+    clinical_score: 85.0, cash_score: 90.0, scarcity_score: 70.0, milestone_score: 95.0, valuation_score: 80.0,
+    ip_score: 68, patent_families: 9, fto_risk: 'HIGH',
+    defensive_strategy: 'Wakix (pitolisant) composition-of-matter patents under active challenge. High FTO risk due to generic challenges. Value lies in commercial infrastructure and orphan drug exclusivity.',
+    key_patents: [{id: 'US10,100,200', title: 'Histamine H3 Receptor Inverse Agonists', expiry: '2031', jurisdictions: ['USPTO', 'EPO']}, {id: 'US10,200,300', title: 'Treatment of Narcolepsy with H3 Antagonists', expiry: '2033', jurisdictions: ['USPTO']}],
+    cash_amount: '$420M', runway_years: 'PROFITABLE', market_cap: '$1.7B',
+    latest_news_headline: 'Harmony Biosciences Wakix sales surpass estimates; expands into hypersomnia',
+    predicted_time: 'TBD / Event Driven', estimated_premium: '+35% ~ +50%', shadow_signals: [],
+    digest: "Profitable commercial-stage neuroscience company driven by Wakix. Valuation has been unfairly battered by short sellers over patent concerns. Big Pharma with existing infrastructure could instantly optimize their SG&A and pocket the cash flow.\n\nVERDICT: Highly accretive value-buy for a mid-sized to large neuro-acquirer."
   }
 ];
 
@@ -533,7 +747,7 @@ export const outLicensingDeals = [
     date: 'Mar 2026',
     licensor: 'Sino Biopharmaceutical',
     licensee: 'Sanofi',
-    value: '$1.53B',
+    value: '$15.3B',
     upfront: '$135M',
     drug: 'Rovadicitinib (Anxu)',
     target: 'JAK / ROCK',
@@ -542,6 +756,36 @@ export const outLicensingDeals = [
     structure: 'Global rights',
     modality: 'Small molecule',
     notes: 'Sanofi secures rovadicitinib for myelofibrosis and cGVHD. Received CN approval in Feb 2026. $1.395B in milestones.'
+  },
+  {
+    id: 98,
+    date: 'Apr 2026',
+    licensor: 'Hengrui Pharmaceuticals',
+    licensee: 'Novartis',
+    value: '$1.2B',
+    upfront: 'Undisclosed',
+    drug: 'Next-gen Trop2 ADC',
+    target: 'TROP2',
+    therapeuticArea: 'Oncology',
+    stage: 'Clinical',
+    structure: 'Global NewCo',
+    modality: 'Antibody-Drug Conjugate',
+    notes: 'Hengrui secures $1.2B deal with Novartis for a next-gen Trop2 ADC using a NewCo structure to bypass regulatory friction.'
+  },
+  {
+    id: 99,
+    date: 'Apr 2026',
+    licensor: 'Shanghai-based Startup',
+    licensee: 'Major US Biotech',
+    value: 'Undisclosed',
+    upfront: '$120M',
+    drug: 'Pan-KRAS Inhibitor',
+    target: 'Pan-KRAS',
+    therapeuticArea: 'Oncology',
+    stage: 'Early Clinical',
+    structure: 'Global rights',
+    modality: 'Small molecule',
+    notes: 'A prominent $120M upfront payment reflecting continued outbound asset viability despite overarching decoupling pressures.'
   },
   {
     id: 2,
@@ -752,6 +996,81 @@ export const outLicensingDeals = [
     structure: 'Global',
     modality: 'Antibody-Drug Conjugate',
     notes: 'BioNTech reinforces its ADC strategy in women\'s cancers with another deal from DualityBio.'
+  },
+  {
+    id: 16,
+    date: 'Feb 2026',
+    licensor: 'Sanegene',
+    licensee: 'Genentech',
+    value: '$1.5B',
+    upfront: 'Undisclosed',
+    drug: 'Multiple Assets',
+    target: 'Undisclosed',
+    therapeuticArea: 'Various',
+    stage: 'Preclinical',
+    structure: 'Global',
+    modality: 'siRNA',
+    notes: 'Genentech bolsters advanced genetic medicines pipeline with Sanegene\'s siRNA platform capabilities.'
+  },
+  {
+    id: 17,
+    date: 'Jan 2026',
+    licensor: 'Ribo Life Science',
+    licensee: 'Madrigal Pharmaceuticals',
+    value: '$4.4B',
+    upfront: 'Undisclosed',
+    drug: 'Multiple Assets',
+    target: 'MASH / NASH Targets',
+    therapeuticArea: 'Metabolic',
+    stage: 'Early Stage',
+    structure: 'Global',
+    modality: 'siRNA',
+    notes: 'Madrigal expands leadership in MASH leveraging Ribo\'s proprietary liver-targeted siRNA technology.'
+  },
+  {
+    id: 18,
+    date: 'Feb 2026',
+    licensor: 'Innovent Biologics',
+    licensee: 'Eli Lilly',
+    value: 'Undisclosed',
+    upfront: 'Undisclosed',
+    drug: 'Early Oncology Targets',
+    target: 'Various',
+    therapeuticArea: 'Oncology',
+    stage: 'Discovery / Preclinical',
+    structure: 'Global',
+    modality: 'Various',
+    notes: 'Early-stage platform "binding" partnership illustrating a shift to locking in Chinese R&D innovation at ground zero.'
+  },
+  {
+    id: 19,
+    date: 'Apr 2026',
+    licensor: 'Hengrui Pharma',
+    licensee: 'Novartis',
+    value: '$1.2B',
+    upfront: 'Undisclosed',
+    drug: 'Next-Gen Trop2 ADC',
+    target: 'Trop2',
+    therapeuticArea: 'Oncology',
+    stage: 'Clinical',
+    structure: 'Global',
+    modality: 'Antibody-Drug Conjugate',
+    notes: 'Novartis further strengthens its ADC pipeline; reinforces Hengrui\'s position as a premier out-licensing powerhouse.'
+  },
+  {
+    id: 20,
+    date: 'Apr 2026',
+    licensor: 'Undisclosed Shanghai Startup',
+    licensee: 'Undisclosed US Biotech',
+    value: 'Undisclosed',
+    upfront: '$120M',
+    drug: 'Pan-KRAS Inhibitor',
+    target: 'Pan-KRAS',
+    therapeuticArea: 'Oncology',
+    stage: 'Preclinical',
+    structure: 'Global',
+    modality: 'Small Molecule',
+    notes: 'Significant $120M upfront for an early-stage asset reflects robust global demand despite macro decoupling friction.'
   }
 ];
 
@@ -923,3 +1242,90 @@ export const conferencePulseData = {
   ],
 };
 
+// ═══════════════════════════════════════════════════════════════
+// PATENT RADAR — Cliff Timeline & CNIPA Scout Intelligence
+// ═══════════════════════════════════════════════════════════════
+
+export const patentCliffTimeline = [
+  { mnc: 'Pfizer', asset: 'Prevnar 13', year: 2026, revenue_at_risk: 1.5, therapeutic_area: 'Vaccines', successor_status: 'Prevnar 20 launched', severity: 'MODERATE' },
+  { mnc: 'Pfizer', asset: 'Ibrance', year: 2027, revenue_at_risk: 4.0, therapeutic_area: 'Oncology', successor_status: 'CDK4 inhibitor in Phase 3', severity: 'HIGH' },
+  { mnc: 'Pfizer', asset: 'Eliquis', year: 2028, revenue_at_risk: 14.0, therapeutic_area: 'Cardiovascular', successor_status: 'No successor identified', severity: 'CRITICAL' },
+  { mnc: 'Pfizer', asset: 'Xtandi', year: 2027, revenue_at_risk: 1.8, therapeutic_area: 'Oncology', successor_status: 'ADC pipeline (Seagen)', severity: 'MODERATE' },
+  { mnc: 'Merck', asset: 'Januvia', year: 2026, revenue_at_risk: 2.0, therapeutic_area: 'Metabolic', successor_status: 'No direct successor', severity: 'MODERATE' },
+  { mnc: 'Merck', asset: 'Keytruda', year: 2028, revenue_at_risk: 29.5, therapeutic_area: 'Oncology', successor_status: 'SubQ Qlex + ADC pipeline', severity: 'CRITICAL' },
+  { mnc: 'AstraZeneca', asset: 'Soliris', year: 2025, revenue_at_risk: 2.6, therapeutic_area: 'Rare Disease', successor_status: 'Ultomiris transition', severity: 'LOW' },
+  { mnc: 'AstraZeneca', asset: 'Farxiga', year: 2025, revenue_at_risk: 7.7, therapeutic_area: 'Cardiovascular', successor_status: 'No successor — major gap', severity: 'CRITICAL' },
+  { mnc: 'AstraZeneca', asset: 'Brilinta', year: 2025, revenue_at_risk: 2.3, therapeutic_area: 'Cardiovascular', successor_status: 'Discontinuing R&D investment', severity: 'HIGH' },
+  { mnc: 'Novartis', asset: 'Entresto', year: 2025, revenue_at_risk: 6.5, therapeutic_area: 'Cardiovascular', successor_status: 'Pelacarsen (Lp(a)) in Phase 3', severity: 'HIGH' },
+  { mnc: 'Novartis', asset: 'Promacta', year: 2026, revenue_at_risk: 2.3, therapeutic_area: 'Hematology', successor_status: 'Iptacopan approved', severity: 'MODERATE' },
+  { mnc: 'Eli Lilly', asset: 'Trulicity', year: 2027, revenue_at_risk: 4.0, therapeutic_area: 'Metabolic', successor_status: 'Mounjaro/Zepbound dominate', severity: 'LOW' },
+  { mnc: 'Roche', asset: 'Perjeta', year: 2025, revenue_at_risk: 3.5, therapeutic_area: 'Oncology', successor_status: 'Phesgo transition', severity: 'HIGH' },
+  { mnc: 'Roche', asset: 'Kadcyla', year: 2026, revenue_at_risk: 2.0, therapeutic_area: 'Oncology', successor_status: 'No direct successor ADC', severity: 'MODERATE' },
+  { mnc: 'Roche', asset: 'Ocrevus', year: 2029, revenue_at_risk: 7.2, therapeutic_area: 'Neurology', successor_status: 'Anti-CD20 biosimilar defense TBD', severity: 'CRITICAL' },
+  { mnc: 'AbbVie', asset: 'Humira', year: 2023, revenue_at_risk: 8.0, therapeutic_area: 'Autoimmune', successor_status: 'Skyrizi + Rinvoq replacing', severity: 'MODERATE' },
+  { mnc: 'AbbVie', asset: 'Imbruvica', year: 2026, revenue_at_risk: 3.6, therapeutic_area: 'Oncology', successor_status: 'CELMoD/ADC pipeline', severity: 'HIGH' },
+  { mnc: 'AbbVie', asset: 'Botox', year: 2029, revenue_at_risk: 5.3, therapeutic_area: 'Aesthetics/Neuro', successor_status: 'No biosimilar defense', severity: 'HIGH' },
+  { mnc: 'Bristol-Myers Squibb', asset: 'Revlimid', year: 2025, revenue_at_risk: 5.7, therapeutic_area: 'Oncology', successor_status: 'CELMoDs (Mezigdomide)', severity: 'CRITICAL' },
+  { mnc: 'Bristol-Myers Squibb', asset: 'Eliquis', year: 2027, revenue_at_risk: 12.2, therapeutic_area: 'Cardiovascular', successor_status: 'No successor', severity: 'CRITICAL' },
+  { mnc: 'Bristol-Myers Squibb', asset: 'Opdivo', year: 2028, revenue_at_risk: 9.0, therapeutic_area: 'Oncology', successor_status: 'IO combinations', severity: 'HIGH' },
+  { mnc: 'Sanofi', asset: 'Dupixent', year: 2031, revenue_at_risk: 22.0, therapeutic_area: 'Immunology', successor_status: 'Amlitelimab, Frexalimab pipeline', severity: 'CRITICAL' },
+];
+
+export const cnipaScoutSignals = [
+  {
+    id: 1, date: 'Apr 12, 2026', company: 'Hengrui Pharmaceuticals (恒瑞医药)', signal_type: 'NEW_FILING',
+    patent_title: 'Novel ADC Linker-Payload Technology for TROP2 Targets', cnipa_number: 'CN2026-1-0045678',
+    jurisdictions_filed: ['CNIPA', 'PCT'], therapeutic_area: 'Oncology',
+    implications: 'Hengrui expanding ADC IP beyond existing Roche deal. Next-gen asset preparation for separate out-licensing.',
+    severity: 'HIGH', related_mnc_interest: ['Novartis', 'AstraZeneca']
+  },
+  {
+    id: 2, date: 'Apr 8, 2026', company: 'BeiGene (百济神州)', signal_type: 'PATENT_GRANTED',
+    patent_title: 'Bispecific PD-1/CTLA-4 Antibody Compositions', cnipa_number: 'CN2024-1-0123456',
+    jurisdictions_filed: ['CNIPA', 'USPTO', 'EPO'], therapeutic_area: 'Oncology',
+    implications: 'Granted CNIPA patent strengthens BeiGene negotiating position in AstraZeneca partnership discussions.',
+    severity: 'MODERATE', related_mnc_interest: ['AstraZeneca', 'Roche']
+  },
+  {
+    id: 3, date: 'Apr 5, 2026', company: 'Innovent Biologics (信达生物)', signal_type: 'OPPOSITION',
+    patent_title: 'GLP-1/GCGR Dual Agonist Patent Opposition by Eli Lilly', cnipa_number: 'CN2023-1-0987654',
+    jurisdictions_filed: ['CNIPA'], therapeutic_area: 'Metabolic',
+    implications: 'Lilly CNIPA opposition signals FTO concern. May accelerate Innovent out-licensing to non-Lilly MNCs.',
+    severity: 'CRITICAL', related_mnc_interest: ['Eli Lilly', 'Novo Nordisk', 'Pfizer']
+  },
+  {
+    id: 4, date: 'Mar 28, 2026', company: 'Akeso (康方生物)', signal_type: 'PCT_NATIONAL_PHASE',
+    patent_title: 'CLDN18.2 × CD3 Bispecific T-Cell Engager', cnipa_number: 'CN2024-1-0567890',
+    jurisdictions_filed: ['CNIPA', 'USPTO', 'EPO', 'JPO'], therapeutic_area: 'Oncology',
+    implications: 'Akeso entering national phase in 4 jurisdictions simultaneously. Strong global out-licensing intent.',
+    severity: 'HIGH', related_mnc_interest: ['Merck KGaA', 'Johnson & Johnson']
+  },
+  {
+    id: 5, date: 'Mar 22, 2026', company: 'Connect Biopharma (康桥生物)', signal_type: 'PATENT_GRANTED',
+    patent_title: 'Oral S1P1 Receptor Modulator for Autoimmune Disease', cnipa_number: 'CN2023-1-0345678',
+    jurisdictions_filed: ['CNIPA', 'USPTO'], therapeutic_area: 'Autoimmune',
+    implications: 'CNIPA grant preceded Sanofi deal by 3 days. Patent grant may have triggered Sanofi finalization.',
+    severity: 'CONFIRMED', related_mnc_interest: ['Sanofi']
+  },
+  {
+    id: 6, date: 'Mar 15, 2026', company: 'Sciwind Biosciences (赛诺风)', signal_type: 'NEW_FILING',
+    patent_title: 'Next-Gen GLP-1/FGF21 Dual Agonist Peptide Formulations', cnipa_number: 'CN2026-1-0234567',
+    jurisdictions_filed: ['CNIPA', 'PCT'], therapeutic_area: 'Metabolic',
+    implications: 'Filed before BIO-Europe Spring — IP positioning ahead of J&J partnership negotiations.',
+    severity: 'HIGH', related_mnc_interest: ['Johnson & Johnson', 'Pfizer']
+  },
+  {
+    id: 7, date: 'Mar 10, 2026', company: 'Zymeworks', signal_type: 'CNIPA_FILING',
+    patent_title: 'Bispecific Antibody Platform for Solid Tumors', cnipa_number: 'CN2026-1-0111222',
+    jurisdictions_filed: ['CNIPA'], therapeutic_area: 'Oncology',
+    implications: 'Western biotech filing directly at CNIPA signals China market entry and pre-deal positioning.',
+    severity: 'MODERATE', related_mnc_interest: ['AstraZeneca']
+  },
+  {
+    id: 8, date: 'Mar 5, 2026', company: 'MediLink Therapeutics (迈威生物)', signal_type: 'PATENT_FAMILY_EXPANSION',
+    patent_title: 'Novel Topoisomerase I Payload for ADC Applications', cnipa_number: 'CN2025-1-0678901',
+    jurisdictions_filed: ['CNIPA', 'PCT', 'USPTO'], therapeutic_area: 'Oncology',
+    implications: 'Expanding ADC payload IP to bypass Daiichi Sankyo DXd patents. Critical for next-gen ADC deals.',
+    severity: 'HIGH', related_mnc_interest: ['Roche', 'Merck', 'Pfizer']
+  }
+];
