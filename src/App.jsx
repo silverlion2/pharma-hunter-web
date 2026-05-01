@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Target, ShieldCheck, ArrowLeft, CheckCircle2, AlertCircle, 
   TerminalSquare, History, LogIn, User, LogOut, Scale,
-  Star, TrendingUp, Clock, DollarSign, Activity, Lock
+  Star, TrendingUp, Clock, DollarSign, Activity, Lock, Search
 } from 'lucide-react';
 
 import { supabase, isSupabaseConfigured } from './utils/supabase';
@@ -34,9 +34,20 @@ import Checkout from './components/Checkout';
 import DealTracker from './components/DealTracker';
 import AiBiotechTracker from './components/AiBiotechTracker';
 import PatentRadar from './components/PatentRadar';
+import CrossBorderHeatmap from './components/CrossBorderHeatmap';
 
 const App = () => {
-  const [view, setView] = useState('landing');
+  const [view, setViewRaw] = useState('landing');
+
+  // Wrapper: intercept setView('auth') to open the AuthModal instead of navigating to a non-existent route
+  const setView = (v) => {
+    if (v === 'auth') {
+      setAuthMode('signup');
+      setShowAuthModal(true);
+      return;
+    }
+    setViewRaw(v);
+  };
   const [targetArea, setTargetArea] = useState('Metabolic');
   const [showPastDeals, setShowPastDeals] = useState(false);
   const [selectedTicker, setSelectedTicker] = useState('ALT');
@@ -58,11 +69,8 @@ const App = () => {
   const [authLoading, setAuthLoading] = useState(false);
 
   // New Phase: Tracked Tickers
-  // eslint-disable-next-line no-unused-vars
   const [isSearching, setIsSearching] = useState(false);
-  // eslint-disable-next-line no-unused-vars
   const [searchStep, setSearchStep] = useState(0);
-  // eslint-disable-next-line no-unused-vars
   const [searchedTicker, setSearchedTicker] = useState('');
   const [trackedTickers, setTrackedTickers] = useState([]);
   const [showOnlyTracked, setShowOnlyTracked] = useState(false);
@@ -162,6 +170,7 @@ const App = () => {
       }
     } catch (err) {
       console.error("Failed to fetch notifications:", err);
+      showToast("Failed to fetch alert notifications.", "error");
     }
   };
 
@@ -173,6 +182,7 @@ const App = () => {
       await supabase.from('alert_notifications').update({ is_read: true }).eq('id', id);
     } catch (err) {
       console.error("Failed to mark notification read", err);
+      showToast("Could not mark notification as read.", "error");
     }
   };
 
@@ -188,6 +198,7 @@ const App = () => {
       }
     } catch (err) {
       console.error("Failed to fetch tracked tickers", err);
+      showToast("Could not sync tracked tickers.", "error");
     }
   };
 
@@ -230,6 +241,7 @@ const App = () => {
       setWatchlistHistory(historyMap);
     } catch (err) {
       console.error("Failed to fetch watchlist history:", err);
+      showToast("Error retrieving watchlist history.", "error");
     }
   };
 
@@ -276,34 +288,20 @@ const App = () => {
     
     setAnalyticsLoading(true);
     try {
-      // Execute all 6 queries concurrently for speed using Promise.all
-      // Each query now also selects 'score' for composite tiebreaking
+      // Execute all queries using the new unified Postgres RPC
       const [
-        { data: scarcityData, error: scarcityErr },
-        { data: cashData, error: cashErr },
-        { data: velocityData, error: velocityErr },
-        { data: clinicalData, error: clinicalErr },
-        { data: catalystData, error: catalystErr },
-        { data: valueData, error: valueErr }
+        { data: rpcData, error: rpcErr },
+        { data: velocityData, error: velocityErr }
       ] = await Promise.all([
-        supabase.from('assets').select('ticker, name, scarcity_score, score, target_area, is_past_deal').eq('is_past_deal', false).order('scarcity_score', { ascending: false }).limit(10),
-        supabase.from('assets').select('ticker, name, cash_score, score, target_area, is_past_deal').eq('is_past_deal', false).order('cash_score', { ascending: false }).limit(10),
-        supabase.rpc('get_7d_fastest_movers'),
-        supabase.from('assets').select('ticker, name, clinical_score, score, target_area, is_past_deal').eq('is_past_deal', false).order('clinical_score', { ascending: false }).limit(10),
-        supabase.from('assets').select('ticker, name, milestone_score, score, target_area, is_past_deal, predicted_time').eq('is_past_deal', false).order('milestone_score', { ascending: false }).limit(10),
-        supabase.from('assets').select('ticker, name, valuation_score, score, target_area, is_past_deal').eq('is_past_deal', false).order('valuation_score', { ascending: false }).limit(10)
+        supabase.rpc('get_analytics_leaderboard'),
+        supabase.rpc('get_7d_fastest_movers')
       ]);
         
-      if (scarcityErr) throw scarcityErr;
-      if (cashErr) throw cashErr;
+      if (rpcErr) throw rpcErr;
       if (velocityErr) throw velocityErr;
-      if (clinicalErr) throw clinicalErr;
-      if (catalystErr) throw catalystErr;
-      if (valueErr) throw valueErr;
 
-      // Composite tiebreaker: sort by primary sub-score DESC, then overall score DESC
-      const sortWithTiebreak = (arr, key) => 
-        [...(arr || [])].sort((a, b) => (b[key] - a[key]) || (b.score - a.score)).slice(0, 5);
+      // Unpack RPC payload (already natively sorted and limited to top 10 on the backend)
+      const { topScarcity, topCashPressure, topClinical, topCatalysts, topValue } = rpcData || {};
 
       // Build shadow signal feed from in-memory assetData
       const signalFeed = assetData
@@ -312,12 +310,12 @@ const App = () => {
         .slice(0, 10);
 
       setAnalyticsData({
-        topScarcity: sortWithTiebreak(scarcityData, 'scarcity_score'),
-        topCashPressure: sortWithTiebreak(cashData, 'cash_score'),
+        topScarcity: topScarcity ? topScarcity.slice(0, 5) : [],
+        topCashPressure: topCashPressure ? topCashPressure.slice(0, 5) : [],
         fastestMovers: velocityData ? velocityData.slice(0, 5) : [],
-        topClinical: sortWithTiebreak(clinicalData, 'clinical_score'),
-        topCatalysts: sortWithTiebreak(catalystData, 'milestone_score'),
-        topValue: sortWithTiebreak(valueData, 'valuation_score'),
+        topClinical: topClinical ? topClinical.slice(0, 5) : [],
+        topCatalysts: topCatalysts ? topCatalysts.slice(0, 5) : [],
+        topValue: topValue ? topValue.slice(0, 5) : [],
         signalFeed: signalFeed,
       });
       
@@ -526,6 +524,7 @@ const App = () => {
     // Auto-refresh every 60 seconds when Supabase is configured
     const refreshInterval = isSupabaseConfigured ? setInterval(fetchAllData, 60_000) : null;
     return () => { if (refreshInterval) clearInterval(refreshInterval); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const pipelineMaxUrgencies = React.useMemo(() => {
@@ -564,7 +563,6 @@ const App = () => {
     if (availableAreas.length > 0 && !availableAreas.includes(targetArea)) {
       setTargetArea(availableAreas[0]);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [availableAreas, targetArea]);
 
   // SEO: Dynamic page title per view
@@ -854,6 +852,7 @@ const App = () => {
             setView={setView}
             setSelectedTicker={setSelectedTicker}
             handleSelect={handleSelect}
+            showToast={showToast}
           />
         )}
 
@@ -979,6 +978,10 @@ const App = () => {
               });
             }}
           />
+        )}
+        
+        {view === 'cross-border' && (
+          <CrossBorderHeatmap setView={setView} />
         )}
         
         {view === 'dashboard' && (
@@ -1347,6 +1350,69 @@ const App = () => {
           </div>
         )}
 
+
+        {isSearching && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[#0A0C10]/95 backdrop-blur-md">
+            <div className="bg-slate-900 border border-slate-700 w-full max-w-lg rounded-2xl flex flex-col overflow-hidden shadow-[0_0_50px_rgba(6,182,212,0.15)] relative">
+              <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/80">
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center border border-cyan-500/50">
+                      <Search size={20} className="text-cyan-400 animate-pulse" />
+                    </div>
+                    <div className="absolute top-0 left-0 w-full h-full rounded-xl border-2 border-cyan-400 border-t-transparent animate-spin"></div>
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-black text-white tracking-widest uppercase">Global Asset Scanner</h2>
+                    <p className="text-xs text-cyan-400 font-mono">TARGET_LOCK: {searchedTicker}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-8 flex flex-col gap-6 bg-[#0A0C10]/80">
+                {/* Step 1 */}
+                <div className={`flex items-center gap-4 transition-all duration-500 ${searchStep >= 0 ? 'opacity-100' : 'opacity-0 translate-y-2'}`}>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] ${searchStep > 0 ? 'bg-cyan-500 text-slate-900 shadow-[0_0_10px_rgba(6,182,212,0.5)]' : searchStep === 0 ? 'border-2 border-cyan-400 text-white animate-pulse' : 'bg-slate-800 text-slate-500'}`}>
+                    1
+                  </div>
+                  <span className={`text-sm tracking-wide ${searchStep > 0 ? 'text-slate-300 font-bold' : searchStep === 0 ? 'text-white font-black' : 'text-slate-600'}`}>
+                    Initializing SEC 10-K & Patent Pipeline...
+                  </span>
+                </div>
+                
+                {/* Step 2 */}
+                <div className={`flex items-center gap-4 transition-all duration-500 ${searchStep >= 1 ? 'opacity-100' : 'opacity-0 translate-y-2'}`}>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] ${searchStep > 1 ? 'bg-cyan-500 text-slate-900 shadow-[0_0_10px_rgba(6,182,212,0.5)]' : searchStep === 1 ? 'border-2 border-cyan-400 text-white animate-pulse' : 'bg-slate-800 text-slate-500'}`}>
+                    2
+                  </div>
+                  <span className={`text-sm tracking-wide ${searchStep > 1 ? 'text-slate-300 font-bold' : searchStep === 1 ? 'text-white font-black' : 'text-slate-600'}`}>
+                    Querying CNIPA / USPTO signals...
+                  </span>
+                </div>
+
+                {/* Step 3 */}
+                <div className={`flex items-center gap-4 transition-all duration-500 ${searchStep >= 2 ? 'opacity-100' : 'opacity-0 translate-y-2'}`}>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] ${searchStep > 2 ? 'bg-cyan-500 text-slate-900 shadow-[0_0_10px_rgba(6,182,212,0.5)]' : searchStep === 2 ? 'border-2 border-cyan-400 text-white animate-pulse' : 'bg-slate-800 text-slate-500'}`}>
+                    3
+                  </div>
+                  <span className={`text-sm tracking-wide ${searchStep > 2 ? 'text-slate-300 font-bold' : searchStep === 2 ? 'text-white font-black' : 'text-slate-600'}`}>
+                    Engaging DeepSeek for FTO risk analysis...
+                  </span>
+                </div>
+
+                {/* Step 4 */}
+                <div className={`flex items-center gap-4 transition-all duration-500 ${searchStep >= 3 ? 'opacity-100' : 'opacity-0 translate-y-2'}`}>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] ${searchStep > 3 ? 'bg-emerald-500 text-slate-900 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : searchStep === 3 ? 'border-2 border-cyan-400 text-white animate-pulse' : 'bg-slate-800 text-slate-500'}`}>
+                    4
+                  </div>
+                  <span className={`text-sm tracking-wide ${searchStep > 3 ? 'text-emerald-400 font-bold' : searchStep === 3 ? 'text-white font-black' : 'text-slate-600'}`}>
+                    {searchStep > 3 ? 'Intelligence report scheduled.' : 'Finalizing intelligence report...'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <AuthModal 
           showAuthModal={showAuthModal}

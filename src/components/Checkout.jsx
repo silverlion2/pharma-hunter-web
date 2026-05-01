@@ -70,11 +70,12 @@ const Checkout = ({ setView, showToast, onUpgradeSuccess }) => {
         }]);
 
         // Upgrade user role to pro
-        await supabase.from('user_profiles').upsert({
-          id: session.user.id,
+        await supabase.from('user_roles').upsert({
+          user_id: session.user.id,
           role: 'pro',
-          upgraded_at: new Date().toISOString(),
-        }, { onConflict: 'id' });
+          trial_expires_at: null,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id' });
       }
 
       setPaymentStatus('success');

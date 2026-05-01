@@ -54,7 +54,7 @@ const Landing = ({ setView, setShowPastDeals }) => {
             <Database size={22} /> LAUNCH BIOQUANTIX TERMINAL
           </button>
           <button
-            onClick={() => setView('biosecure')}
+            onClick={() => setView('guidance')}
             className="bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 font-bold text-sm px-6 py-4 rounded-2xl transition-all w-full sm:w-auto justify-center flex items-center gap-2"
           >
             <ShieldCheck size={18} className="text-emerald-400" /> Read the Convergence Thesis

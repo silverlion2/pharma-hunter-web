@@ -92,6 +92,7 @@ const Watchlist = ({
   toggleTrackTicker,
   setView,
   handleSelect,
+  showToast,
 }) => {
   const trackedAssets = assetData.filter(a => trackedTickers.includes(a.ticker));
   
@@ -247,7 +248,8 @@ const Watchlist = ({
         isOpen={showConfigModal} 
         onClose={() => { setShowConfigModal(false); setConfigTicker(null); }} 
         ticker={configTicker} 
-        assetName={configName} 
+        assetName={configName}
+        showToast={showToast}
       />
     </div>
   );

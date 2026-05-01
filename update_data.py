@@ -784,7 +784,47 @@ def run_universe_expansion():
     send_alert("BioQuantix 扩容完成", summary)
 
 # ==========================================
-# 6. 自动化日常主流程 (引入多线程并发与智能差分)
+# 6. US Investor Geopolitical Risk Radar
+# ==========================================
+def check_geopolitical_risk(ticker, name, clin_data):
+    """Dual-compliance radar for US investors targeting China assets."""
+    biosecure_flag = False
+    hgr_conflict = False
+    geo_risk_score = 0.0
+    fda_readiness = 0.0
+    
+    clin_desc = clin_data.get('desc', '').lower() if clin_data else ''
+    name_lower = str(name).lower() if name else ''
+    
+    # BIOSECURE Flag (WuXi exposure)
+    wuxi_keywords = ["wuxi", "apptec", "biologics", "bgi", "complete genomics", "mgi"]
+    if any(k in name_lower or k in clin_desc for k in wuxi_keywords):
+        biosecure_flag = True
+        geo_risk_score += 60.0
+        
+    # Decree 834 / HGR Risk (China only data)
+    china_keywords = ["china", "shanghai", "beijing", "guangzhou", "shenzhen", "jiangsu"]
+    if any(k in name_lower for k in china_keywords) or "mrct" not in clin_desc:
+        hgr_conflict = True
+        geo_risk_score += 30.0
+        
+    # FDA "Sintilimab" Readiness (MRCT vs China-only)
+    if not hgr_conflict and not biosecure_flag:
+        fda_readiness = 85.0
+    elif hgr_conflict:
+        fda_readiness = 30.0
+    else:
+        fda_readiness = 50.0
+        
+    return {
+        "biosecure_flag": biosecure_flag,
+        "hgr_conflict": hgr_conflict,
+        "geopolitical_risk_score": min(geo_risk_score, 100.0),
+        "fda_readiness_score": fda_readiness
+    }
+
+# ==========================================
+# 7. 自动化日常主流程 (引入多线程并发与智能差分)
 # ==========================================
 def process_single_target(target, TARGET_SCARCITY_MAP, db_assets_map):
     """处理单个标的的核心逻辑，被多线程调用"""
@@ -805,6 +845,8 @@ def process_single_target(target, TARGET_SCARCITY_MAP, db_assets_map):
     
     error_logs = []
     sec_warning_flag = None
+    
+    geo_risk = check_geopolitical_risk(ticker, name, clin_data)
     
     if market_data["error"]:
         error_logs.append(f"MarketData Error: {market_data['error']}")
@@ -858,6 +900,11 @@ def process_single_target(target, TARGET_SCARCITY_MAP, db_assets_map):
     v_score = float(v_score or 50.0)
     
     base_s_score = (e_score * 0.30) + (t_score * 0.25) + (m_score * 0.20) + (c_score * 0.15) + (v_score * 0.10)
+    
+    # Geopolitical Risk Penalty (up to -20% of score if risk is 100)
+    geo_risk_penalty = (geo_risk["geopolitical_risk_score"] / 100.0) * 20.0
+    base_s_score = max(0, base_s_score - geo_risk_penalty)
+    
     final_score = base_s_score * 1.15 if market_data.get("has_anomaly") else base_s_score
     final_score = float(round(min(final_score, 99.5), 1))
     
@@ -919,7 +966,11 @@ def process_single_target(target, TARGET_SCARCITY_MAP, db_assets_map):
         "latest_news_headline": str(news_headline) if news_headline else None,
         "market_cap": format_cash_display(market_data.get("market_cap", 0)),
         "cash_amount": format_cash_display(fin_data.get("cash", 0) if fin_data else 0),
-        "runway_years": f"~{fin_data['runway']:.1f} Yrs" if fin_data and fin_data.get('runway') else "—"
+        "runway_years": f"~{fin_data['runway']:.1f} Yrs" if fin_data and fin_data.get('runway') else "—",
+        "biosecure_flag": geo_risk["biosecure_flag"],
+        "hgr_conflict": geo_risk["hgr_conflict"],
+        "geopolitical_risk_score": geo_risk["geopolitical_risk_score"],
+        "fda_readiness_score": geo_risk["fda_readiness_score"]
     }
     
     if fin_data and fin_data.get("cash", 0) > 1:

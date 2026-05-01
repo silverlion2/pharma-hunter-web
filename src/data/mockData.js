@@ -9,6 +9,15 @@ export const fallbackData = [
     latest_news_headline: 'Altimmune reports positive Pemvidutide Phase 2 liver fat reduction data',
     predicted_time: '14-30 Days (Imminent)', estimated_premium: '+65% ~ +80%',
     shadow_signals: [{ type: 'OPTIONS', date: 'T-1 EOD', desc: 'Strike $12.5 Call Sweep (Vol: 4500 vs OI: 1200)', mood: 'HIGH-INTENT' }],
+    catalysts: [
+      { phase: 'Phase 2', drug: 'Pemvidutide', indication: 'MASH', readout: 'Q4 2026', type: 'Primary Completion' },
+      { phase: 'Phase 3', drug: 'Pemvidutide', indication: 'Obesity', readout: 'Q2 2027', type: 'Interim Readout' }
+    ],
+    kol_network: [
+      { name: 'Dr. Alastair Mac', institution: 'Dana-Farber', role: 'SAB Chair', weight: 90 },
+      { name: 'Dr. Sarah Jin', institution: 'Mayo Clinic', role: 'Lead PI', weight: 65 },
+      { name: 'Dr. Robert V.', institution: 'MD Anderson', role: 'Advisor', weight: 40 }
+    ],
     digest: "Altimmune's Pemvidutide shows significant liver fat reduction alongside weight loss, differentiating it in the MASH space. With cash runway dropping below 0.6 years, management is highly incentivized to execute a buyout. Options flow indicates massive institutional positioning.\n\nVERDICT: Based on the critical cash pressure score of 82.0 and high asset scarcity (95.0), the Overall Quant Score stands at 94.5/100. We estimate a highly probable acquisition scenario within the next quarter, projecting an estimated M&A premium of +65% ~ +80% above the current trading price."
   },
   {
@@ -21,6 +30,14 @@ export const fallbackData = [
     latest_news_headline: 'Terns Pharma advances TERN-601 oral GLP-1 into dose-ranging study',
     predicted_time: '1-3 Months', estimated_premium: '+55% ~ +70%',
     shadow_signals: [],
+    catalysts: [
+      { phase: 'Phase 2a', drug: 'TERN-601', indication: 'Obesity', readout: 'Q1 2027', type: 'Dose-Ranging Topline' },
+      { phase: 'Phase 1', drug: 'TERN-501', indication: 'MASH', readout: 'Q3 2026', type: 'Safety Readout' }
+    ],
+    kol_network: [
+      { name: 'Dr. Eugene L.', institution: 'Johns Hopkins', role: 'SAB Member', weight: 80 },
+      { name: 'Dr. Emily W.', institution: 'MGH', role: 'Co-PI', weight: 55 }
+    ],
     digest: "Terns holds TERN-601, a highly scarce oral GLP-1 candidate. Big Pharma desperately needs oral formulations to combat the cold-chain logistics of injectables. TERN's valuation gap represents a prime entry point for MNCs looking to leapfrog into the obesity race.\n\nVERDICT: High-conviction mid-term target. Scarcity premium is compounding."
   },
   {
@@ -336,6 +353,18 @@ export const fallbackData = [
     latest_news_headline: 'Harmony Biosciences Wakix sales surpass estimates; expands into hypersomnia',
     predicted_time: 'TBD / Event Driven', estimated_premium: '+35% ~ +50%', shadow_signals: [],
     digest: "Profitable commercial-stage neuroscience company driven by Wakix. Valuation has been unfairly battered by short sellers over patent concerns. Big Pharma with existing infrastructure could instantly optimize their SG&A and pocket the cash flow.\n\nVERDICT: Highly accretive value-buy for a mid-sized to large neuro-acquirer."
+  },
+  {
+    ticker: 'FNDO', name: 'Foundayo', score: 96.5, target_area: 'Metabolic', is_past_deal: false, warning_flag: null,
+    clinical_score: 95.0, cash_score: 85.0, scarcity_score: 98.0, milestone_score: 90.0, valuation_score: 88.0,
+    ip_score: 94, patent_families: 18, fto_risk: 'LOW',
+    defensive_strategy: 'Oral GLP-1 (orforglipron) with proprietary absorption enhancement technology. Superior IP defensibility vis-a-vis injectable peptides. Foundational composition-of-matter patents.',
+    key_patents: [{id: 'US12,123,456', title: 'Oral Incretin Peptides', expiry: '2044', jurisdictions: ['USPTO', 'EPO', 'CNIPA', 'JPO']}],
+    cash_amount: '$450M', runway_years: '~2.8 Yrs', market_cap: '$3.2B',
+    latest_news_headline: 'Foundayo releases unprecedented Phase 2 oral GLP-1 (orforglipron) weight loss data',
+    predicted_time: '1-3 Months', estimated_premium: '+60% ~ +80%',
+    shadow_signals: [{ type: 'OPTIONS', date: 'T-2 EOD', desc: 'Sustained OTM Call Sweep in Near-Term Expiries', mood: 'HIGH-INTENT' }],
+    digest: "Foundayo's oral GLP-1 (orforglipron) presents a paradigm shift in metabolic treatments by decoupling administration from cold-chain injectables. With obesity markets prioritizing oral formulations for mass adoption, FNDO represents a highly scarce, tier-1 acquisition target for MNCs looking to disrupt the ongoing GLP-1 duopoly.\n\nVERDICT: Elite Tier-1 asset. An acquisition arms race is highly probable."
   }
 ];
 
@@ -685,6 +714,32 @@ export const biosecureData = {
     { date: 'Mar 15, 2026', licensor: 'Hengrui Pharma', licensee: 'Merck', value: '$1.4B', structure: 'Global ex-China rights (ADC)', paradox_score: 85 },
     { date: 'Feb 28, 2026', licensor: 'Biotheus', licensee: 'BioNTech', value: '$800M', structure: 'Global rights (Bispecific)', paradox_score: 92 },
     { date: 'Jan 10, 2026', licensor: 'MediLink', licensee: 'Roche', value: '$1.1B', structure: 'Global rights (ADC)', paradox_score: 78 }
+  ]
+};
+
+export const regulatoryConflictData = {
+  overview: {
+    headline: 'The Dual-Compliance Trap',
+    subheadline: 'Multinational pharma and CROs are caught in the crossfire of US decoupling and Chinese data localization.',
+    summary: 'The intersection of the US BIOSECURE Act (preventing reliance on Chinese biomanufacturing) and China Decree 834 (mandating local hosting of human genomic data) creates an impossible operational paradox. Companies must either bifurcate infrastructure or face regulatory exclusion.'
+  },
+  decree834: {
+    title: "China Decree 834 (HGRP)",
+    description: "Strict controls on cross-border transfer of Chinese human genomic data. Forces local data hosting, security reviews, and restricts foreign ownership of biological samples.",
+    impact_level: "High",
+    entities_affected: ["MNC R&D Centers", "Cross-border CROs", "Academic Collaborations"]
+  },
+  biosecureAct: {
+    title: "US BIOSECURE Act",
+    description: "Prohibits US federal funding and contracts to life science companies partnering with designated 'Entities of Concern'.",
+    impact_level: "Critical",
+    entities_affected: ["WuXi AppTec", "BGI", "Complete Genomics", "WuXi Biologics"]
+  },
+  victims: [
+    { name: "WuXi AppTec", exposure: "Critical", sector: "CDMO", conflict: "Caught directly between US decoupling mandates and local Chinese operating pressures." },
+    { name: "BGI Group", exposure: "Critical", sector: "Genomics", conflict: "Directly named in BIOSECURE; massive data restrictions imposed by Decree 834." },
+    { name: "AstraZeneca / MNCs", exposure: "High", sector: "MNC Pharma", conflict: "Forced to duplicate infrastructure (China-for-China strategy) to comply with both regimes." },
+    { name: "Cross-border Biotechs", exposure: "Moderate", sector: "Emerging Biotech", conflict: "Forced to re-evaluate clinical trial site selection and data hosting providers, raising costs." }
   ]
 };
 

@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { key: 'deal-tracker', label: 'Deal Tracker', icon: Globe },
   { key: 'ai-biotech', label: 'AI × Bio', icon: Brain },
   { key: 'gap-map', label: 'Gap Map', icon: Cpu },
+  { key: 'cross-border', label: 'Cross-Border', icon: Globe, badge: 'HOT' },
   { key: 'patent-radar', label: 'Patent Radar', icon: Shield, badge: 'NEW' },
   { key: 'guidance', label: 'Guide & FAQ', icon: BookOpen },
 ];
@@ -313,7 +314,7 @@ const Layout = ({
 
             {/* Discord in mobile menu */}
             <a 
-              href="https://discord.gg/your-invite-link-here" 
+              href="https://discord.gg/bioquantix" 
               target="_blank"
               rel="noopener noreferrer"
               className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-widest text-[#5865F2] hover:bg-[#5865F2]/10 transition-all"
@@ -352,7 +353,7 @@ const Layout = ({
             {NAV_ITEMS.map(item => (
               <button key={item.key} onClick={() => navigateTo(item.key)} className="text-[11px] text-slate-500 hover:text-cyan-400 transition-colors text-left font-medium">{item.label}</button>
             ))}
-            <a href="https://discord.gg/your-invite-link-here" target="_blank" rel="noopener noreferrer" className="text-[11px] text-[#5865F2] hover:text-[#4752C4] transition-colors text-left font-medium flex items-center gap-1.5">
+            <a href="https://discord.gg/bioquantix" target="_blank" rel="noopener noreferrer" className="text-[11px] text-[#5865F2] hover:text-[#4752C4] transition-colors text-left font-medium flex items-center gap-1.5">
               <MessageSquare size={10} /> Discord Community
             </a>
           </div>

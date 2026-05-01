@@ -3,6 +3,7 @@ import {
   Activity, TrendingUp, AlertCircle, Cpu, Target, Clock 
 } from 'lucide-react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import ValuationEngine from './ValuationEngine';
 
 // eslint-disable-next-line no-unused-vars
 const FactorRow = ({ label, icon: Icon, valA, valB, isPercent = false, isDollar = false }) => {
@@ -216,6 +217,14 @@ const ComparisonView = ({ tickers = [], assetData = [], userRole = 'visitor', se
             "{assetB.latest_news_headline || 'No recent news'}"
           </div>
         </div>
+
+        {/* Combat Valuation Engine */}
+        <h3 className="text-center text-[10px] font-black tracking-widest text-slate-600 uppercase mt-10 mb-6 border-t border-slate-800/50 pt-8">Alpha Modeling Combat</h3>
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-8">
+           <ValuationEngine activeAsset={assetA} userRole={userRole} setView={setView} />
+           <ValuationEngine activeAsset={assetB} userRole={userRole} setView={setView} />
+        </div>
+
         </div>
       </div>
     </div>

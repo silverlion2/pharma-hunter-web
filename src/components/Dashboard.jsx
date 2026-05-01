@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import { TrendingUp, AlertCircle, Cpu, Clock, Database, Activity, Lock, CheckCircle2, DollarSign, Newspaper, BarChart3, Star, Search, User, Swords, ArrowRight } from 'lucide-react';
+import { TrendingUp, AlertCircle, Cpu, Clock, Database, Activity, Lock, CheckCircle2, DollarSign, Newspaper, BarChart3, Star, Search, User, Swords, ArrowRight, ShieldAlert, FileText, Globe } from 'lucide-react';
+import ValuationEngine from './ValuationEngine';
+import CatalystRadar from './CatalystRadar';
+import KOLNetworkMap from './KOLNetworkMap';
+import DealStructurer from './DealStructurer';
+import TPPMapping from './TPPMapping';
+import VDRCopilot from './VDRCopilot';
+import GeopoliticalRisk from './GeopoliticalRisk';
 
 const Dashboard = ({
   availableAreas = ['Metabolic', 'Autoimmune'], targetArea, setTargetArea, showPastDeals, themeColorText,
@@ -12,6 +19,7 @@ const Dashboard = ({
   isSearching, searchStep, searchedTicker, setView
 }) => {
   const [searchInput, setSearchInput] = useState('');
+  const [activeAssetTab, setActiveAssetTab] = useState('overview');
   
   const loadingMessages = [
     `[1/4] Parsing SEC filings for ${searchedTicker}...`,
@@ -393,30 +401,67 @@ const Dashboard = ({
             )}
 
             {!showPastDeals && (
-              <div className="flex flex-col md:flex-row items-center gap-6 p-5 bg-slate-950 rounded-2xl border border-slate-800/60 mb-8 relative">
-                <div className={`flex flex-col md:flex-row items-center gap-6 w-full ${isCurrentlyLocked ? 'blur-[3px] opacity-40 select-none pointer-events-none' : ''}`}>
-                  <div className="flex-1">
-                    <h4 className="text-slate-400 text-xs font-black uppercase tracking-widest mb-1">Transaction Prediction</h4>
-                    <p className="text-slate-500 text-xs leading-relaxed max-w-md italic">Calculated based on institutional BD benchmarks and current MarketData API volume intensity.</p>
-                  </div>
-                  <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0 w-full md:w-auto">
-                    <div className={`flex items-center gap-4 px-5 py-3 bg-opacity-5 border rounded-xl w-full sm:w-auto ${targetArea === 'Autoimmune' ? 'bg-indigo-500 border-indigo-500/20' : 'bg-cyan-500 border-cyan-500/20'}`}>
-                      <Clock className={`shrink-0 ${themeColorText}`} size={18} />
-                      <div>
-                        <div className="text-[9px] text-slate-500 font-bold uppercase mb-0.5">Predicted Execution</div>
-                        <div className={`text-lg font-mono font-black leading-none ${themeColorText}`}>{safeTime}</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4 px-5 py-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl w-full sm:w-auto">
-                      <TrendingUp className="text-emerald-400 shrink-0" size={18} />
-                      <div>
-                        <div className="text-[9px] text-slate-500 font-bold uppercase mb-0.5">Estimated Premium</div>
-                        <div className="text-lg font-mono font-black text-emerald-400 leading-none">{safeUpside}</div>
-                      </div>
-                    </div>
-                  </div>
+              <>
+                {/* Asset Navigation Tabs */}
+                <div className="flex items-center gap-6 mb-8 border-b border-slate-800/60 pb-px overflow-x-auto custom-scrollbar">
+                  <button onClick={() => setActiveAssetTab('overview')} className={`shrink-0 px-2 py-3 text-xs font-bold uppercase tracking-widest border-b-2 transition-all ${activeAssetTab === 'overview' ? 'text-cyan-400 border-cyan-400' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>Overview & Combat</button>
+                  <button onClick={() => setActiveAssetTab('valuation')} className={`shrink-0 px-2 py-3 text-xs font-bold uppercase tracking-widest border-b-2 transition-all ${activeAssetTab === 'valuation' ? 'text-cyan-400 border-cyan-400' : 'text-slate-500 border-transparent hover:text-slate-300'}`}>Valuation & Catalysts</button>
+                  <button onClick={() => setActiveAssetTab('bd-execution')} className={`shrink-0 px-2 py-3 text-xs font-bold uppercase tracking-widest border-b-2 transition-all flex items-center gap-2 ${activeAssetTab === 'bd-execution' ? 'text-amber-400 border-amber-400' : 'text-slate-500 border-transparent hover:text-slate-300'}`}><ShieldAlert size={14} /> BD Execution</button>
                 </div>
-              </div>
+
+                {activeAssetTab === 'overview' && (
+                  <div className="flex flex-col md:flex-row items-center gap-6 p-5 bg-slate-950 rounded-2xl border border-slate-800/60 mb-8 relative">
+                    <div className={`flex flex-col md:flex-row items-center gap-6 w-full ${isCurrentlyLocked ? 'blur-[3px] opacity-40 select-none pointer-events-none' : ''}`}>
+                      <div className="flex-1">
+                        <h4 className="text-slate-400 text-xs font-black uppercase tracking-widest mb-1">Transaction Prediction</h4>
+                        <p className="text-slate-500 text-xs leading-relaxed max-w-md italic">Calculated based on institutional BD benchmarks and current MarketData API volume intensity.</p>
+                      </div>
+                      <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0 w-full md:w-auto">
+                        <div className={`flex items-center gap-4 px-5 py-3 bg-opacity-5 border rounded-xl w-full sm:w-auto ${targetArea === 'Autoimmune' ? 'bg-indigo-500 border-indigo-500/20' : 'bg-cyan-500 border-cyan-500/20'}`}>
+                          <Clock className={`shrink-0 ${themeColorText}`} size={18} />
+                          <div>
+                            <div className="text-[9px] text-slate-500 font-bold uppercase mb-0.5">Predicted Execution</div>
+                            <div className={`text-lg font-mono font-black leading-none ${themeColorText}`}>{safeTime}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4 px-5 py-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl w-full sm:w-auto">
+                          <TrendingUp className="text-emerald-400 shrink-0" size={18} />
+                          <div>
+                            <div className="text-[9px] text-slate-500 font-bold uppercase mb-0.5">Estimated Premium</div>
+                            <div className="text-lg font-mono font-black text-emerald-400 leading-none">{safeUpside}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeAssetTab === 'valuation' && (
+                  <div className="mb-8">
+                    <ValuationEngine 
+                      activeAsset={activeAsset} 
+                      userRole={userRole} 
+                      setView={setView} 
+                    />
+                    
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+                      <CatalystRadar catalysts={activeAsset?.catalysts} />
+                      <KOLNetworkMap network={activeAsset?.kol_network} ticker={activeAsset?.ticker} />
+                    </div>
+                  </div>
+                )}
+
+                {activeAssetTab === 'bd-execution' && (
+                  <div className="mb-8 flex flex-col gap-8">
+                    <DealStructurer activeAsset={activeAsset} userRole={userRole} />
+                    <TPPMapping activeAsset={activeAsset} />
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                      <VDRCopilot activeAsset={activeAsset} />
+                      <GeopoliticalRisk activeAsset={activeAsset} />
+                    </div>
+                  </div>
+                )}
+              </>
             )}
 
             <div className="relative">

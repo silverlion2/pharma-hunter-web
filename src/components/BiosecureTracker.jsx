@@ -1,21 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldAlert, Clock, TrendingUp, AlertTriangle, ArrowRight, Building2, Map, Zap, Users, CalendarDays, Radio, MapPin, Briefcase, MessageCircle } from 'lucide-react';
-import { biosecureData as mockBiosecureData, conferencePulseData as mockConferencePulseData } from '../data/mockData';
+import { 
+  biosecureData as mockBiosecureData, 
+  conferencePulseData as mockConferencePulseData,
+  regulatoryConflictData as mockRegulatoryConflictData
+} from '../data/mockData';
 import { supabase, isSupabaseConfigured } from '../utils/supabase';
 export default function BiosecureTracker({ userRole }) {
-  const [activeTab, setActiveTab] = useState('conference'); // 'biosecure' | 'conference'
+  const [activeTab, setActiveTab] = useState('conference'); // 'biosecure' | 'conference' | 'conflict'
   const [agendaDay, setAgendaDay] = useState(0);
-
-  if (userRole !== 'admin') {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 bg-slate-900 rounded-3xl border border-slate-800">
-        <ShieldAlert size={48} className="text-slate-700 mb-4" />
-        <h2 className="text-xl font-black text-slate-500 mb-2 uppercase tracking-widest">Restricted Access</h2>
-        <p className="text-sm text-slate-400">The Pharma BD Intelligence Hub is currently restricted to Admin users.</p>
-      </div>
-    );
-  }
-
   const [biosecureData, setBiosecureData] = useState(mockBiosecureData);
   const [conferencePulseData, setConferencePulseData] = useState(mockConferencePulseData);
 
@@ -38,6 +31,16 @@ export default function BiosecureTracker({ userRole }) {
     };
     fetchData();
   }, []);
+
+  if (userRole !== 'admin') {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 bg-slate-900 rounded-3xl border border-slate-800">
+        <ShieldAlert size={48} className="text-slate-700 mb-4" />
+        <h2 className="text-xl font-black text-slate-500 mb-2 uppercase tracking-widest">Restricted Access</h2>
+        <p className="text-sm text-slate-400">The Pharma BD Intelligence Hub is currently restricted to Admin users.</p>
+      </div>
+    );
+  }
 
   const { timeline, exposureMap, dealFlow } = biosecureData || mockBiosecureData;
   const { conference, stats, rumoredDeals, agenda, signalFeed } = conferencePulseData || mockConferencePulseData;
@@ -92,6 +95,13 @@ export default function BiosecureTracker({ userRole }) {
         >
           <ShieldAlert size={14} />
           BIOSECURE ACT
+        </button>
+        <button
+          onClick={() => setActiveTab('conflict')}
+          className={`px-5 py-2.5 rounded-lg font-black text-xs transition-all flex items-center gap-2 ${activeTab === 'conflict' ? 'bg-purple-500/15 text-purple-400 border border-purple-500/30' : 'text-slate-500 hover:text-slate-300 border border-transparent'}`}
+        >
+          <AlertTriangle size={14} />
+          CONFLICT TRACKER
         </button>
       </div>
 
@@ -382,6 +392,69 @@ export default function BiosecureTracker({ userRole }) {
                       <td className="py-4 px-4 text-xs text-indigo-300">
                         {item.shiftTrend}
                       </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============ CONFLICT TRACKER TAB ============ */}
+      {activeTab === 'conflict' && (
+        <div className="space-y-6">
+          <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-6 relative overflow-hidden">
+            <h2 className="text-xl font-black text-white tracking-tight mb-2">{mockRegulatoryConflictData.overview.headline}</h2>
+            <p className="text-sm text-slate-400 max-w-3xl leading-relaxed">{mockRegulatoryConflictData.overview.summary}</p>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-rose-950/20 border border-rose-900/30 rounded-2xl p-6 border-t-4 border-t-rose-500">
+               <h3 className="text-rose-400 font-black text-sm uppercase tracking-widest mb-4 flex items-center gap-2"><Map size={16} />{mockRegulatoryConflictData.decree834.title}</h3>
+               <p className="text-slate-300 text-sm mb-6 leading-relaxed">{mockRegulatoryConflictData.decree834.description}</p>
+               <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Affected Entities</div>
+               <div className="flex flex-wrap gap-2">
+                 {mockRegulatoryConflictData.decree834.entities_affected.map(e => <span key={e} className="bg-rose-500/10 text-rose-400 px-2.5 py-1.5 rounded-md text-xs font-bold border border-rose-500/20">{e}</span>)}
+               </div>
+            </div>
+            <div className="bg-indigo-950/20 border border-indigo-900/30 rounded-2xl p-6 border-t-4 border-t-indigo-500">
+               <h3 className="text-indigo-400 font-black text-sm uppercase tracking-widest mb-4 flex items-center gap-2"><ShieldAlert size={16} />{mockRegulatoryConflictData.biosecureAct.title}</h3>
+               <p className="text-slate-300 text-sm mb-6 leading-relaxed">{mockRegulatoryConflictData.biosecureAct.description}</p>
+               <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Affected Entities</div>
+               <div className="flex flex-wrap gap-2">
+                 {mockRegulatoryConflictData.biosecureAct.entities_affected.map(e => <span key={e} className="bg-indigo-500/10 text-indigo-400 px-2.5 py-1.5 rounded-md text-xs font-bold border border-indigo-500/20">{e}</span>)}
+               </div>
+            </div>
+          </div>
+          
+          {/* Victims Table */}
+          <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-6">
+            <h3 className="font-bold text-xs tracking-widest uppercase text-slate-300 flex items-center gap-2 mb-6">
+              <Users className="w-4 h-4 text-purple-500" />
+              Strategic Exposure Mapping
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[700px]">
+                <thead>
+                  <tr className="border-b border-slate-800">
+                    <th className="py-3 px-4 text-[10px] font-black tracking-widest text-slate-500 uppercase">Entity</th>
+                    <th className="py-3 px-4 text-[10px] font-black tracking-widest text-slate-500 uppercase">Sector</th>
+                    <th className="py-3 px-4 text-[10px] font-black tracking-widest text-slate-500 uppercase">Exposure</th>
+                    <th className="py-3 px-4 text-[10px] font-black tracking-widest text-slate-500 uppercase">Conflict Paradox</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {mockRegulatoryConflictData.victims.map((v, i) => (
+                    <tr key={i} className="border-b border-slate-800/50 hover:bg-white/[0.02] transition-colors">
+                      <td className="py-4 px-4 font-bold text-sm text-slate-200">{v.name}</td>
+                      <td className="py-4 px-4 text-xs text-slate-400">{v.sector}</td>
+                      <td className="py-4 px-4">
+                        <span className={`text-[9px] font-black px-2 py-1 rounded border ${v.exposure === 'Critical' ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-amber-500/20 text-amber-400 border-amber-500/30'}`}>
+                          {v.exposure.toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 text-[13px] text-slate-300 max-w-sm leading-relaxed">{v.conflict}</td>
                     </tr>
                   ))}
                 </tbody>

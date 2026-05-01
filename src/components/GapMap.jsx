@@ -43,7 +43,7 @@ const GapMap = ({ pipelineGapsData, setView }) => {
   const [selectedMncIdx, setSelectedMncIdx] = useState(0);
 
   const [patentCliffTimeline, setPatentCliffTimeline] = useState(mockPatentCliffTimeline);
-  const [targetDict, setTargetDict] = useState(mockTargetDict);
+  const [targetDict] = useState(mockTargetDict);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -100,7 +100,7 @@ const GapMap = ({ pipelineGapsData, setView }) => {
       if (gap.secondary_targets) gap.secondary_targets.forEach(t => targets.add(t));
     });
     return Array.from(targets).sort();
-  }, [selectedArea, filteredGaps]);
+  }, [selectedArea, filteredGaps, targetDict]);
 
   const activeGap = filteredGaps[selectedMncIdx] || filteredGaps[0];
 

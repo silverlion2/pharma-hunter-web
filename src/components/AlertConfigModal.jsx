@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Bell, ShieldAlert } from 'lucide-react';
 import { supabase } from '../utils/supabase';
 
-const AlertConfigModal = ({ isOpen, onClose, ticker }) => {
+const AlertConfigModal = ({ isOpen, onClose, ticker, showToast }) => {
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -39,6 +39,7 @@ const AlertConfigModal = ({ isOpen, onClose, ticker }) => {
       setAlerts(data || []);
     } catch (err) {
       console.error("Failed to fetch alerts:", err);
+      if (showToast) showToast("Failed to fetch tracking rules.", "error");
     } finally {
       setLoading(false);
     }
@@ -72,6 +73,7 @@ const AlertConfigModal = ({ isOpen, onClose, ticker }) => {
       fetchAlerts();
     } catch (err) {
       console.error("Failed to add alert:", err);
+      if (showToast) showToast("Could not create tracking rule.", "error");
     } finally {
       setSubmitting(false);
     }
@@ -83,6 +85,7 @@ const AlertConfigModal = ({ isOpen, onClose, ticker }) => {
       setAlerts(prev => prev.filter(a => a.id !== id));
     } catch (err) {
       console.error("Failed to delete alert:", err);
+      if (showToast) showToast("Could not delete tracking rule.", "error");
     }
   };
 

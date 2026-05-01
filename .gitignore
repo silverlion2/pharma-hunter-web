@@ -23,3 +23,11 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Antigravity Persistent Memory
+.gemini/
+.vercel
+.omm/
+data_dumps/
+lint_output.txt
+__pycache__/
